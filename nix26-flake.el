@@ -74,6 +74,16 @@
 
 (defvar nix26-flake-show-history nil)
 
+(defun nix26-flake-lookup-tree (path data)
+  "Look up PATH in a tree DATA.
+
+This is a helper macro for traversing a tree."
+  (cl-reduce (lambda (acc f)
+               (cdr (assq f acc)))
+             (cdr path)
+             :initial-value
+             (cdr (assq (car path) data))))
+
 (defun nix26-flake--alist-to-url (url-alist)
   "Convert ORIGIN into a plain URL format."
   (let-alist url-alist
@@ -153,14 +163,21 @@
                                 'face 'nix26-flake-drv-parent-face)))
 
                 (dolist (output-reverse leaves)
-                  (let ((path (reverse output-reverse)))
+                  (let* ((path (reverse output-reverse))
+                         (node (nix26-flake-lookup-tree path result))
+                         ;; (package-name (cdr (assq 'name node)))
+                         (description (cdr (assq 'description node))))
                     (magit-insert-section (flake-output path)
                       (magit-insert-heading
                         (make-string 6 ?\s)
-                        (propertize (symbol-name (car output-reverse))
-                                    'nix-flake-output (mapconcat #'symbol-name
-                                                                 path ".")
-                                    'face 'nix26-flake-drv-name-face)))))))))))
+                        (apply #'propertize
+                               (symbol-name (car output-reverse))
+                               'nix-flake-output (mapconcat #'symbol-name
+                                                            path ".")
+                               'nix-flake-show node
+                               'face 'nix26-flake-drv-name-face
+                               (when description
+                                 (list 'help-echo description)))))))))))))
     (insert ?\n)))
 
 (defun nix26-flake--group-outputs (root)
