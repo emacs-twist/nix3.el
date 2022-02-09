@@ -292,7 +292,7 @@ This is a helper macro for traversing a tree."
            (file-exists-p (expand-file-name "flake.nix" dir)))
       (let ((truename (nix26-path-normalize dir))
             (default-directory dir))
-        (promise-chain (promise-new (apply-partially #'nix26-flake--make-show-process truename nil))
+        (promise-chain (nix26-flake--get-promise truename nil)
           (then (lambda (_)
                   (nix26-flake-switch-to-buffer (nix26-flake-show-buffer truename nil))))))
     (user-error "Directory %s does not contain flake.nix" dir)))
@@ -300,14 +300,19 @@ This is a helper macro for traversing a tree."
 (defun nix26-flake-show-url (url)
   (interactive "sFlake url: ")
   (message "Fetching a flake...")
-  (promise-chain (promise-all
-                  (vector (promise-new (apply-partially #'nix26-flake--make-show-process url t))
-                          (promise-new (apply-partially #'nix26-flake--make-metadata-process url t))))
+  (promise-chain (nix26-flake--get-promise url t)
     (then (lambda (_)
             (let (message-log-max)
-              (message nil))
+              (message nil))))
+    (then (lambda (_)
             (nix26-flake-switch-to-buffer (nix26-flake-show-buffer url t))))
     (catch #'error)))
+
+(defun nix26-flake--get-promise (dir-or-url is-url)
+  (promise-all (vector (promise-new (apply-partially #'nix26-flake--make-show-process
+                                                     dir-or-url is-url))
+                       (promise-new (apply-partially #'nix26-flake--make-metadata-process
+                                                     dir-or-url is-url)))))
 
 (cl-defmacro nix26-flake--nix-json-process (func-name &key name buffer stderr
                                                       subcommand
