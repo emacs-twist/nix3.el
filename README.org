@@ -1,5 +1,11 @@
 * nix26.el
 =nix26.el= is an Emacs interface to experimental commands of Nix.
 Its goal is to enable the user to easily work across multiple Nix projects.
-A typical use case is one main program that contains a =flake.nix= and its dependencies in separate repositories which may be or may not be flakes.
 It is also intended to provide a common infrastructure for [[https://github.com/emacs-twist/twist.el][twist.el]].
+
+A typical use case is a multi-repository project that consists of a main application that is a flake and its dependencies in separate repositories which may be or may not be flakes.
+You clone the source of a dependency, fix a bug or add a feature, and rebuild the main application.
+=nix26.el= should accelerate this cycle by supporting both local and remote flakes.
+** Usage
+- =nix26-flake-show= command displays information on a flake on filesystem.
+- =nix26-flake-show-url= command displays information on a remote flake.
