@@ -92,7 +92,7 @@ This is a helper macro for traversing a tree."
               ("git" (concat "git+" \.url))
               ("tarball" \.url)
               ("indirect" (concat "indirect:" \.id))
-              (_ (format "error: %s: %s" \.type origin)))
+              (_ (format "error: %s: %s" \.type url-alist)))
             (if \.ref
                 (format "?ref=%s" \.ref)
               ""))))
