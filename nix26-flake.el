@@ -31,6 +31,8 @@
 ;;; Code:
 
 (require 'nix26-repl)
+(require 'nix26-utils)
+(require 'nix26-flake-input)
 
 (require 'magit-section)
 (require 'project)
@@ -48,6 +50,10 @@
     nix26-flake-insert-inputs)
   ""
   :type 'hook)
+
+(defcustom nix26-flake-toplevel-sections-unfolded t
+  "Whether to unfold the top-level section by default."
+  :type 'boolean)
 
 (defface nix26-flake-drv-type-face
   '((t :inherit font-lock-constant-face))
@@ -93,8 +99,17 @@ This is a helper macro for traversing a tree."
               ("tarball" \.url)
               ("indirect" (concat "indirect:" \.id))
               (_ (format "error: %s: %s" \.type url-alist)))
+            (if (or \.ref \.rev)
+                "?"
+              "")
             (if \.ref
-                (format "?ref=%s" \.ref)
+                (format "ref=%s" \.ref)
+              "")
+            (if (and \.ref \.rev)
+                "&"
+              "")
+            (if \.rev
+                (format "rev=%s" \.rev)
               ""))))
 
 (defvar nix26-flake-show-results nil)
@@ -127,16 +142,8 @@ This is a helper macro for traversing a tree."
   (gethash (string-remove-suffix "/" directory)
            nix26-flake-metadata-results))
 
-(defun nix26-flake-insert-header (url)
-  (insert (propertize "Flake: " 'face 'magit-section-heading)
-          (if-let (metadata (nix26-flake-metadata--get url))
-              (cdr (assq 'resolvedUrl metadata))
-            url)
-          "\n")
-  (insert ?\n))
-
 (defun nix26-flake-insert-outputs ()
-  (magit-insert-section (flake-outputs nil t)
+  (magit-insert-section (flake-outputs nil nix26-flake-toplevel-sections-unfolded)
     (magit-insert-heading "Flake outputs")
 
     (let ((result (nix26-flake--get-show-result))
@@ -180,6 +187,14 @@ This is a helper macro for traversing a tree."
                                  (list 'help-echo description)))))))))))))
     (insert ?\n)))
 
+(defun nix26-flake-insert-header (url)
+  (insert (propertize "Flake: " 'face 'magit-section-heading)
+          (if-let (metadata (nix26-flake-metadata--get url))
+              (cdr (assq 'resolvedUrl metadata))
+            url)
+          "\n")
+  (insert ?\n))
+
 (defun nix26-flake--group-outputs (root)
   (let (result)
     (cl-labels
@@ -198,7 +213,7 @@ This is a helper macro for traversing a tree."
 
 (defun nix26-flake-insert-inputs ()
   (when-let (result (nix26-flake--get-metadata-result))
-    (magit-insert-section (flake-inputs nil t)
+    (magit-insert-section (flake-inputs nil nix26-flake-toplevel-sections-unfolded)
       (magit-insert-heading "Flake inputs")
 
       (let* ((nodes (thread-last result
@@ -233,7 +248,11 @@ This is a helper macro for traversing a tree."
                                       "(flake)"
                                     "(non-flake)")
                                   'face 'font-lock-constant-face)
-                      "\n")))))
+                      "\n")
+              (nix26-put-overlay-on-region (line-beginning-position 0) (line-end-position 0)
+                'keymap nix26-flake-input-map
+                'nix26-flake-input-name name
+                'nix26-flake-input-data data)))))
       (insert ?\n))))
 
 (defun nix26-flake-show-buffer (dir-or-url is-url)
