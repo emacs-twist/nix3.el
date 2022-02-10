@@ -1,6 +1,6 @@
 * nix26.el
-=nix26.el= is an Emacs interface to experimental commands of Nix.
-Its goal is to enable the user to easily work across multiple Nix projects.
+=nix26.el= is an experimental Emacs interface to experimental commands of Nix.
+Its goal is to enable the user to easily work across multiple projects.
 It is also intended to provide a common infrastructure for [[https://github.com/emacs-twist/twist.el][twist.el]].
 
 A typical use case is a multi-repository project that consists of a main application that is a flake and its dependencies in separate repositories which may be or may not be flakes.
