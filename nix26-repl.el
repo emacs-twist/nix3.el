@@ -2,7 +2,14 @@
 
 (require 'eieio)
 (require 'comint)
+(require 'json)
 (require 'nix26-path)
+(require 'nix26-core)
+
+(defgroup nix26-repl nil
+  ""
+  :prefix "nix26-repl-"
+  :group 'nix26)
 
 ;; Based on https://emacs.stackexchange.com/a/18884
 (defconst nix26-repl-ansi-escape-re

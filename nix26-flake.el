@@ -11,6 +11,11 @@
 (require 'project)
 (require 'promise)
 
+(defgroup nix26-flake nil
+  ""
+  :prefix "nix26-flake-"
+  :group 'nix26)
+
 (defconst nix26-flake-show-error-buffer "*Nix-Flake-Show Errors*")
 (defconst nix26-flake-metadata-error-buffer "*Nix-Flake-Metadata Errors*")
 

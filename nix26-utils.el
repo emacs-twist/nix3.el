@@ -1,5 +1,7 @@
 ;;; nix26-utils.el ---  -*- lexical-binding: t -*-
 
+(require 'cl-lib)
+
 (defun nix26-put-overlay-on-region (beg end &rest properties)
   "A shorthand for putting overlay properties on a region."
   (declare (indent 2))

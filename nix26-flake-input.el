@@ -5,6 +5,9 @@
 (defvar nix26-flake-input-name nil)
 (defvar nix26-flake-input-data nil)
 
+(declare-function nix26-flake-show-url "nix26-flake")
+(declare-function nix26-flake--alist-to-url "nix26-flake")
+
 (defvar nix26-flake-input-map
   (let ((map (make-keymap)))
     (define-key map (kbd "RET") #'nix26-flake-input-return)
