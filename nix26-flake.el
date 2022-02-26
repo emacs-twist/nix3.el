@@ -13,10 +13,6 @@
 (defconst nix26-flake-show-error-buffer "*Nix-Flake-Show Errors*")
 (defconst nix26-flake-metadata-error-buffer "*Nix-Flake-Metadata Errors*")
 
-(defcustom nix26-nix-executable "nix"
-  ""
-  :type 'file)
-
 (defcustom nix26-flake-show-sections
   '(nix26-flake-insert-outputs
     nix26-flake-insert-inputs)
@@ -151,7 +147,7 @@ This is a helper macro for traversing a tree."
     (magit-insert-heading "Flake outputs")
 
     (let ((result (nix26-flake--get-show-result))
-          (nix-system (nix-system)))
+          (nix-system (nix26-system)))
       (pcase-dolist (`(,type-name . ,outputs)
                      (nix26-flake--group-outputs result))
         (magit-insert-section (flake-output-group type-name)
@@ -241,9 +237,10 @@ This is a helper macro for traversing a tree."
               (magit-insert-section (flake-input name t)
                 (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
                        (original (cdr (assq 'original data)))
+                       (name-string (symbol-name name))
                        (url (nix26-flake--alist-to-url original)))
                   (insert (make-string 2 ?\s)
-                          (propertize (pad-column name-width (symbol-name name))
+                          (propertize (pad-column name-width name-string)
                                       'help-echo name-string
                                       'face 'nix26-flake-input-name-face)
                           " ")
