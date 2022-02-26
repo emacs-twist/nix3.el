@@ -303,7 +303,7 @@ This is a helper macro for traversing a tree."
 (defun nix26-flake-show (dir)
   "Show the flake at DIR."
   (interactive (list (if (equal current-prefix-arg '(4))
-                         (nix26-flake-select-locally)
+                         (read-directory-name "Select a flake: ")
                        (or (locate-dominating-file default-directory
                                                    "flake.nix")
                            (nix26-flake-select-locally)))))
