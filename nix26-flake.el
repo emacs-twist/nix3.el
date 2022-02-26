@@ -303,10 +303,10 @@ This is a helper macro for traversing a tree."
 (defun nix26-flake-show (dir)
   "Show the flake at DIR."
   (interactive (list (if (equal current-prefix-arg '(4))
-                         (project-prompt-project-dir)
+                         (nix26-flake-select-locally)
                        (or (locate-dominating-file default-directory
                                                    "flake.nix")
-                           (project-prompt-project-dir)))))
+                           (nix26-flake-select-locally)))))
   (if (and dir
            (file-exists-p (expand-file-name "flake.nix" dir)))
       (let ((truename (nix26-path-normalize dir))
@@ -315,6 +315,10 @@ This is a helper macro for traversing a tree."
           (then (lambda (_)
                   (nix26-flake-switch-to-buffer (nix26-flake-show-buffer truename nil))))))
     (user-error "Directory %s does not contain flake.nix" dir)))
+
+(defun nix26-flake-select-locally ()
+  "Select a flake directory on the file system."
+  (project-prompt-project-dir))
 
 (defun nix26-flake-show-url (url)
   (interactive "sFlake url: ")
