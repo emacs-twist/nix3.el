@@ -311,6 +311,7 @@ This is a helper macro for traversing a tree."
   (setq-local revert-buffer-function #'nix26-flake-show-revert)
   (read-only-mode 1))
 
+;;;###autoload
 (defun nix26-flake-show (dir)
   "Show the flake at DIR."
   (interactive (list (if (equal current-prefix-arg '(4))
@@ -331,6 +332,7 @@ This is a helper macro for traversing a tree."
   "Select a flake directory on the file system."
   (project-prompt-project-dir))
 
+;;;###autoload
 (defun nix26-flake-show-url (url)
   (interactive "sFlake url: ")
   (message "Fetching a flake...")
