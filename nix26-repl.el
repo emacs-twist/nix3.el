@@ -3,7 +3,6 @@
 (require 'eieio)
 (require 'comint)
 (require 'json)
-(require 'nix26-path)
 (require 'nix26-core)
 
 (defgroup nix26-repl nil
@@ -37,7 +36,7 @@
             (make-hash-table :test #'equal))))
 
 (defun nix26-repl-local-session (dir)
-  (let* ((path (nix26-path-normalize dir))
+  (let* ((path (nix26-normalize-path dir))
          (table (nix26-repl--local-sessions))
          (existing (gethash path table)))
     (if (and existing (nix26-repl--buffer-process-live-p existing))

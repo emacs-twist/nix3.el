@@ -30,5 +30,7 @@
 
 ;;; Code:
 
+(require 'nix26-core)
+
 (provide 'nix26)
 ;;; nix26.el ends here

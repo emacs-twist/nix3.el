@@ -19,5 +19,8 @@
                                  "--impure" "--raw"))
       (error "Failed to run nix eval"))))
 
+(defun nix26-normalize-path (dir)
+  (string-remove-suffix "/" (file-truename dir)))
+
 (provide 'nix26-core)
 ;;; nix26-core.el ends here

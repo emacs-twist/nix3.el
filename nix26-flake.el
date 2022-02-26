@@ -1,10 +1,9 @@
 ;;; nix26-flake.el --- Support for Nix flakes -*- lexical-binding: t -*-
 
+(require 'nix26-core)
 (require 'nix26-repl)
 (require 'nix26-utils)
 (require 'nix26-flake-input)
-(require 'nix26-format)
-(require 'nix26-core)
 
 (require 's)
 (require 'magit-section)
@@ -115,7 +114,7 @@ This is a helper macro for traversing a tree."
                       "dir="
                       relative))
              (t
-              (nix26-path-normalize (expand-file-name relative default-directory)))))
+              (nix26-normalize-path (expand-file-name relative default-directory)))))
         (error "Failed to match against a path \"%s\"" path)))))
 
 (defvar nix26-flake-show-results nil)
@@ -297,7 +296,7 @@ This is a helper macro for traversing a tree."
 
 (defun nix26-flake--buffer-url ()
   (or nix26-flake-url
-      (nix26-path-normalize default-directory)))
+      (nix26-normalize-path default-directory)))
 
 (defun nix26-flake--get-show-result ()
   (nix26-flake-show--get (nix26-flake--buffer-url)))
@@ -326,7 +325,7 @@ This is a helper macro for traversing a tree."
                            (nix26-flake-select-locally)))))
   (if (and dir
            (file-exists-p (expand-file-name "flake.nix" dir)))
-      (let ((truename (nix26-path-normalize dir))
+      (let ((truename (nix26-normalize-path dir))
             (default-directory dir))
         (promise-chain (nix26-flake--get-promise truename nil)
           (then (lambda (_)

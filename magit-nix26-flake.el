@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "27.1") (nix26-flake "0.1") (promise "1.1"))
+;; Package-Requires: ((emacs "27.1") (nix26 "0.1") (promise "1.1"))
 ;; Keywords: processes
 ;; URL: https://github.com/emacs-twist/nix26.el
 
@@ -32,12 +32,13 @@
 
 ;;; Code:
 
+(require 'nix26)
 (require 'nix26-flake)
 (require 'promise)
 
 (defun magit-nix26-flake-output-section ()
   (when (file-exists-p "flake.nix")
-    (let ((truename (nix26-path-normalize default-directory)))
+    (let ((truename (nix26-normalize-path default-directory)))
       (promise-wait 0.5
         (promise-new (apply-partially #'nix26-flake--make-show-process
                                       truename nil)))
