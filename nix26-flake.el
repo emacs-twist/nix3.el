@@ -3,7 +3,9 @@
 (require 'nix26-repl)
 (require 'nix26-utils)
 (require 'nix26-flake-input)
+(require 'nix26-format)
 
+(require 's)
 (require 'magit-section)
 (require 'project)
 (require 'promise)
@@ -24,6 +26,10 @@
 (defcustom nix26-flake-toplevel-sections-unfolded t
   "Whether to unfold the top-level section by default."
   :type 'boolean)
+
+(defcustom nix26-flake-input-name-max-width 20
+  ""
+  :type '(choice number (const nil)))
 
 (defface nix26-flake-drv-type-face
   '((t :inherit font-lock-constant-face))
@@ -46,7 +52,8 @@
   'help-function #'nix26-flake-show-url
   'help-echo (purecopy "mouse-2, RET: Show the flake"))
 
-(defvar nix26-flake-url nil)
+(defvar nix26-flake-url nil
+  "Set to the URL of a flake when the flake is not local.")
 
 (defvar nix26-flake-show-history nil)
 
@@ -67,6 +74,7 @@ This is a helper macro for traversing a tree."
               ("github" (format "github:%s/%s" \.owner \.repo))
               ("git" (concat "git+" \.url))
               ("tarball" \.url)
+              ("path" (concat "path:" \.path))
               ("indirect" (concat "indirect:" \.id))
               (_ (format "error: %s: %s" \.type url-alist)))
             (if (or \.ref \.rev)
@@ -81,6 +89,32 @@ This is a helper macro for traversing a tree."
             (if \.rev
                 (format "rev=%s" \.rev)
               ""))))
+
+(defun nix26-flake--path-p (url-alist)
+  "Return non-nil if URL-ALIST points to a path."
+  (equal "path" (assq 'type url-alist)))
+
+(defun nix26-flake--resolve-path (path)
+  (if (string-prefix-p "/" path)
+      path
+    (save-match-data
+      (if (string-match (rx bol "./" (group (+ anything))) path)
+          (let ((relative (match-string 1 path)))
+            (cond
+             ((and nix26-flake-url
+                   (string-match-p (rx (any "=&") "dir=") nix26-flake-url))
+              (error "The parent flake \"%s\" already has dir parameter, so it cannot be resolved"
+                     nix26-flake-url))
+             (nix26-flake-url
+              (concat nix26-flake-url
+                      (if (string-match-p (rx "?") nix26-flake-url)
+                          "&"
+                        "?")
+                      "dir="
+                      relative))
+             (t
+              (nix26-path-normalize (expand-file-name relative default-directory)))))
+        (error "Failed to match against a path \"%s\"" path)))))
 
 (defvar nix26-flake-show-results nil)
 
@@ -186,43 +220,52 @@ This is a helper macro for traversing a tree."
     (magit-insert-section (flake-inputs nil nix26-flake-toplevel-sections-unfolded)
       (magit-insert-heading "Flake inputs")
 
-      (let* ((nodes (thread-last result
-                      (assq 'locks)
-                      (cdr)
-                      (assq 'nodes)
-                      (cdr)
-                      (assq-delete-all 'root)))
-             (name-fmt (when nodes
-                         (format "%%-%ds"
-                                 (thread-last nodes
-                                   (mapcar (lambda (cell)
-                                             (length (symbol-name (car cell)))))
-                                   (apply #'max))))))
-        (pcase-dolist (`(,name . ,data) nodes)
-          (magit-insert-section (flake-input name t)
-            (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
-                   (locked (cdr (assq 'locked data)))
-                   (last-modified (cdr (assq 'lastModified locked)))
-                   (url (nix26-flake--alist-to-url (cdr (assq 'original data)))))
-              (insert (make-string 2 ?\s)
-                      (propertize (format name-fmt name)
-                                  'face 'nix26-flake-input-name-face)
-                      " ")
-              (if is-flake
-                  (insert-text-button url
-                                      'type 'nix26-flake-url-link
-                                      'help-args (list url))
-                (insert url))
-              (insert "  "
-                      (propertize (if is-flake
-                                      "(flake)"
-                                    "(non-flake)")
-                                  'face 'font-lock-constant-face)
-                      "\n")
-              (nix26-put-overlay-on-region (line-beginning-position 0) (line-end-position 0)
-                'keymap nix26-flake-input-map
-                'nix26-flake-input-name name
-                'nix26-flake-input-data data)))))
+      (when-let (nodes (thread-last
+                         result
+                         (assq 'locks)
+                         (cdr)
+                         (assq 'nodes)
+                         (cdr)
+                         (assq-delete-all 'root)))
+        (let ((name-width (thread-last
+                            nodes
+                            (mapcar (lambda (cell)
+                                      (symbol-name (car cell))))
+                            (nix26-format--column-width
+                             nix26-flake-input-name-max-width))))
+          (cl-flet
+              ((pad-column
+                (len s)
+                (s-pad-right len " " (s-truncate len s))))
+            (pcase-dolist (`(,name . ,data) nodes)
+              (magit-insert-section (flake-input name t)
+                (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
+                       (original (cdr (assq 'original data)))
+                       (url (nix26-flake--alist-to-url original)))
+                  (insert (make-string 2 ?\s)
+                          (propertize (pad-column name-width (symbol-name name))
+                                      'help-echo name-string
+                                      'face 'nix26-flake-input-name-face)
+                          " ")
+                  (if is-flake
+                      (insert-text-button url
+                                          'type 'nix26-flake-url-link
+                                          'help-args
+                                          (list (if (nix26-flake--path-p original)
+                                                    (nix26-flake--resolve-path
+                                                     (cdr (assq 'path original)))
+                                                  url)))
+                    (insert url))
+                  (insert "  "
+                          (propertize (if is-flake
+                                          "(flake)"
+                                        "(non-flake)")
+                                      'face 'font-lock-constant-face)
+                          "\n")
+                  (nix26-put-overlay-on-region (line-beginning-position 0) (line-end-position 0)
+                    'keymap nix26-flake-input-map
+                    'nix26-flake-input-name name
+                    'nix26-flake-input-data data)))))))
       (insert ?\n))))
 
 (defun nix26-flake-show-buffer (dir-or-url is-url)
