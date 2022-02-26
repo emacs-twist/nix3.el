@@ -4,6 +4,7 @@
 (require 'nix26-utils)
 (require 'nix26-flake-input)
 (require 'nix26-format)
+(require 'nix26-core)
 
 (require 's)
 (require 'magit-section)
