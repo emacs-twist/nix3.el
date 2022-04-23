@@ -17,6 +17,7 @@
 
 (defconst nix26-flake-show-error-buffer "*Nix-Flake-Show Errors*")
 (defconst nix26-flake-metadata-error-buffer "*Nix-Flake-Metadata Errors*")
+(defconst nix26-flake-init-buffer "*Nix-Flake-Init*")
 
 (defcustom nix26-flake-show-sections
   '(nix26-flake-insert-outputs
@@ -31,6 +32,12 @@
 (defcustom nix26-flake-input-name-max-width 20
   ""
   :type '(choice number (const nil)))
+
+(defcustom nix26-flake-init-reverted-modes
+  '(dired-mode
+    magit-status-mode)
+  "List of major modes that should be reverted after flake init."
+  :type '(repeat symbol))
 
 (defface nix26-flake-drv-type-face
   '((t :inherit font-lock-constant-face))
@@ -57,6 +64,10 @@
   "Set to the URL of a flake when the flake is not local.")
 
 (defvar nix26-flake-show-history nil)
+
+(defvar nix26-flake-template-history nil)
+
+(defvar nix26-flake-template-alist nil)
 
 (defun nix26-flake-lookup-tree (path data)
   "Look up PATH in a tree DATA.
@@ -386,6 +397,91 @@ This is a helper macro for traversing a tree."
   (when (eq major-mode 'nix26-flake-show-mode)
     (when-let (buffer (pop nix26-flake-show-history))
       (switch-to-buffer buffer))))
+
+;;;###autoload
+(defun nix26-flake-init (&optional template)
+  (interactive)
+  (when (and (file-exists-p "flake.nix")
+             (not (yes-or-no-p "The directory is a flake. Are you sure?")))
+    (user-error "Aborted"))
+  (if template
+      (nix26-flake--init-with-template template)
+    (let ((item (nix26-registry-complete
+                 "nix flake init: "
+                 :require-match nil
+                 :extra-entries nix26-flake-template-history
+                 :no-exact t)))
+      (if (and (stringp item)
+               (string-match-p "#" item))
+          (nix26-flake--init-with-template item)
+        (let ((name-or-url (if (stringp item)
+                               item
+                             (car item)))
+              (url (if (stringp item)
+                       item
+                     (nix26-flake-ref-alist-to-url (cdr item)))))
+          (promise-chain (promise-new (apply-partially #'nix26-flake--make-show-process
+                                                       url t))
+            (then (lambda (_)
+                    (let (message-log-max)
+                      (message nil))))
+            (then `(lambda (_)
+                     (nix26-flake--init-with-template
+                      (concat ,name-or-url
+                              "#"
+                              (thread-last
+                                (nix26-flake-show--get ,url)
+                                ;; Since Nix 2.7, the default template is templates.default, so we
+                                ;; won't consider defaultTemplate.
+                                (alist-get 'templates)
+                                (nix26-flake--complete-template "nix flake init: "))))))
+            (catch #'error)))))))
+
+(defun nix26-flake--init-with-template (template)
+  (delq template nix26-flake-template-history)
+  (push template nix26-flake-template-history)
+  ;; To set up a hook, we will use `start-process' rather than `compile'.
+  (with-current-buffer (get-buffer-create nix26-flake-init-buffer)
+    (erase-buffer))
+  (message "nix26-flake-init[%s]: -t %s" default-directory template)
+  (let ((proc (start-process "nix26-flake-init" nix26-flake-init-buffer
+                             nix26-nix-executable "flake" "init" "-t" template)))
+    (set-process-sentinel proc
+                          (lambda (_proc event)
+                            (cond
+                             ((equal "finished\n" event)
+                              (let ((message-log-max nil))
+                                (message (with-current-buffer nix26-flake-init-buffer
+                                           (buffer-string))))
+                              (when (and nix26-flake-init-reverted-modes
+                                         (apply #'derived-mode-p
+                                                nix26-flake-init-reverted-modes))
+                                (revert-buffer)))
+                             ((string-prefix-p "exited abnormally" event)
+                              (display-buffer nix26-flake-init-buffer)
+                              (let ((message-log-max nil))
+                                (message "Exited abnormally"))))))))
+
+(defun nix26-flake--complete-template (prompt templates)
+  (unless templates
+    (user-error "The flake provides no template"))
+  (setq nix26-flake-template-alist
+        (mapcar (pcase-lambda (`(,name . ,alist))
+                  (cons (symbol-name name) (alist-get 'description alist)))
+                templates))
+  (completing-read prompt
+                   `(lambda (string pred action)
+                      (if (eq action 'metadata)
+                          '(metadata . ((category . nix26-registry-entry)
+                                        (annotation-function . nix26-flake--annotate-template)))
+                        (complete-with-action action ',(mapcar #'car nix26-flake-template-alist)
+                                              string pred)))
+                   nil t))
+
+(defun nix26-flake--annotate-template (template)
+  (if-let (cell (assoc template nix26-flake-template-alist))
+      (concat " " (propertize (cdr cell) 'face 'font-lock-comment-face))
+    ""))
 
 (provide 'nix26-flake)
 ;;; nix26-flake.el ends here
