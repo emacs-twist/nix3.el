@@ -68,29 +68,6 @@ This is a helper macro for traversing a tree."
              :initial-value
              (cdr (assq (car path) data))))
 
-(defun nix26-flake--alist-to-url (url-alist)
-  "Convert ORIGIN into a plain URL format."
-  (let-alist url-alist
-    (concat (pcase \.type
-              ("github" (format "github:%s/%s" \.owner \.repo))
-              ("git" (concat "git+" \.url))
-              ("tarball" \.url)
-              ("path" (concat "path:" \.path))
-              ("indirect" (concat "indirect:" \.id))
-              (_ (format "error: %s: %s" \.type url-alist)))
-            (if (or \.ref \.rev)
-                "?"
-              "")
-            (if \.ref
-                (format "ref=%s" \.ref)
-              "")
-            (if (and \.ref \.rev)
-                "&"
-              "")
-            (if \.rev
-                (format "rev=%s" \.rev)
-              ""))))
-
 (defun nix26-flake--path-p (url-alist)
   "Return non-nil if URL-ALIST points to a path."
   (equal "path" (assq 'type url-alist)))
@@ -243,7 +220,7 @@ This is a helper macro for traversing a tree."
                 (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
                        (original (cdr (assq 'original data)))
                        (name-string (symbol-name name))
-                       (url (nix26-flake--alist-to-url original)))
+                       (url (nix26-flake-ref-alist-to-url original)))
                   (insert (make-string 2 ?\s)
                           (propertize (pad-column name-width name-string)
                                       'help-echo name-string

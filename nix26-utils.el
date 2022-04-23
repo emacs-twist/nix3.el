@@ -16,5 +16,28 @@
         (min limit max)
       max)))
 
+(defun nix26-flake-ref-alist-to-url (url-alist)
+  "Convert ORIGIN into a plain URL format."
+  (let-alist url-alist
+    (concat (pcase \.type
+              ("github" (format "github:%s/%s" \.owner \.repo))
+              ("git" (concat "git+" \.url))
+              ("tarball" \.url)
+              ("path" (concat "path:" \.path))
+              ("indirect" (concat "indirect:" \.id))
+              (_ (format "error: %s: %s" \.type url-alist)))
+            (if (or \.ref \.rev)
+                "?"
+              "")
+            (if \.ref
+                (format "ref=%s" \.ref)
+              "")
+            (if (and \.ref \.rev)
+                "&"
+              "")
+            (if \.rev
+                (format "rev=%s" \.rev)
+              ""))))
+
 (provide 'nix26-utils)
 ;;; nix26-utils.el ends here
