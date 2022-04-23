@@ -120,6 +120,15 @@
          (entry (assoc input entries)))
     (if entry
         (cons input (cddr entry))
+      (when (and (not (string-match-p "#" input))
+                 (string-match-p ":" input)
+                 (not require-match)
+                 user
+                 (yes-or-no-p "Add the flake to the user registry?"))
+        (let ((name (read-string (format "Name for %s: " input))))
+          (call-process nix26-nix-executable nil nil nil
+                        "registry" "add"
+                        name input)))
       input)))
 
 (defun nix26-registry-annotate (id)
