@@ -4,6 +4,7 @@
 (require 'nix26-repl)
 (require 'nix26-utils)
 (require 'nix26-flake-input)
+(require 'nix26-registry)
 
 (require 's)
 (require 'magit-section)
@@ -326,7 +327,12 @@ This is a helper macro for traversing a tree."
 
 ;;;###autoload
 (defun nix26-flake-show-url (url)
-  (interactive "sFlake url: ")
+  (interactive (let ((ent (nix26-registry-complete "Flake: "
+                                                   :require-match nil
+                                                   :no-exact t)))
+                 (list (if (stringp ent)
+                           ent
+                         (car ent)))))
   (message "Fetching a flake...")
   (promise-chain (nix26-flake--get-promise url t)
     (then (lambda (_)
