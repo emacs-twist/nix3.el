@@ -1,12 +1,12 @@
 ;;; nix26-flake-input.el ---  -*- lexical-binding: t -*-
 
 (require 'transient)
+(require 'nix26-utils)
 
 (defvar nix26-flake-input-name nil)
 (defvar nix26-flake-input-data nil)
 
 (declare-function nix26-flake-show-url "nix26-flake")
-(declare-function nix26-flake--alist-to-url "nix26-flake")
 
 (defvar nix26-flake-input-map
   (let ((map (make-keymap)))
@@ -24,13 +24,13 @@
   (thread-last (or data nix26-flake-input-data)
     (assq 'original)
     (cdr)
-    (nix26-flake--alist-to-url)))
+    (nix26-flake-ref-alist-to-url)))
 
 (defun nix26-flake-input--locked-url (&optional data)
   (thread-last (or data nix26-flake-input-data)
     (assq 'locked)
     (cdr)
-    (nix26-flake--alist-to-url)))
+    (nix26-flake-ref-alist-to-url)))
 
 (defun nix26-flake-input--last-modified (&optional data)
   (thread-last (or data nix26-flake-input-data)
