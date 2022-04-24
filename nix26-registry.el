@@ -99,6 +99,7 @@
 (cl-defun nix26-registry-complete (prompt &key
                                           extra-entries
                                           (require-match t)
+                                          add-to-registry
                                           no-exact
                                           (global t)
                                           (system t)
@@ -120,7 +121,8 @@
          (entry (assoc input entries)))
     (if entry
         (cons input (cddr entry))
-      (when (and (not (string-match-p "#" input))
+      (when (and add-to-registry
+                 (not (string-match-p "#" input))
                  (string-match-p ":" input)
                  (not require-match)
                  user

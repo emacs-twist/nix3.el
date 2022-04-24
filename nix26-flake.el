@@ -414,6 +414,7 @@ This is a helper macro for traversing a tree."
       (nix26-flake--init-with-template template)
     (let ((item (nix26-registry-complete
                  "nix flake init: "
+                 :add-to-registry t
                  :require-match nil
                  :extra-entries nix26-flake-template-history
                  :no-exact t)))
