@@ -49,8 +49,8 @@
 
 (defun nix26-registry--global-entries ()
   (if (and nix26-registry-global-cache
-           (<g (car nix26-registry-global-cache)
-               (+ (float-time) (nix26-config-lookup-value "tarball-ttl"))))
+           (< (car nix26-registry-global-cache)
+              (+ (float-time) (nix26-config-lookup-value "tarball-ttl"))))
       (cdr nix26-registry-global-cache)
     (let ((buffer (url-retrieve-synchronously (nix26-registry--global-url) t t))
           (message-log-max nil))
