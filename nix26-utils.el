@@ -39,5 +39,34 @@
                 (format "rev=%s" \.rev)
               ""))))
 
+(defun nix26-format-duration (seconds)
+  (cond
+   ((< seconds 60)
+    "just now")
+   ((< seconds 3600)
+    (format "%.f minutes ago" (/ seconds 60)))
+   ((< seconds 86400)
+    (format "%.f hours ago" (/ seconds 3600)))
+   ((< seconds (* 86400 2))
+    "yesterday")
+   ((< seconds (* 86400 7))
+    (format "%.f days ago" (/ seconds 86400)))
+   ((< seconds (* 86400 30))
+    (format "%.f weeks ago" (/ seconds (* 86400 7))))
+   ((< seconds (* 86400 365))
+    (format "%.f months ago" (/ seconds (* 86400 30))))
+   (t
+    (format "%.f years ago" (/ seconds (* 86400 365))))))
+
+(defun nix26-format-timestamp (time)
+  (cl-etypecase time
+    (number
+     (let ((offset (car (current-time-zone))))
+       (format "%s (%s)"
+               (format-time-string "%F %X" time)
+               (nix26-format-duration (- (float-time)
+                                         offset
+                                         time)))))))
+
 (provide 'nix26-utils)
 ;;; nix26-utils.el ends here

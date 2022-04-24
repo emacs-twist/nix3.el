@@ -21,7 +21,8 @@
 (defconst nix26-flake-init-buffer "*Nix-Flake-Init*")
 
 (defcustom nix26-flake-show-sections
-  '(nix26-flake-insert-outputs
+  '(nix26-flake-insert-metadata
+    nix26-flake-insert-outputs
     nix26-flake-insert-inputs)
   ""
   :type 'hook)
@@ -136,6 +137,22 @@ This is a helper macro for traversing a tree."
   (gethash (string-remove-suffix "/" directory)
            nix26-flake-metadata-results))
 
+(defun nix26-flake-insert-metadata ()
+  (magit-insert-section (flake-metadata nil nix26-flake-toplevel-sections-unfolded)
+    (when-let (metadata (nix26-flake--get-metadata-result))
+      (let-alist metadata
+        (nix26-section-dlist 0
+          nil
+          ("Resolved URL: " (not (equal \.resolvedUrl \.originalUrl))
+           (insert \.resolvedUrl))
+          ("Description:" t
+           (insert \.description))
+          ("Revision:" t
+           (insert \.revision))
+          ("Last modified:" t
+           (insert (nix26-format-timestamp \.lastModified))))))
+    (insert ?\n)))
+
 (defun nix26-flake-insert-outputs ()
   (magit-insert-section (flake-outputs nil nix26-flake-toplevel-sections-unfolded)
     (magit-insert-heading "Flake outputs")
@@ -184,7 +201,7 @@ This is a helper macro for traversing a tree."
 (defun nix26-flake-insert-header (url)
   (insert (propertize "Flake: " 'face 'magit-section-heading)
           (if-let (metadata (nix26-flake-metadata--get url))
-              (cdr (assq 'resolvedUrl metadata))
+              (cdr (assq 'originalUrl metadata))
             url)
           "\n")
   (insert ?\n))
