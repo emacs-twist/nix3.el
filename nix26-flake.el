@@ -452,6 +452,22 @@ This is a helper macro for traversing a tree."
   (nix26-flake--prompt-template "nix flake init: "
                                 #'nix26-flake-init-with-template))
 
+;;;###autoload
+(defun nix26-flake-new ()
+  (interactive)
+  (nix26-flake--prompt-template "nix flake new: "
+                                (lambda (template)
+                                  (let ((dir (read-directory-name "New directory: ")))
+                                    (when (file-exists-p dir)
+                                      (user-error "Directory already exists"))
+                                    (nix26-flake--record-template template)
+                                    (let ((default-directory (file-name-directory
+                                                              (string-remove-suffix
+                                                               "/" dir))))
+                                      (nix26-flake--run-template
+                                       `(lambda () (dired ,dir))
+                                       "new" "-t" template (expand-file-name dir)))))))
+
 (defun nix26-flake--prompt-template (prompt callback)
   (let ((item (nix26-registry-complete prompt
                                        :add-to-registry t
