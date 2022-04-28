@@ -43,7 +43,8 @@
   :type '(repeat symbol))
 
 (defcustom nix26-flake-new-hook
-  nil
+  '(nix26-flake-git-init
+    nix26-flake-remember-this-project)
   "Hook to run after `nix26-flake-new' scaffolds a new project.
 
 Each function in this hook is called without arguments in the
@@ -568,6 +569,18 @@ This is a helper macro for traversing a tree."
   (if-let (cell (assoc template nix26-flake-template-alist))
       (concat " " (propertize (cdr cell) 'face 'font-lock-comment-face))
     ""))
+
+;;;; Functions that can be added to nix26-flake-new-hook
+
+(defun nix26-flake-git-init ()
+  "Run git init in the current directory if there is no repository."
+  (unless (locate-dominating-file default-directory ".git")
+    (call-process "git" nil nil nil "init")))
+
+(defun nix26-flake-remember-this-project ()
+  "Remember the current project."
+  (when-let (pr (project-current))
+    (project-remember-project pr)))
 
 (provide 'nix26-flake)
 ;;; nix26-flake.el ends here
