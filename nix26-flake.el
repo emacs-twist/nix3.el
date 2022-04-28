@@ -337,7 +337,9 @@ This is a helper macro for traversing a tree."
             (default-directory dir))
         (promise-chain (nix26-flake--get-promise truename nil)
           (then (lambda (_)
-                  (nix26-flake-switch-to-buffer (nix26-flake-show-buffer truename nil))))
+                  (nix26-flake-switch-to-buffer (nix26-flake-show-buffer truename nil))
+                  (let (message-log-max)
+                    (message "Fetched the flake"))))
           (promise-catch #'nix26-flake--show-process-error)))
     (user-error "Directory %s does not contain flake.nix" dir)))
 
@@ -356,10 +358,9 @@ This is a helper macro for traversing a tree."
   (message "Fetching a flake...")
   (promise-chain (nix26-flake--get-promise url t)
     (then (lambda (_)
+            (nix26-flake-switch-to-buffer (nix26-flake-show-buffer url t))
             (let (message-log-max)
-              (message nil))))
-    (then (lambda (_)
-            (nix26-flake-switch-to-buffer (nix26-flake-show-buffer url t))))
+              (message "Fetched the flake"))))
     (promise-catch #'nix26-flake--show-process-error)))
 
 (defun nix26-flake--get-promise (dir-or-url is-url)
