@@ -446,7 +446,7 @@ This is a helper macro for traversing a tree."
   (interactive)
   (when (and (or (file-exists-p "flake.nix")
                  (project-current))
-             (not (yes-or-no-p (format "Directory \"%s\" has a flake or inside a project. Are you sure?"
+             (not (yes-or-no-p (format "Are you sure you want to run the template in \"%s\"?"
                                        default-directory))))
     (user-error "Aborted"))
   (nix26-flake--prompt-template "nix flake init: "
