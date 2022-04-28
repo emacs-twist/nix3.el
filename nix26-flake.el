@@ -450,7 +450,7 @@ This is a helper macro for traversing a tree."
                                        default-directory))))
     (user-error "Aborted"))
   (if template
-      (nix26-flake--init-with-template template)
+      (nix26-flake-init-with-template template)
     (let ((item (nix26-registry-complete
                  "nix flake init: "
                  :add-to-registry t
@@ -459,7 +459,7 @@ This is a helper macro for traversing a tree."
                  :no-exact t)))
       (if (and (stringp item)
                (string-match-p "#" item))
-          (nix26-flake--init-with-template item)
+          (nix26-flake-init-with-template item)
         (let ((name-or-url (if (stringp item)
                                item
                              (car item)))
@@ -468,30 +468,37 @@ This is a helper macro for traversing a tree."
                      (nix26-flake-ref-alist-to-url (cdr item)))))
           (promise-chain (promise-new (apply-partially #'nix26-flake--make-show-process
                                                        url t))
-            (then (lambda (_)
-                    (let (message-log-max)
-                      (message nil))))
             (then `(lambda (_)
-                     (nix26-flake--init-with-template
-                      (concat ,name-or-url
-                              "#"
-                              (thread-last
-                                (nix26-flake-show--get ,url)
-                                ;; Since Nix 2.7, the default template is templates.default, so we
-                                ;; won't consider defaultTemplate.
-                                (alist-get 'templates)
-                                (nix26-flake--complete-template "nix flake init: "))))))
+                     (let (message-log-max)
+                       (message nil))
+                     (concat ,name-or-url
+                             "#"
+                             (thread-last
+                               (nix26-flake-show--get ,url)
+                               ;; Since Nix 2.7, the default template is templates.default, so we
+                               ;; won't consider defaultTemplate.
+                               (alist-get 'templates)
+                               (nix26-flake--complete-template "nix flake init: ")))))
+            (then #'nix26-flake-init-with-template)
             (promise-catch #'error)))))))
 
-(defun nix26-flake--init-with-template (template)
+(defun nix26-flake-init-with-template (template)
+  (nix26-flake--record-template template)
+  (nix26-flake--run-template "init" "-t" "template"))
+
+(defun nix26-flake--record-template (template)
   (delq template nix26-flake-template-history)
-  (push template nix26-flake-template-history)
+  (push template nix26-flake-template-history))
+
+(defun nix26-flake--run-template (success &rest args)
   ;; To set up a hook, we will use `start-process' rather than `compile'.
   (with-current-buffer (get-buffer-create nix26-flake-init-buffer)
     (erase-buffer))
-  (message "nix26-flake-init[%s]: -t %s" default-directory template)
-  (let ((proc (start-process "nix26-flake-init" nix26-flake-init-buffer
-                             nix26-nix-executable "flake" "init" "-t" template)))
+  (message "nix26[%s]: %s" default-directory (mapconcat #'shell-quote-argument
+                                                        args " "))
+  (let ((proc (apply #'start-process
+                     "nix26-flake-init" nix26-flake-init-buffer
+                     nix26-nix-executable "flake" args)))
     (set-process-sentinel proc
                           (lambda (_proc event)
                             (cond
@@ -499,10 +506,7 @@ This is a helper macro for traversing a tree."
                               (let ((message-log-max nil))
                                 (message (with-current-buffer nix26-flake-init-buffer
                                            (buffer-string))))
-                              (when (and nix26-flake-init-reverted-modes
-                                         (apply #'derived-mode-p
-                                                nix26-flake-init-reverted-modes))
-                                (revert-buffer)))
+                              (funcall success))
                              ((string-prefix-p "exited abnormally" event)
                               (display-buffer nix26-flake-init-buffer)
                               (let ((message-log-max nil))
