@@ -24,7 +24,7 @@
               ("git" (concat "git+" \.url))
               ("tarball" \.url)
               ("path" (concat "path:" \.path))
-              ("indirect" (concat "indirect:" \.id))
+              ("indirect" (concat "flake:" \.id))
               (_ (format "error: %s: %s" \.type url-alist)))
             (if (or \.ref \.rev)
                 "?"
