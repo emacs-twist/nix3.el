@@ -3,6 +3,9 @@
 (require 'nix26-core)
 (require 'nix26-utils)
 
+;; Silent byte-compile
+(defvar url-http-end-of-headers)
+
 (defgroup nix26-registry nil
   "Support for flake registries."
   :group 'nix26)
