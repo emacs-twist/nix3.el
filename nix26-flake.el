@@ -42,6 +42,14 @@
   "List of major modes that should be reverted after flake init."
   :type '(repeat symbol))
 
+(defcustom nix26-flake-new-hook
+  nil
+  "Hook to run after `nix26-flake-new' scaffolds a new project.
+
+Each function in this hook is called without arguments in the
+created directory."
+  :type 'hook)
+
 (defface nix26-flake-drv-type-face
   '((t :inherit font-lock-constant-face))
   "")
@@ -465,7 +473,10 @@ This is a helper macro for traversing a tree."
                                                               (string-remove-suffix
                                                                "/" dir))))
                                       (nix26-flake--run-template
-                                       `(lambda () (dired ,dir))
+                                       `(lambda ()
+                                          (let ((default-directory ,dir))
+                                            (run-hooks 'nix26-flake-new-hook)
+                                            (dired default-directory)))
                                        "new" "-t" template (expand-file-name dir)))))))
 
 (defun nix26-flake--prompt-template (prompt callback)
