@@ -337,7 +337,8 @@ This is a helper macro for traversing a tree."
             (default-directory dir))
         (promise-chain (nix26-flake--get-promise truename nil)
           (then (lambda (_)
-                  (nix26-flake-switch-to-buffer (nix26-flake-show-buffer truename nil))))))
+                  (nix26-flake-switch-to-buffer (nix26-flake-show-buffer truename nil))))
+          (promise-catch #'nix26-flake--show-process-error)))
     (user-error "Directory %s does not contain flake.nix" dir)))
 
 (defun nix26-flake-select-locally ()
@@ -359,13 +360,25 @@ This is a helper macro for traversing a tree."
               (message nil))))
     (then (lambda (_)
             (nix26-flake-switch-to-buffer (nix26-flake-show-buffer url t))))
-    (catch #'error)))
+    (promise-catch #'nix26-flake--show-process-error)))
 
 (defun nix26-flake--get-promise (dir-or-url is-url)
   (promise-all (vector (promise-new (apply-partially #'nix26-flake--make-show-process
                                                      dir-or-url is-url))
                        (promise-new (apply-partially #'nix26-flake--make-metadata-process
                                                      dir-or-url is-url)))))
+
+(defun nix26-flake--show-process-error (plist)
+  (message "Error from \"nix %s %s\": %s"
+           (mapconcat #'shell-quote-argument (plist-get plist :subcommand) " ")
+           (plist-get plist :url)
+           (with-current-buffer (plist-get plist :error-buffer)
+             (let ((case-fold-search t))
+               (save-excursion
+                 (goto-char (point-max))
+                 (when (re-search-backward (rx bol "error") nil t)
+                   (buffer-substring (line-beginning-position)
+                                     (line-end-position))))))))
 
 (cl-defmacro nix26-flake--nix-json-process (func-name &key name buffer stderr
                                                       subcommand
@@ -388,15 +401,19 @@ This is a helper macro for traversing a tree."
                       ((equal "finished\n" event)
                        (with-current-buffer (process-buffer process)
                          (goto-char (point-min))
-                         (let ((result (json-parse-buffer :object-type 'alist
-                                                          :array-type 'list)))
-                           (,put-result url result)
-                           (funcall resolve result)))
+                         (if-let (result (json-parse-buffer :object-type 'alist
+                                                            :array-type 'list))
+                             (progn
+                               (,put-result url result)
+                               (funcall resolve result))
+                           (funcall reject (list :error-buffer ,stderr
+                                                 :subcommand ',subcommand
+                                                 :url url))))
                        (kill-buffer (process-buffer process)))
                       ((string-prefix-p "exited abnormally" event)
-                       (funcall reject (format "nix %s failed on %s"
-                                               ,(string-join subcommand " ")
-                                               url))))))))
+                       (funcall reject (list :error-buffer ,stderr
+                                             :subcommand ',subcommand
+                                             :url url))))))))
 
 (nix26-flake--nix-json-process nix26-flake--make-show-process
   :name "Nix-Flake-Show-Json"
@@ -461,7 +478,7 @@ This is a helper macro for traversing a tree."
                                 ;; won't consider defaultTemplate.
                                 (alist-get 'templates)
                                 (nix26-flake--complete-template "nix flake init: "))))))
-            (catch #'error)))))))
+            (promise-catch #'error)))))))
 
 (defun nix26-flake--init-with-template (template)
   (delq template nix26-flake-template-history)
