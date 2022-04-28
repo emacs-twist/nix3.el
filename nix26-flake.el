@@ -442,49 +442,58 @@ This is a helper macro for traversing a tree."
       (switch-to-buffer buffer))))
 
 ;;;###autoload
-(defun nix26-flake-init (&optional template)
+(defun nix26-flake-init ()
   (interactive)
   (when (and (or (file-exists-p "flake.nix")
                  (project-current))
              (not (yes-or-no-p (format "Directory \"%s\" has a flake or inside a project. Are you sure?"
                                        default-directory))))
     (user-error "Aborted"))
-  (if template
-      (nix26-flake-init-with-template template)
-    (let ((item (nix26-registry-complete
-                 "nix flake init: "
-                 :add-to-registry t
-                 :require-match nil
-                 :extra-entries nix26-flake-template-history
-                 :no-exact t)))
-      (if (and (stringp item)
-               (string-match-p "#" item))
-          (nix26-flake-init-with-template item)
-        (let ((name-or-url (if (stringp item)
-                               item
-                             (car item)))
-              (url (if (stringp item)
-                       item
-                     (nix26-flake-ref-alist-to-url (cdr item)))))
-          (promise-chain (promise-new (apply-partially #'nix26-flake--make-show-process
-                                                       url t))
-            (then `(lambda (_)
-                     (let (message-log-max)
-                       (message nil))
-                     (concat ,name-or-url
-                             "#"
-                             (thread-last
-                               (nix26-flake-show--get ,url)
-                               ;; Since Nix 2.7, the default template is templates.default, so we
-                               ;; won't consider defaultTemplate.
-                               (alist-get 'templates)
-                               (nix26-flake--complete-template "nix flake init: ")))))
-            (then #'nix26-flake-init-with-template)
-            (promise-catch #'error)))))))
+  (nix26-flake--prompt-template "nix flake init: "
+                                #'nix26-flake-init-with-template))
+
+(defun nix26-flake--prompt-template (prompt callback)
+  (let ((item (nix26-registry-complete prompt
+                                       :add-to-registry t
+                                       :require-match nil
+                                       :extra-entries nix26-flake-template-history
+                                       :no-exact t)))
+    (if (nix26-flake--template-p item)
+        (funcall callback item)
+      (let ((name-or-url (if (stringp item)
+                             item
+                           (car item)))
+            (url (if (stringp item)
+                     item
+                   (nix26-flake-ref-alist-to-url (cdr item)))))
+        (promise-chain (promise-new (apply-partially #'nix26-flake--make-show-process
+                                                     url t))
+          (then `(lambda (_)
+                   (let (message-log-max)
+                     (message nil))
+                   (concat ,name-or-url
+                           "#"
+                           (thread-last
+                             (nix26-flake-show--get ,url)
+                             ;; Since Nix 2.7, the default template is templates.default, so we
+                             ;; won't consider defaultTemplate.
+                             (alist-get 'templates)
+                             (nix26-flake--complete-template ,prompt)))))
+          (then callback)
+          (promise-catch #'error))))))
+
+(defun nix26-flake--template-p (url)
+  (and (stringp url)
+       (string-match-p "#" url)))
 
 (defun nix26-flake-init-with-template (template)
   (nix26-flake--record-template template)
-  (nix26-flake--run-template "init" "-t" "template"))
+  (nix26-flake--run-template (lambda ()
+                               (when (and nix26-flake-init-reverted-modes
+                                          (apply #'derived-mode-p
+                                                 nix26-flake-init-reverted-modes))
+                                 (revert-buffer)))
+                             "init" "-t" "template"))
 
 (defun nix26-flake--record-template (template)
   (delq template nix26-flake-template-history)
