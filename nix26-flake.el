@@ -444,8 +444,10 @@ This is a helper macro for traversing a tree."
 ;;;###autoload
 (defun nix26-flake-init (&optional template)
   (interactive)
-  (when (and (file-exists-p "flake.nix")
-             (not (yes-or-no-p "The directory is a flake. Are you sure?")))
+  (when (and (or (file-exists-p "flake.nix")
+                 (project-current))
+             (not (yes-or-no-p (format "Directory \"%s\" has a flake or inside a project. Are you sure?"
+                                       default-directory))))
     (user-error "Aborted"))
   (if template
       (nix26-flake--init-with-template template)
