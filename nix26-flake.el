@@ -144,13 +144,14 @@ This is a helper macro for traversing a tree."
       (let-alist metadata
         (nix26-section-dlist 0
           nil
-          ("Resolved URL: " (not (equal \.resolvedUrl \.originalUrl))
+          ("Resolved URL: " (and .resolvedUrl
+                                 (not (equal \.resolvedUrl \.originalUrl)))
            (insert \.resolvedUrl))
-          ("Description:" t
+          ("Description:" .description
            (insert \.description))
-          ("Revision:" t
+          ("Revision:" .revision
            (insert \.revision))
-          ("Last modified:" t
+          ("Last modified:" .lastModified
            (insert (nix26-format-timestamp \.lastModified))))))
     (insert ?\n)))
 
