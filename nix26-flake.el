@@ -465,20 +465,24 @@ This is a helper macro for traversing a tree."
 (defun nix26-flake-new ()
   (interactive)
   (nix26-flake--prompt-template "nix flake new: "
-                                (lambda (template)
-                                  (let ((dir (read-directory-name "New directory: ")))
-                                    (when (file-exists-p dir)
-                                      (user-error "Directory already exists"))
-                                    (nix26-flake--record-template template)
-                                    (let ((default-directory (file-name-directory
-                                                              (string-remove-suffix
-                                                               "/" dir))))
-                                      (nix26-flake--run-template
-                                       `(lambda ()
-                                          (let ((default-directory ,dir))
-                                            (run-hooks 'nix26-flake-new-hook)
-                                            (dired default-directory)))
-                                       "new" "-t" template (expand-file-name dir)))))))
+                                #'nix26-flake--new-with-template))
+
+(defun nix26-flake--new-with-template (template)
+  (let* ((dir (read-directory-name "New directory: "))
+         (parent (file-name-directory (string-remove-suffix "/" dir))))
+    (when (file-exists-p dir)
+      (user-error "Directory already exists"))
+    (unless (file-directory-p parent)
+      (if (yes-or-no-p (format "Directory %s does not exist. Create it?" parent))
+          (make-directory parent t)
+        (user-error "Parent directory does not exist")))
+    (nix26-flake--record-template template)
+    (let ((default-directory parent))
+      (nix26-flake--run-template `(lambda ()
+                                    (let ((default-directory ,dir))
+                                      (run-hooks 'nix26-flake-new-hook)
+                                      (dired default-directory)))
+                                 "new" "-t" template (expand-file-name dir)))))
 
 (defun nix26-flake--prompt-template (prompt callback)
   (let ((item (nix26-registry-complete prompt
