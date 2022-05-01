@@ -525,7 +525,7 @@ This is a helper macro for traversing a tree."
                                           (apply #'derived-mode-p
                                                  nix26-flake-init-reverted-modes))
                                  (revert-buffer)))
-                             "init" "-t" "template"))
+                             "init" "-t" template))
 
 (defun nix26-flake--record-template (template)
   (delq template nix26-flake-template-history)
