@@ -40,6 +40,15 @@
                      :object-type 'alist
                      :array-type 'list))
 
+(defun nix26-run-process-background (cmd &rest args)
+  "Run a system command in the background.
+
+This command discard the exit code or output of the command."
+  ;; Use compile for now, but it may be a better way
+  (compile (mapconcat #'shell-quote-argument
+                      (cons cmd args)
+                      " ")))
+
 (defun nix26-system ()
   "Return the system name of Nix."
   (nix26-read-nix-command "eval" "--expr" "builtins.currentSystem" "--impure"

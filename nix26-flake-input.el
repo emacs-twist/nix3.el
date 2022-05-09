@@ -1,6 +1,7 @@
 ;;; nix26-flake-input.el ---  -*- lexical-binding: t -*-
 
 (require 'transient)
+(require 'nix26-core)
 (require 'nix26-utils)
 
 ;; Set to non-nil when the flake is not local.
@@ -56,7 +57,7 @@
                       (nix26-flake-input--locked-url)
                       (format-time-string "%F %R"
                                           (nix26-flake-input--last-modified))))
-   ("u" "Update" ignore :if nix26-flake-input--local-p)
+   ("u" "Update" nix26-flake-input-update :if nix26-flake-input--local-p)
    ("e" "Edit worktree" ignore)
    ("g" "Browse remote" ignore)
    ("w" "Copy revision" ignore)
@@ -80,6 +81,20 @@
 (defun nix26-flake-show-locked-input (&optional data)
   (interactive)
   (nix26-flake-show-url (nix26-flake-input--locked-url data)))
+
+;;;; Commands
+
+(defun nix26-flake-input-update (name &optional arg)
+  (interactive (list nix26-flake-input-name
+                     current-prefix-arg))
+  ;; TODO This is a quick-and-dirty implementation, so rewrite it
+  (nix26-run-process-background nix26-nix-executable
+                                "flake"
+                                "lock"
+                                "--update-input"
+                                (cl-etypecase name
+                                  (string name)
+                                  (symbol (symbol-name name)))))
 
 (provide 'nix26-flake-input)
 ;;; nix26-flake-input.el ends here
