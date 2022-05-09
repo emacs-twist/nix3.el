@@ -3,6 +3,9 @@
 (require 'transient)
 (require 'nix26-utils)
 
+;; Set to non-nil when the flake is not local.
+(defvar nix26-flake-url)
+
 (defvar nix26-flake-input-name nil)
 (defvar nix26-flake-input-data nil)
 
@@ -12,6 +15,10 @@
   (let ((map (make-keymap)))
     (define-key map (kbd "RET") #'nix26-flake-input-return)
     map))
+
+(defun nix26-flake-input--local-p ()
+  "Return non-nil when the flake is local."
+  (not nix26-flake-url))
 
 (defun nix26-flake-input-return ()
   "Push the button at point or dispatch a transient interface."
@@ -41,9 +48,6 @@
 
 (transient-define-prefix nix26-flake-input-dispatch (name data)
   [:description
-   (lambda () (format "Input name: %s" nix26-flake-input-name))
-   ("u" "Update" ignore)]
-  [:description
    (lambda () (format "Original: %s" (nix26-flake-input--original-url)))
    ("d" "Show" nix26-flake-show-original-input)
    ("c" "Clone" ignore)]
@@ -52,6 +56,7 @@
                       (nix26-flake-input--locked-url)
                       (format-time-string "%F %R"
                                           (nix26-flake-input--last-modified))))
+   ("u" "Update" ignore :if nix26-flake-input--local-p)
    ("e" "Edit worktree" ignore)
    ("g" "Browse remote" ignore)
    ("w" "Copy revision" ignore)
