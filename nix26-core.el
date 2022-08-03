@@ -20,7 +20,8 @@
 (defun nix26-read-nix-command (&rest args)
   "Run nix and return its output string."
   (with-temp-buffer
-    (let ((err-file (make-temp-file "nix26")))
+    (let ((err-file (make-temp-file "nix26"))
+          (coding-system-for-read 'utf-8))
       (unwind-protect
           (unless (zerop (apply #'call-process
                                 nix26-nix-executable
