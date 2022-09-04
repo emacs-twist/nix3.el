@@ -125,15 +125,12 @@
     (if entry
         (cons input (cddr entry))
       (when (and add-to-registry
-                 (not (string-match-p "#" input))
-                 (string-match-p ":" input)
+                 (nix26-registry--flake-url-p input)
                  (not require-match)
                  user
                  (yes-or-no-p "Add the flake to the user registry?"))
         (let ((name (read-string (format "Name for %s: " input))))
-          (call-process nix26-nix-executable nil nil nil
-                        "registry" "add"
-                        name input)))
+          (nix26-registry-add name input)))
       input)))
 
 (defun nix26-registry-annotate (id)
@@ -146,6 +143,22 @@
               " "
               (propertize (symbol-name type)
                           'face 'nix26-registry-type-face)))))
+
+;;;###autoload
+(defun nix26-registry-add (name flake)
+  "Add a new entry to the user registry."
+  (interactive (let* ((url (read-string "Url: "))
+                      (name (read-string (format "Name for \"%s\": " url))))
+                 (list name url)))
+  (unless (nix26-registry--flake-url-p flake)
+    (user-error "Invalid flake URL: %s" flake))
+  (call-process nix26-nix-executable nil nil nil
+                "registry" "add"
+                name flake))
+
+(defun nix26-registry--flake-url-p (url)
+  (and (not (string-match-p "#" url))
+       (string-match-p ":" url)))
 
 (provide 'nix26-registry)
 ;;; nix26-registry.el ends here
