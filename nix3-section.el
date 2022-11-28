@@ -1,11 +1,11 @@
-;;; nix26-section.el --- Magit sections -*- lexical-binding: t -*-
+;;; nix3-section.el --- Magit sections -*- lexical-binding: t -*-
 
 (require 'magit-section)
 
-(defmacro nix26-section--heading (body)
+(defmacro nix3-section--heading (body)
   `(propertize ,body 'face 'magit-section-heading))
 
-(defmacro nix26-section-dlist (indent-level &rest rows)
+(defmacro nix3-section-dlist (indent-level &rest rows)
   (declare (indent 1))
   (let* ((width (1+ (cl-loop for header in (mapcar #'car rows)
                              maximize (length header))))
@@ -15,10 +15,10 @@
        ,@(mapcar (pcase-lambda (`(,header ,visible ,exp))
                    `(when ,visible
                       (magit-insert-section ('row ,header)
-                        (insert (nix26-section--heading (format ,th ,header)))
+                        (insert (nix3-section--heading (format ,th ,header)))
                         ,exp
                         (newline))))
                  rows))))
 
-(provide 'nix26-section)
-;;; nix26-section.el ends here
+(provide 'nix3-section)
+;;; nix3-section.el ends here

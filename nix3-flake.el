@@ -1,87 +1,87 @@
-;;; nix26-flake.el --- Support for Nix flakes -*- lexical-binding: t -*-
+;;; nix3-flake.el --- Support for Nix flakes -*- lexical-binding: t -*-
 
-(require 'nix26-core)
-(require 'nix26-repl)
-(require 'nix26-utils)
-(require 'nix26-flake-input)
-(require 'nix26-registry)
-(require 'nix26-section)
+(require 'nix3-core)
+(require 'nix3-repl)
+(require 'nix3-utils)
+(require 'nix3-flake-input)
+(require 'nix3-registry)
+(require 'nix3-section)
 
 (require 's)
 (require 'magit-section)
 (require 'project)
 (require 'promise)
 
-(defgroup nix26-flake nil
+(defgroup nix3-flake nil
   ""
-  :prefix "nix26-flake-"
-  :group 'nix26)
+  :prefix "nix3-flake-"
+  :group 'nix3)
 
-(defconst nix26-flake-show-error-buffer "*Nix-Flake-Show Errors*")
-(defconst nix26-flake-metadata-error-buffer "*Nix-Flake-Metadata Errors*")
-(defconst nix26-flake-init-buffer "*Nix-Flake-Init*")
+(defconst nix3-flake-show-error-buffer "*Nix-Flake-Show Errors*")
+(defconst nix3-flake-metadata-error-buffer "*Nix-Flake-Metadata Errors*")
+(defconst nix3-flake-init-buffer "*Nix-Flake-Init*")
 
-(defcustom nix26-flake-show-sections
-  '(nix26-flake-insert-metadata
-    nix26-flake-insert-outputs
-    nix26-flake-insert-inputs)
+(defcustom nix3-flake-show-sections
+  '(nix3-flake-insert-metadata
+    nix3-flake-insert-outputs
+    nix3-flake-insert-inputs)
   ""
   :type 'hook)
 
-(defcustom nix26-flake-toplevel-sections-unfolded t
+(defcustom nix3-flake-toplevel-sections-unfolded t
   "Whether to unfold the top-level section by default."
   :type 'boolean)
 
-(defcustom nix26-flake-input-name-max-width 20
+(defcustom nix3-flake-input-name-max-width 20
   ""
   :type '(choice number (const nil)))
 
-(defcustom nix26-flake-init-reverted-modes
+(defcustom nix3-flake-init-reverted-modes
   '(dired-mode
     magit-status-mode)
   "List of major modes that should be reverted after flake init."
   :type '(repeat symbol))
 
-(defcustom nix26-flake-new-hook
-  '(nix26-flake-git-init
-    nix26-flake-remember-this-project)
-  "Hook to run after `nix26-flake-new' scaffolds a new project.
+(defcustom nix3-flake-new-hook
+  '(nix3-flake-git-init
+    nix3-flake-remember-this-project)
+  "Hook to run after `nix3-flake-new' scaffolds a new project.
 
 Each function in this hook is called without arguments in the
 created directory."
   :type 'hook)
 
-(defface nix26-flake-drv-type-face
+(defface nix3-flake-drv-type-face
   '((t :inherit font-lock-constant-face))
   "")
 
-(defface nix26-flake-drv-parent-face
+(defface nix3-flake-drv-parent-face
   '((t :inherit default))
   "")
 
-(defface nix26-flake-drv-name-face
+(defface nix3-flake-drv-name-face
   '((t :inherit magit-section-secondary-heading))
   "")
 
-(defface nix26-flake-input-name-face
+(defface nix3-flake-input-name-face
   '((t :inherit magit-section-secondary-heading))
   "")
 
-(define-button-type 'nix26-flake-url-link
+(define-button-type 'nix3-flake-url-link
   :supertype 'help-xref
-  'help-function #'nix26-flake-show-url
+  'help-function #'nix3-flake-show-url
   'help-echo (purecopy "mouse-2, RET: Show the flake"))
 
-(defvar nix26-flake-url nil
+(defvar nix3-flake-url nil
   "Set to the URL of a flake when the flake is not local.")
 
-(defvar nix26-flake-show-history nil)
+(defvar nix3-flake-show-history nil)
 
-(defvar nix26-flake-template-history nil)
+(defvar nix3-flake-template-history nil)
 
-(defvar nix26-flake-template-alist nil)
+(defvar nix3-flake-template-alist nil)
 
-(defun nix26-flake-lookup-tree (path data)
+(defun nix3-flake-lookup-tree (path data)
   "Look up PATH in a tree DATA.
 
 This is a helper macro for traversing a tree."
@@ -91,67 +91,67 @@ This is a helper macro for traversing a tree."
              :initial-value
              (cdr (assq (car path) data))))
 
-(defun nix26-flake--path-p (url-alist)
+(defun nix3-flake--path-p (url-alist)
   "Return non-nil if URL-ALIST points to a path."
   (equal "path" (assq 'type url-alist)))
 
-(defun nix26-flake--resolve-path (path)
+(defun nix3-flake--resolve-path (path)
   (if (string-prefix-p "/" path)
       path
     (save-match-data
       (if (string-match (rx bol "./" (group (+ anything))) path)
           (let ((relative (match-string 1 path)))
             (cond
-             ((and nix26-flake-url
-                   (string-match-p (rx (any "=&") "dir=") nix26-flake-url))
+             ((and nix3-flake-url
+                   (string-match-p (rx (any "=&") "dir=") nix3-flake-url))
               (error "The parent flake \"%s\" already has dir parameter, so it cannot be resolved"
-                     nix26-flake-url))
-             (nix26-flake-url
-              (concat nix26-flake-url
-                      (if (string-match-p (rx "?") nix26-flake-url)
+                     nix3-flake-url))
+             (nix3-flake-url
+              (concat nix3-flake-url
+                      (if (string-match-p (rx "?") nix3-flake-url)
                           "&"
                         "?")
                       "dir="
                       relative))
              (t
-              (nix26-normalize-path (expand-file-name relative default-directory)))))
+              (nix3-normalize-path (expand-file-name relative default-directory)))))
         (error "Failed to match against a path \"%s\"" path)))))
 
-(defvar nix26-flake-show-results nil)
+(defvar nix3-flake-show-results nil)
 
-(defun nix26-flake--ensure-show-cache ()
-  (unless nix26-flake-show-results
-    (setq nix26-flake-show-results (make-hash-table :test #'equal))))
+(defun nix3-flake--ensure-show-cache ()
+  (unless nix3-flake-show-results
+    (setq nix3-flake-show-results (make-hash-table :test #'equal))))
 
-(defun nix26-flake-show--put (directory-or-url result)
-  (nix26-flake--ensure-show-cache)
-  (puthash directory-or-url result nix26-flake-show-results))
+(defun nix3-flake-show--put (directory-or-url result)
+  (nix3-flake--ensure-show-cache)
+  (puthash directory-or-url result nix3-flake-show-results))
 
-(defun nix26-flake-show--get (directory)
-  (nix26-flake--ensure-show-cache)
+(defun nix3-flake-show--get (directory)
+  (nix3-flake--ensure-show-cache)
   (gethash (string-remove-suffix "/" directory)
-           nix26-flake-show-results))
+           nix3-flake-show-results))
 
-(defvar nix26-flake-metadata-results nil)
+(defvar nix3-flake-metadata-results nil)
 
-(defun nix26-flake--ensure-metadata-cache ()
-  (unless nix26-flake-metadata-results
-    (setq nix26-flake-metadata-results (make-hash-table :test #'equal))))
+(defun nix3-flake--ensure-metadata-cache ()
+  (unless nix3-flake-metadata-results
+    (setq nix3-flake-metadata-results (make-hash-table :test #'equal))))
 
-(defun nix26-flake-metadata--put (directory-or-url result)
-  (nix26-flake--ensure-metadata-cache)
-  (puthash directory-or-url result nix26-flake-metadata-results))
+(defun nix3-flake-metadata--put (directory-or-url result)
+  (nix3-flake--ensure-metadata-cache)
+  (puthash directory-or-url result nix3-flake-metadata-results))
 
-(defun nix26-flake-metadata--get (directory)
-  (nix26-flake--ensure-metadata-cache)
+(defun nix3-flake-metadata--get (directory)
+  (nix3-flake--ensure-metadata-cache)
   (gethash (string-remove-suffix "/" directory)
-           nix26-flake-metadata-results))
+           nix3-flake-metadata-results))
 
-(defun nix26-flake-insert-metadata ()
-  (magit-insert-section (flake-metadata nil nix26-flake-toplevel-sections-unfolded)
-    (when-let (metadata (nix26-flake--get-metadata-result))
+(defun nix3-flake-insert-metadata ()
+  (magit-insert-section (flake-metadata nil nix3-flake-toplevel-sections-unfolded)
+    (when-let (metadata (nix3-flake--get-metadata-result))
       (let-alist metadata
-        (nix26-section-dlist 0
+        (nix3-section-dlist 0
           nil
           ("Resolved URL: " (and .resolvedUrl
                                  (not (equal \.resolvedUrl \.originalUrl)))
@@ -161,21 +161,21 @@ This is a helper macro for traversing a tree."
           ("Revision:" .revision
            (insert \.revision))
           ("Last modified:" .lastModified
-           (insert (nix26-format-timestamp \.lastModified))))))
+           (insert (nix3-format-timestamp \.lastModified))))))
     (insert ?\n)))
 
-(defun nix26-flake-insert-outputs ()
-  (magit-insert-section (flake-outputs nil nix26-flake-toplevel-sections-unfolded)
+(defun nix3-flake-insert-outputs ()
+  (magit-insert-section (flake-outputs nil nix3-flake-toplevel-sections-unfolded)
     (magit-insert-heading "Flake outputs")
 
-    (let ((result (nix26-flake--get-show-result))
-          (nix-system (nix26-system)))
+    (let ((result (nix3-flake--get-show-result))
+          (nix-system (nix3-system)))
       (pcase-dolist (`(,type-name . ,outputs)
-                     (nix26-flake--group-outputs result))
+                     (nix3-flake--group-outputs result))
         (magit-insert-section (flake-output-group type-name)
           (magit-insert-heading
             (make-string 2 ?\s)
-            (propertize type-name 'face 'nix26-flake-drv-type-face))
+            (propertize type-name 'face 'nix3-flake-drv-type-face))
 
           (pcase-dolist (`(,branch-reverse . ,leaves)
                          (seq-group-by #'cdr outputs))
@@ -189,11 +189,11 @@ This is a helper macro for traversing a tree."
                   (magit-insert-heading
                     (make-string 4 ?\s)
                     (propertize (mapconcat #'symbol-name branch ".")
-                                'face 'nix26-flake-drv-parent-face)))
+                                'face 'nix3-flake-drv-parent-face)))
 
                 (dolist (output-reverse leaves)
                   (let* ((path (reverse output-reverse))
-                         (node (nix26-flake-lookup-tree path result))
+                         (node (nix3-flake-lookup-tree path result))
                          ;; (package-name (cdr (assq 'name node)))
                          (description (cdr (assq 'description node))))
                     (magit-insert-section (flake-output path)
@@ -204,20 +204,20 @@ This is a helper macro for traversing a tree."
                                'nix-flake-output (mapconcat #'symbol-name
                                                             path ".")
                                'nix-flake-show node
-                               'face 'nix26-flake-drv-name-face
+                               'face 'nix3-flake-drv-name-face
                                (when description
                                  (list 'help-echo description)))))))))))))
     (insert ?\n)))
 
-(defun nix26-flake-insert-header (url)
+(defun nix3-flake-insert-header (url)
   (insert (propertize "Flake: " 'face 'magit-section-heading)
-          (if-let (metadata (nix26-flake-metadata--get url))
+          (if-let (metadata (nix3-flake-metadata--get url))
               (cdr (assq 'originalUrl metadata))
             url)
           "\n")
   (insert ?\n))
 
-(defun nix26-flake--group-outputs (root)
+(defun nix3-flake--group-outputs (root)
   (let (result)
     (cl-labels
         ((go (rev-path node)
@@ -233,9 +233,9 @@ This is a helper macro for traversing a tree."
                              (mapcar #'cdr)))))
       (seq-sort-by #'car #'string<))))
 
-(defun nix26-flake-insert-inputs ()
-  (when-let (result (nix26-flake--get-metadata-result))
-    (magit-insert-section (flake-inputs nil nix26-flake-toplevel-sections-unfolded)
+(defun nix3-flake-insert-inputs ()
+  (when-let (result (nix3-flake--get-metadata-result))
+    (magit-insert-section (flake-inputs nil nix3-flake-toplevel-sections-unfolded)
       (magit-insert-heading "Flake inputs")
 
       (when-let (nodes (thread-last
@@ -249,8 +249,8 @@ This is a helper macro for traversing a tree."
                             nodes
                             (mapcar (lambda (cell)
                                       (symbol-name (car cell))))
-                            (nix26-format--column-width
-                             nix26-flake-input-name-max-width))))
+                            (nix3-format--column-width
+                             nix3-flake-input-name-max-width))))
           (cl-flet
               ((pad-column
                 (len s)
@@ -260,18 +260,18 @@ This is a helper macro for traversing a tree."
                 (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
                        (original (cdr (assq 'original data)))
                        (name-string (symbol-name name))
-                       (url (nix26-flake-ref-alist-to-url original)))
+                       (url (nix3-flake-ref-alist-to-url original)))
                   (insert (make-string 2 ?\s)
                           (propertize (pad-column name-width name-string)
                                       'help-echo name-string
-                                      'face 'nix26-flake-input-name-face)
+                                      'face 'nix3-flake-input-name-face)
                           " ")
                   (if is-flake
                       (insert-text-button url
-                                          'type 'nix26-flake-url-link
+                                          'type 'nix3-flake-url-link
                                           'help-args
-                                          (list (if (nix26-flake--path-p original)
-                                                    (nix26-flake--resolve-path
+                                          (list (if (nix3-flake--path-p original)
+                                                    (nix3-flake--resolve-path
                                                      (cdr (assq 'path original)))
                                                   url)))
                     (insert url))
@@ -281,13 +281,13 @@ This is a helper macro for traversing a tree."
                                         "(non-flake)")
                                       'face 'font-lock-constant-face)
                           "\n")
-                  (nix26-put-overlay-on-region (line-beginning-position 0) (line-end-position 0)
-                    'keymap nix26-flake-input-map
-                    'nix26-flake-input-name name
-                    'nix26-flake-input-data data)))))))
+                  (nix3-put-overlay-on-region (line-beginning-position 0) (line-end-position 0)
+                    'keymap nix3-flake-input-map
+                    'nix3-flake-input-name name
+                    'nix3-flake-input-data data)))))))
       (insert ?\n))))
 
-(defun nix26-flake-show-buffer (dir-or-url is-url)
+(defun nix3-flake-show-buffer (dir-or-url is-url)
   (let ((default-directory (if is-url
                                "~/"
                              (file-name-as-directory dir-or-url))))
@@ -296,89 +296,89 @@ This is a helper macro for traversing a tree."
                                   (if is-url
                                       dir-or-url
                                     (file-name-nondirectory dir-or-url))))
-      (nix26-flake-show-mode)
+      (nix3-flake-show-mode)
       (when is-url
-        (setq-local nix26-flake-url dir-or-url))
-      (nix26-flake-show-revert)
+        (setq-local nix3-flake-url dir-or-url))
+      (nix3-flake-show-revert)
       (current-buffer))))
 
-(defun nix26-flake-show-revert (&rest _args)
+(defun nix3-flake-show-revert (&rest _args)
   (interactive)
   (let ((inhibit-read-only t))
     (erase-buffer)
     (magit-insert-section (flake)
       (magit-insert-heading)
-      (nix26-flake-insert-header (nix26-flake--buffer-url))
-      (run-hooks 'nix26-flake-show-sections))))
+      (nix3-flake-insert-header (nix3-flake--buffer-url))
+      (run-hooks 'nix3-flake-show-sections))))
 
-(defun nix26-flake--buffer-url ()
-  (or nix26-flake-url
-      (nix26-normalize-path default-directory)))
+(defun nix3-flake--buffer-url ()
+  (or nix3-flake-url
+      (nix3-normalize-path default-directory)))
 
-(defun nix26-flake--get-show-result ()
-  (nix26-flake-show--get (nix26-flake--buffer-url)))
+(defun nix3-flake--get-show-result ()
+  (nix3-flake-show--get (nix3-flake--buffer-url)))
 
-(defun nix26-flake--get-metadata-result ()
-  (nix26-flake-metadata--get (nix26-flake--buffer-url)))
+(defun nix3-flake--get-metadata-result ()
+  (nix3-flake-metadata--get (nix3-flake--buffer-url)))
 
-(defvar nix26-flake-show-mode-map
+(defvar nix3-flake-show-mode-map
   (let ((m (make-composed-keymap nil magit-section-mode-map)))
-    (define-key m (kbd "l") #'nix26-flake-back)
-    (define-key m (kbd "g") #'nix26-flake-show-revert)
+    (define-key m (kbd "l") #'nix3-flake-back)
+    (define-key m (kbd "g") #'nix3-flake-show-revert)
     m))
 
-(define-derived-mode nix26-flake-show-mode magit-section-mode
+(define-derived-mode nix3-flake-show-mode magit-section-mode
   "Nix Flake"
-  (setq-local revert-buffer-function #'nix26-flake-show-revert)
+  (setq-local revert-buffer-function #'nix3-flake-show-revert)
   (read-only-mode 1))
 
 ;;;###autoload
-(defun nix26-flake-show (dir)
+(defun nix3-flake-show (dir)
   "Show the flake at DIR."
   (interactive (list (if (equal current-prefix-arg '(4))
                          (read-directory-name "Select a flake: ")
                        (or (locate-dominating-file default-directory
                                                    "flake.nix")
-                           (nix26-flake-select-locally)))))
+                           (nix3-flake-select-locally)))))
   (if (and dir
            (file-exists-p (expand-file-name "flake.nix" dir)))
-      (let ((truename (nix26-normalize-path dir))
+      (let ((truename (nix3-normalize-path dir))
             (default-directory dir))
-        (promise-chain (nix26-flake--get-promise truename nil)
+        (promise-chain (nix3-flake--get-promise truename nil)
           (then (lambda (_)
-                  (nix26-flake-switch-to-buffer (nix26-flake-show-buffer truename nil))
+                  (nix3-flake-switch-to-buffer (nix3-flake-show-buffer truename nil))
                   (let (message-log-max)
                     (message "Fetched the flake"))))
-          (promise-catch #'nix26-flake--show-process-error)))
+          (promise-catch #'nix3-flake--show-process-error)))
     (user-error "Directory %s does not contain flake.nix" dir)))
 
-(defun nix26-flake-select-locally ()
+(defun nix3-flake-select-locally ()
   "Select a flake directory on the file system."
   (project-prompt-project-dir))
 
 ;;;###autoload
-(defun nix26-flake-show-url (url)
-  (interactive (let ((ent (nix26-registry-complete "Flake: "
+(defun nix3-flake-show-url (url)
+  (interactive (let ((ent (nix3-registry-complete "Flake: "
                                                    :require-match nil
                                                    :no-exact t)))
                  (list (if (stringp ent)
                            ent
                          (car ent)))))
   (message "Fetching a flake...")
-  (promise-chain (nix26-flake--get-promise url t)
+  (promise-chain (nix3-flake--get-promise url t)
     (then (lambda (_)
-            (nix26-flake-switch-to-buffer (nix26-flake-show-buffer url t))
+            (nix3-flake-switch-to-buffer (nix3-flake-show-buffer url t))
             (let (message-log-max)
               (message "Fetched the flake"))))
-    (promise-catch #'nix26-flake--show-process-error)))
+    (promise-catch #'nix3-flake--show-process-error)))
 
-(defun nix26-flake--get-promise (dir-or-url is-url)
-  (promise-all (vector (promise-new (apply-partially #'nix26-flake--make-show-process
+(defun nix3-flake--get-promise (dir-or-url is-url)
+  (promise-all (vector (promise-new (apply-partially #'nix3-flake--make-show-process
                                                      dir-or-url is-url))
-                       (promise-new (apply-partially #'nix26-flake--make-metadata-process
+                       (promise-new (apply-partially #'nix3-flake--make-metadata-process
                                                      dir-or-url is-url)))))
 
-(defun nix26-flake--show-process-error (plist)
+(defun nix3-flake--show-process-error (plist)
   (message "Error from \"nix %s %s\": %s"
            (mapconcat #'shell-quote-argument (plist-get plist :subcommand) " ")
            (plist-get plist :url)
@@ -390,7 +390,7 @@ This is a helper macro for traversing a tree."
                    (buffer-substring (line-beginning-position)
                                      (line-end-position))))))))
 
-(cl-defmacro nix26-flake--nix-json-process (func-name &key name buffer stderr
+(cl-defmacro nix3-flake--nix-json-process (func-name &key name buffer stderr
                                                       subcommand
                                                       put-result)
   (declare (indent 1))
@@ -398,7 +398,7 @@ This is a helper macro for traversing a tree."
      (make-process :name ,name
                    :buffer ,buffer
                    :stderr ,stderr
-                   :command (append (list nix26-nix-executable
+                   :command (append (list nix3-nix-executable
                                           ,@subcommand
                                           url
                                           "--show-trace"
@@ -425,49 +425,49 @@ This is a helper macro for traversing a tree."
                                              :subcommand ',subcommand
                                              :url url))))))))
 
-(nix26-flake--nix-json-process nix26-flake--make-show-process
+(nix3-flake--nix-json-process nix3-flake--make-show-process
   :name "Nix-Flake-Show-Json"
   :buffer (generate-new-buffer "*Nix Flake Show Output*")
-  :stderr nix26-flake-show-error-buffer
+  :stderr nix3-flake-show-error-buffer
   :subcommand ("flake" "show")
-  :put-result nix26-flake-show--put)
+  :put-result nix3-flake-show--put)
 
-(nix26-flake--nix-json-process nix26-flake--make-metadata-process
+(nix3-flake--nix-json-process nix3-flake--make-metadata-process
   :name "Nix-Flake-Metadata-Json"
   :buffer (generate-new-buffer "*Nix Flake Metadata Output*")
-  :stderr nix26-flake-metadata-error-buffer
+  :stderr nix3-flake-metadata-error-buffer
   :subcommand ("flake" "metadata")
-  :put-result nix26-flake-metadata--put)
+  :put-result nix3-flake-metadata--put)
 
-(defun nix26-flake-switch-to-buffer (buffer)
-  (when (eq major-mode 'nix26-flake-show-mode)
-    (push (current-buffer) nix26-flake-show-history))
+(defun nix3-flake-switch-to-buffer (buffer)
+  (when (eq major-mode 'nix3-flake-show-mode)
+    (push (current-buffer) nix3-flake-show-history))
   (switch-to-buffer buffer))
 
-(defun nix26-flake-back ()
+(defun nix3-flake-back ()
   (interactive)
-  (when (eq major-mode 'nix26-flake-show-mode)
-    (when-let (buffer (pop nix26-flake-show-history))
+  (when (eq major-mode 'nix3-flake-show-mode)
+    (when-let (buffer (pop nix3-flake-show-history))
       (switch-to-buffer buffer))))
 
 ;;;###autoload
-(defun nix26-flake-init ()
+(defun nix3-flake-init ()
   (interactive)
   (when (and (or (file-exists-p "flake.nix")
                  (project-current))
              (not (yes-or-no-p (format "Are you sure you want to run the template in \"%s\"?"
                                        default-directory))))
     (user-error "Aborted"))
-  (nix26-flake--prompt-template "nix flake init: "
-                                #'nix26-flake-init-with-template))
+  (nix3-flake--prompt-template "nix flake init: "
+                                #'nix3-flake-init-with-template))
 
 ;;;###autoload
-(defun nix26-flake-new ()
+(defun nix3-flake-new ()
   (interactive)
-  (nix26-flake--prompt-template "nix flake new: "
-                                #'nix26-flake--new-with-template))
+  (nix3-flake--prompt-template "nix flake new: "
+                                #'nix3-flake--new-with-template))
 
-(defun nix26-flake--new-with-template (template)
+(defun nix3-flake--new-with-template (template)
   (let* ((dir (read-directory-name "New directory: "))
          (parent (file-name-directory (string-remove-suffix "/" dir))))
     (when (file-exists-p dir)
@@ -476,29 +476,29 @@ This is a helper macro for traversing a tree."
       (if (yes-or-no-p (format "Directory %s does not exist. Create it?" parent))
           (make-directory parent t)
         (user-error "Parent directory does not exist")))
-    (nix26-flake--record-template template)
+    (nix3-flake--record-template template)
     (let ((default-directory parent))
-      (nix26-flake--run-template `(lambda ()
+      (nix3-flake--run-template `(lambda ()
                                     (let ((default-directory ,dir))
-                                      (run-hooks 'nix26-flake-new-hook)
+                                      (run-hooks 'nix3-flake-new-hook)
                                       (dired default-directory)))
                                  "new" "-t" template (expand-file-name dir)))))
 
-(defun nix26-flake--prompt-template (prompt callback)
-  (let ((item (nix26-registry-complete prompt
+(defun nix3-flake--prompt-template (prompt callback)
+  (let ((item (nix3-registry-complete prompt
                                        :add-to-registry t
                                        :require-match nil
-                                       :extra-entries nix26-flake-template-history
+                                       :extra-entries nix3-flake-template-history
                                        :no-exact t)))
-    (if (nix26-flake--template-p item)
+    (if (nix3-flake--template-p item)
         (funcall callback item)
       (let ((name-or-url (if (stringp item)
                              item
                            (car item)))
             (url (if (stringp item)
                      item
-                   (nix26-flake-ref-alist-to-url (cdr item)))))
-        (promise-chain (promise-new (apply-partially #'nix26-flake--make-show-process
+                   (nix3-flake-ref-alist-to-url (cdr item)))))
+        (promise-chain (promise-new (apply-partially #'nix3-flake--make-show-process
                                                      url t))
           (then `(lambda (_)
                    (let (message-log-max)
@@ -506,85 +506,85 @@ This is a helper macro for traversing a tree."
                    (concat ,name-or-url
                            "#"
                            (thread-last
-                             (nix26-flake-show--get ,url)
+                             (nix3-flake-show--get ,url)
                              ;; Since Nix 2.7, the default template is templates.default, so we
                              ;; won't consider defaultTemplate.
                              (alist-get 'templates)
-                             (nix26-flake--complete-template ,prompt)))))
+                             (nix3-flake--complete-template ,prompt)))))
           (then callback)
           (promise-catch #'error))))))
 
-(defun nix26-flake--template-p (url)
+(defun nix3-flake--template-p (url)
   (and (stringp url)
        (string-match-p "#" url)))
 
-(defun nix26-flake-init-with-template (template)
-  (nix26-flake--record-template template)
-  (nix26-flake--run-template (lambda ()
-                               (when (and nix26-flake-init-reverted-modes
+(defun nix3-flake-init-with-template (template)
+  (nix3-flake--record-template template)
+  (nix3-flake--run-template (lambda ()
+                               (when (and nix3-flake-init-reverted-modes
                                           (apply #'derived-mode-p
-                                                 nix26-flake-init-reverted-modes))
+                                                 nix3-flake-init-reverted-modes))
                                  (revert-buffer)))
                              "init" "-t" template))
 
-(defun nix26-flake--record-template (template)
-  (delq template nix26-flake-template-history)
-  (push template nix26-flake-template-history))
+(defun nix3-flake--record-template (template)
+  (delq template nix3-flake-template-history)
+  (push template nix3-flake-template-history))
 
-(defun nix26-flake--run-template (success &rest args)
+(defun nix3-flake--run-template (success &rest args)
   ;; To set up a hook, we will use `start-process' rather than `compile'.
-  (with-current-buffer (get-buffer-create nix26-flake-init-buffer)
+  (with-current-buffer (get-buffer-create nix3-flake-init-buffer)
     (erase-buffer))
-  (message "nix26[%s]: %s" default-directory (mapconcat #'shell-quote-argument
+  (message "nix3[%s]: %s" default-directory (mapconcat #'shell-quote-argument
                                                         args " "))
   (let ((proc (apply #'start-process
-                     "nix26-flake-init" nix26-flake-init-buffer
-                     nix26-nix-executable "flake" args)))
+                     "nix3-flake-init" nix3-flake-init-buffer
+                     nix3-nix-executable "flake" args)))
     (set-process-sentinel proc
                           (lambda (_proc event)
                             (cond
                              ((equal "finished\n" event)
                               (let ((message-log-max nil))
-                                (message (with-current-buffer nix26-flake-init-buffer
+                                (message (with-current-buffer nix3-flake-init-buffer
                                            (buffer-string))))
                               (funcall success))
                              ((string-prefix-p "exited abnormally" event)
-                              (display-buffer nix26-flake-init-buffer)
+                              (display-buffer nix3-flake-init-buffer)
                               (let ((message-log-max nil))
                                 (message "Exited abnormally"))))))))
 
-(defun nix26-flake--complete-template (prompt templates)
+(defun nix3-flake--complete-template (prompt templates)
   (unless templates
     (user-error "The flake provides no template"))
-  (setq nix26-flake-template-alist
+  (setq nix3-flake-template-alist
         (mapcar (pcase-lambda (`(,name . ,alist))
                   (cons (symbol-name name) (alist-get 'description alist)))
                 templates))
   (completing-read prompt
                    `(lambda (string pred action)
                       (if (eq action 'metadata)
-                          '(metadata . ((category . nix26-registry-entry)
-                                        (annotation-function . nix26-flake--annotate-template)))
-                        (complete-with-action action ',(mapcar #'car nix26-flake-template-alist)
+                          '(metadata . ((category . nix3-registry-entry)
+                                        (annotation-function . nix3-flake--annotate-template)))
+                        (complete-with-action action ',(mapcar #'car nix3-flake-template-alist)
                                               string pred)))
                    nil t))
 
-(defun nix26-flake--annotate-template (template)
-  (if-let (cell (assoc template nix26-flake-template-alist))
+(defun nix3-flake--annotate-template (template)
+  (if-let (cell (assoc template nix3-flake-template-alist))
       (concat " " (propertize (cdr cell) 'face 'font-lock-comment-face))
     ""))
 
-;;;; Functions that can be added to nix26-flake-new-hook
+;;;; Functions that can be added to nix3-flake-new-hook
 
-(defun nix26-flake-git-init ()
+(defun nix3-flake-git-init ()
   "Run git init in the current directory if there is no repository."
   (unless (locate-dominating-file default-directory ".git")
     (call-process "git" nil nil nil "init")))
 
-(defun nix26-flake-remember-this-project ()
+(defun nix3-flake-remember-this-project ()
   "Remember the current project."
   (when-let (pr (project-current))
     (project-remember-project pr)))
 
-(provide 'nix26-flake)
-;;; nix26-flake.el ends here
+(provide 'nix3-flake)
+;;; nix3-flake.el ends here

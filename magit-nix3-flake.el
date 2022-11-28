@@ -1,12 +1,12 @@
-;;; magit-nix26-flake.el ---  -*- lexical-binding: t -*-
+;;; magit-nix3-flake.el ---  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2022 Akira Komamura
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "27.1") (nix26 "0.1") (promise "1.1"))
+;; Package-Requires: ((emacs "27.1") (nix3 "0.1") (promise "1.1"))
 ;; Keywords: processes
-;; URL: https://github.com/emacs-twist/nix26.el
+;; URL: https://github.com/emacs-twist/nix3.el
 
 ;; This file is not part of GNU Emacs.
 
@@ -32,29 +32,29 @@
 
 ;;; Code:
 
-(require 'nix26)
-(require 'nix26-flake)
+(require 'nix3)
+(require 'nix3-flake)
 (require 'promise)
 
-(defun magit-nix26-flake-output-section ()
+(defun magit-nix3-flake-output-section ()
   (when (file-exists-p "flake.nix")
-    (let ((truename (nix26-normalize-path default-directory)))
+    (let ((truename (nix3-normalize-path default-directory)))
       (promise-wait 0.5
-        (promise-new (apply-partially #'nix26-flake--make-show-process
-                                      truename nil)))
-      (nix26-flake-insert-outputs))))
+                    (promise-new (apply-partially #'nix3-flake--make-show-process
+                                                  truename nil)))
+      (nix3-flake-insert-outputs))))
 
 ;;;###autoload
-(define-minor-mode magit-nix26-flake-mode
+(define-minor-mode magit-nix3-flake-mode
   "Turn on flake features in `magit-status-mode' buffers."
   :global t
   (cond
-   (magit-nix26-flake-mode
-    (magit-add-section-hook 'magit-status-sections-hook #'magit-nix26-flake-output-section
+   (magit-nix3-flake-mode
+    (magit-add-section-hook 'magit-status-sections-hook #'magit-nix3-flake-output-section
                             'magit-insert-status-headers
                             'append))
    (t
-    (remove-hook 'magit-status-sections-hook #'magit-nix26-flake-output-section))))
+    (remove-hook 'magit-status-sections-hook #'magit-nix3-flake-output-section))))
 
-(provide 'magit-nix26-flake)
-;;; magit-nix26-flake.el ends here
+(provide 'magit-nix3-flake)
+;;; magit-nix3-flake.el ends here

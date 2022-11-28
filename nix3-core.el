@@ -1,47 +1,47 @@
-;;; nix26-core.el ---  -*- lexical-binding: t -*-
+;;; nix3-core.el ---  -*- lexical-binding: t -*-
 
 (require 'map)
 
-(defgroup nix26 nil
+(defgroup nix3 nil
   ""
-  :prefix "nix26-"
-  :group 'nix26)
+  :prefix "nix3-"
+  :group 'nix3)
 
-(defcustom nix26-nix-executable "nix"
+(defcustom nix3-nix-executable "nix"
   ""
   :type 'file)
 
-(defcustom nix26-config-expiration 5
-  "Number of seconds for which `nix26--config' is memorized."
+(defcustom nix3-config-expiration 5
+  "Number of seconds for which `nix3--config' is memorized."
   :type 'number)
 
-(defvar nix26-config-cache nil)
+(defvar nix3-config-cache nil)
 
-(defun nix26-read-nix-command (&rest args)
+(defun nix3-read-nix-command (&rest args)
   "Run nix and return its output string."
   (with-temp-buffer
-    (let ((err-file (make-temp-file "nix26"))
+    (let ((err-file (make-temp-file "nix3"))
           (coding-system-for-read 'utf-8))
       (unwind-protect
           (unless (zerop (apply #'call-process
-                                nix26-nix-executable
+                                nix3-nix-executable
                                 nil (list (current-buffer) err-file) nil
                                 args))
             (error "Failed to run %s: %s"
-                   (cons nix26-nix-executable args)
+                   (cons nix3-nix-executable args)
                    (with-temp-buffer
                      (insert-file-contents err-file)
                      (buffer-string))))
         (delete-file err-file)))
     (buffer-string)))
 
-(defun nix26-read-nix-json-command (&rest args)
+(defun nix3-read-nix-json-command (&rest args)
   "Run nix and return its output string."
-  (json-parse-string (apply #'nix26-read-nix-command args)
+  (json-parse-string (apply #'nix3-read-nix-command args)
                      :object-type 'alist
                      :array-type 'list))
 
-(defun nix26-run-process-background (cmd &rest args)
+(defun nix3-run-process-background (cmd &rest args)
   "Run a system command in the background.
 
 This command discard the exit code or output of the command."
@@ -50,18 +50,18 @@ This command discard the exit code or output of the command."
                       (cons cmd args)
                       " ")))
 
-(defun nix26-system ()
+(defun nix3-system ()
   "Return the system name of Nix."
-  (nix26-read-nix-command "eval" "--expr" "builtins.currentSystem" "--impure"
+  (nix3-read-nix-command "eval" "--expr" "builtins.currentSystem" "--impure"
                           "--raw"))
 
-(defun nix26-normalize-path (dir)
+(defun nix3-normalize-path (dir)
   (string-remove-suffix "/" (file-truename dir)))
 
-(defun nix26--config ()
+(defun nix3--config ()
   "Return the output from \"nix show-config\" command."
   (with-temp-buffer
-    (insert (nix26-read-nix-command "show-config" "--json"))
+    (insert (nix3-read-nix-command "show-config" "--json"))
     (goto-char (point-min))
     ;; "max-free" contains a big integer, which cannot be parsed using
     ;; `json-parse-string' right now. Thus it is necessary to delete the
@@ -77,19 +77,19 @@ This command discard the exit code or output of the command."
     (goto-char (point-min))
     (json-parse-buffer :array-type 'list)))
 
-(defun nix26--config-memorized ()
-  (if (and nix26-config-cache
-           (< (car nix26-config-cache)
-              (+ nix26-config-expiration (float-time))))
-      (cdr nix26-config-cache)
-    (let ((value (nix26--config)))
-      (setq nix26-config-cache (cons (float-time) value))
+(defun nix3--config-memorized ()
+  (if (and nix3-config-cache
+           (< (car nix3-config-cache)
+              (+ nix3-config-expiration (float-time))))
+      (cdr nix3-config-cache)
+    (let ((value (nix3--config)))
+      (setq nix3-config-cache (cons (float-time) value))
       value)))
 
-(defun nix26-config-lookup-value (key)
-  (if-let (h (map-elt (nix26--config-memorized) key))
+(defun nix3-config-lookup-value (key)
+  (if-let (h (map-elt (nix3--config-memorized) key))
       (map-elt h "value")
     (error "Key %s is not found in the nix conf" key)))
 
-(provide 'nix26-core)
-;;; nix26-core.el ends here
+(provide 'nix3-core)
+;;; nix3-core.el ends here

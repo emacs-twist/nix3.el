@@ -1,4 +1,4 @@
-;;; nix26.el --- Frontend for experimental commands of Nix -*- lexical-binding: t -*-
+;;; nix3.el --- Frontend for experimental commands of Nix -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2022 Akira Komamura
 
@@ -6,7 +6,7 @@
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "26.1") (promise "1.1") (project "0.6") (magit-section "3.3") (s "1.12"))
 ;; Keywords: processes
-;; URL: https://github.com/emacs-twist/nix26.el
+;; URL: https://github.com/emacs-twist/nix3.el
 
 ;; This file is not part of GNU Emacs.
 
@@ -30,7 +30,7 @@
 
 ;;; Code:
 
-(require 'nix26-core)
+(require 'nix3-core)
 
-(provide 'nix26)
-;;; nix26.el ends here
+(provide 'nix3)
+;;; nix3.el ends here

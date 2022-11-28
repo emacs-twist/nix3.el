@@ -1,22 +1,22 @@
-;;; nix26-utils.el ---  -*- lexical-binding: t -*-
+;;; nix3-utils.el ---  -*- lexical-binding: t -*-
 
 (require 'cl-lib)
-(require 'nix26-core)
+(require 'nix3-core)
 
-(defun nix26-put-overlay-on-region (beg end &rest properties)
+(defun nix3-put-overlay-on-region (beg end &rest properties)
   "A shorthand for putting overlay properties on a region."
   (declare (indent 2))
   (let ((ov (make-overlay beg end)))
     (cl-loop for (prop value) on properties by #'cddr
              do (overlay-put ov prop value))))
 
-(defun nix26-format--column-width (limit items)
+(defun nix3-format--column-width (limit items)
   (let ((max (apply #'max (mapcar #'length items))))
     (if limit
         (min limit max)
       max)))
 
-(defun nix26-flake-ref-alist-to-url (url-alist)
+(defun nix3-flake-ref-alist-to-url (url-alist)
   "Convert ORIGIN into a plain URL format."
   (let-alist url-alist
     (concat (pcase \.type
@@ -39,7 +39,7 @@
                 (format "rev=%s" \.rev)
               ""))))
 
-(defun nix26-format-duration (seconds)
+(defun nix3-format-duration (seconds)
   (cond
    ((< seconds 60)
     "just now")
@@ -58,15 +58,15 @@
    (t
     (format "%.f years ago" (/ seconds (* 86400 365))))))
 
-(defun nix26-format-timestamp (time)
+(defun nix3-format-timestamp (time)
   (cl-etypecase time
     (number
      (let ((offset (car (current-time-zone))))
        (format "%s (%s)"
                (format-time-string "%F %X" time)
-               (nix26-format-duration (- (float-time)
+               (nix3-format-duration (- (float-time)
                                          offset
                                          time)))))))
 
-(provide 'nix26-utils)
-;;; nix26-utils.el ends here
+(provide 'nix3-utils)
+;;; nix3-utils.el ends here

@@ -1,5 +1,5 @@
 {
-  description = "nix26";
+  description = "nix3.el";
 
   inputs = {
     gnu-elpa = {
@@ -26,7 +26,7 @@
     nomake.lib.mkFlake {
       src = ./.;
       localPackages = [
-        "nix26"
+        "nix3"
       ];
     };
 }
