@@ -7,7 +7,7 @@
       flake = false;
     };
     melpa = {
-      url = "github:akirak/melpa/twist";
+      url = "github:akirak/melpa/nix3";
       flake = false;
     };
 
@@ -27,6 +27,7 @@
       src = ./.;
       localPackages = [
         "nix3"
+        "magit-nix3"
       ];
     };
 }
