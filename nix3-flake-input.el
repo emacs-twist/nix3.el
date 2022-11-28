@@ -109,7 +109,7 @@
                                           (nix3-flake-input--last-modified))))
    ("u" "Update" nix3-flake-input-update :if nix3-flake-input--local-p)
    ("e" "Edit worktree" ignore)
-   ("g" "Browse remote" nix3-flake-input-browse-remote)
+   ("r" "Browse remote" nix3-flake-input-browse-remote)
    ("w" "Copy revision" nix3-flake-input-copy-revision)
    ("l" "Magit log" ignore)]
   (interactive (nix3-flake--input-at-point))
