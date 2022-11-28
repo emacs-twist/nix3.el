@@ -29,19 +29,22 @@
     (call-interactively #'nix3-flake-input-dispatch)))
 
 (defun nix3-flake-input--original-url (&optional data)
-  (thread-last (or data nix3-flake-input-data)
+  (thread-last
+    (or data nix3-flake-input-data)
     (assq 'original)
     (cdr)
     (nix3-flake-ref-alist-to-url)))
 
 (defun nix3-flake-input--locked-url (&optional data)
-  (thread-last (or data nix3-flake-input-data)
+  (thread-last
+    (or data nix3-flake-input-data)
     (assq 'locked)
     (cdr)
     (nix3-flake-ref-alist-to-url)))
 
 (defun nix3-flake-input--last-modified (&optional data)
-  (thread-last (or data nix3-flake-input-data)
+  (thread-last
+    (or data nix3-flake-input-data)
     (assq 'locked)
     (cdr)
     (assq 'lastModified)
