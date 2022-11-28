@@ -32,10 +32,6 @@
 
 ;;; Code:
 
-(require 'nix3)
-(require 'nix3-flake)
-(require 'promise)
-
 (defcustom magit-nix3-sections
   '(nix3-flake-insert-outputs)
   "Sections inserted into the magit buffer."
@@ -52,13 +48,19 @@ This should be a value which is already included in
   "Whether to insert the section after the position."
   :type 'boolean)
 
+(defcustom magit-nix3-wait 0.5
+  "Number of seconds to wait for loading the flake."
+  :type 'number)
+
 (defun magit-nix3-flake-sections ()
+  (require 'promise)
+  ;; Load the library without adding autoloads
+  (require 'nix3-flake)
   (when (file-exists-p "flake.nix")
-    (let ((truename (nix3-normalize-path default-directory)))
-      (promise-wait 0.5
-        (promise-new (apply-partially #'nix3-flake--make-show-process
-                                      truename nil)))
-      (run-hooks 'magit-nix3-sections))))
+    (nix3-flake--get-promise (nix3-normalize-path default-directory)
+                             nil
+                             magit-nix3-sections)
+    (run-hooks 'magit-nix3-sections)))
 
 ;;;###autoload
 (define-minor-mode magit-nix3-flake-mode

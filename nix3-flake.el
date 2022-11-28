@@ -164,6 +164,8 @@ This is a helper macro for traversing a tree."
            (insert (nix3-format-timestamp \.lastModified))))))
     (insert ?\n)))
 
+(put 'nix3-flake-insert-metadata 'nix3-loader #'nix3-flake--make-metadata-process)
+
 (defun nix3-flake-insert-outputs ()
   (magit-insert-section (flake-outputs nil nix3-flake-toplevel-sections-unfolded)
     (magit-insert-heading "Flake outputs")
@@ -208,6 +210,8 @@ This is a helper macro for traversing a tree."
                                (when description
                                  (list 'help-echo description)))))))))))))
     (insert ?\n)))
+
+(put 'nix3-flake-insert-outputs 'nix3-loader #'nix3-flake--make-show-process)
 
 (defun nix3-flake-insert-header (url)
   (insert (propertize "Flake: " 'face 'magit-section-heading)
@@ -286,6 +290,8 @@ This is a helper macro for traversing a tree."
                     'nix3-flake-input-name name
                     'nix3-flake-input-data data)))))))
       (insert ?\n))))
+
+(put 'nix3-flake-insert-inputs 'nix3-loader #'nix3-flake--make-metadata-process)
 
 (defun nix3-flake-show-buffer (dir-or-url is-url)
   (let ((default-directory (if is-url
@@ -374,11 +380,23 @@ This is a helper macro for traversing a tree."
               (message "Fetched the flake"))))
     (promise-catch #'nix3-flake--show-process-error)))
 
-(defun nix3-flake--get-promise (dir-or-url is-url)
-  (promise-all (vector (promise-new (apply-partially #'nix3-flake--make-show-process
-                                                     dir-or-url is-url))
-                       (promise-new (apply-partially #'nix3-flake--make-metadata-process
-                                                     dir-or-url is-url)))))
+(defun nix3-flake--get-promise (dir-or-url is-url &optional hook-var)
+  (cl-flet
+      ((make-loader (loader)
+         (promise-new (apply-partially loader dir-or-url is-url)))
+       (uniq (items)
+         (cl-remove-duplicates items :test #'eq)))
+    (promise-wait 0.5
+      (thread-last
+        (or hook-var nix3-flake-show-sections)
+        (mapcar (lambda (func)
+                  (when (symbolp func)
+                    (get func 'nix3-loader))))
+        (delq nil)
+        (uniq)
+        (mapcar #'make-loader)
+        (apply #'vector)
+        (promise-all)))))
 
 (defun nix3-flake--show-process-error (plist)
   (message "Error from \"nix %s %s\": %s"
