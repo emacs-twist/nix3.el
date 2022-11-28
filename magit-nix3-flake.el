@@ -36,13 +36,29 @@
 (require 'nix3-flake)
 (require 'promise)
 
-(defun magit-nix3-flake-output-section ()
+(defcustom magit-nix3-sections
+  '(nix3-flake-insert-outputs)
+  "Sections inserted into the magit buffer."
+  :type 'hook)
+
+(defcustom magit-nix3-insert-positions 'magit-insert-status-headers
+  "Position at which nix flake sections are inserted.
+
+This should be a value which is already included in
+`magit-status-sections-hook'."
+  :type 'function)
+
+(defcustom magit-nix3-append t
+  "Whether to insert the section after the position."
+  :type 'boolean)
+
+(defun magit-nix3-flake-sections ()
   (when (file-exists-p "flake.nix")
     (let ((truename (nix3-normalize-path default-directory)))
       (promise-wait 0.5
-                    (promise-new (apply-partially #'nix3-flake--make-show-process
-                                                  truename nil)))
-      (nix3-flake-insert-outputs))))
+        (promise-new (apply-partially #'nix3-flake--make-show-process
+                                      truename nil)))
+      (run-hooks 'magit-nix3-sections))))
 
 ;;;###autoload
 (define-minor-mode magit-nix3-flake-mode
@@ -50,11 +66,12 @@
   :global t
   (cond
    (magit-nix3-flake-mode
-    (magit-add-section-hook 'magit-status-sections-hook #'magit-nix3-flake-output-section
-                            'magit-insert-status-headers
-                            'append))
+    (magit-add-section-hook 'magit-status-sections-hook
+                            #'magit-nix3-flake-sections
+                            magit-nix3-insert-positions
+                            magit-nix3-append))
    (t
-    (remove-hook 'magit-status-sections-hook #'magit-nix3-flake-output-section))))
+    (remove-hook 'magit-status-sections-hook #'magit-nix3-flake-sections))))
 
 (provide 'magit-nix3-flake)
 ;;; magit-nix3-flake.el ends here
