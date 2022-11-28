@@ -1,18 +1,18 @@
-;;; nix3-core.el ---  -*- lexical-binding: t -*-
+;;; nix3-core.el --- Foundations for nix3.el -*- lexical-binding: t -*-
 
 (require 'map)
 
 (defgroup nix3 nil
-  ""
+  "Interface to experimental commands of Nix."
   :prefix "nix3-"
   :group 'nix3)
 
 (defcustom nix3-nix-executable "nix"
-  ""
+  "Executable file of Nix."
   :type 'file)
 
 (defcustom nix3-config-expiration 5
-  "Number of seconds for which `nix3--config' is memorized."
+  "Number of seconds for which `nix3--config' is memoized."
   :type 'number)
 
 (defvar nix3-config-cache nil)
@@ -77,7 +77,8 @@ This command discard the exit code or output of the command."
     (goto-char (point-min))
     (json-parse-buffer :array-type 'list)))
 
-(defun nix3--config-memorized ()
+(defun nix3--config-memoized ()
+  "Return a memoized value of the Nix configuration."
   (if (and nix3-config-cache
            (< (car nix3-config-cache)
               (+ nix3-config-expiration (float-time))))
@@ -86,8 +87,9 @@ This command discard the exit code or output of the command."
       (setq nix3-config-cache (cons (float-time) value))
       value)))
 
-(defun nix3-config-lookup-value (key)
-  (if-let (h (map-elt (nix3--config-memorized) key))
+(defun nix3-config-lookup (key)
+  "Look up the configuration of Nix."
+  (if-let (h (map-elt (nix3--config-memoized) key))
       (map-elt h "value")
     (error "Key %s is not found in the nix conf" key)))
 

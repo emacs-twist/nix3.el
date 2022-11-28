@@ -303,6 +303,7 @@ This is a helper macro for traversing a tree."
       (current-buffer))))
 
 (defun nix3-flake-show-revert (&rest _args)
+  "Revert the `nix3-flake-show' buffer."
   (interactive)
   (let ((inhibit-read-only t))
     (erase-buffer)
@@ -323,7 +324,7 @@ This is a helper macro for traversing a tree."
 
 (defvar nix3-flake-show-mode-map
   (let ((m (make-composed-keymap nil magit-section-mode-map)))
-    (define-key m (kbd "l") #'nix3-flake-back)
+    (define-key m (kbd "l") #'nix3-flake-show-back)
     (define-key m (kbd "g") #'nix3-flake-show-revert)
     m))
 
@@ -334,7 +335,7 @@ This is a helper macro for traversing a tree."
 
 ;;;###autoload
 (defun nix3-flake-show (dir)
-  "Show the flake at DIR."
+  "Display information of the flake at DIR."
   (interactive (list (if (equal current-prefix-arg '(4))
                          (read-directory-name "Select a flake: ")
                        (or (locate-dominating-file default-directory
@@ -358,9 +359,10 @@ This is a helper macro for traversing a tree."
 
 ;;;###autoload
 (defun nix3-flake-show-url (url)
+  "Display information of the flake at URL."
   (interactive (let ((ent (nix3-registry-complete "Flake: "
-                                                   :require-match nil
-                                                   :no-exact t)))
+                                                  :require-match nil
+                                                  :no-exact t)))
                  (list (if (stringp ent)
                            ent
                          (car ent)))))
@@ -444,7 +446,8 @@ This is a helper macro for traversing a tree."
     (push (current-buffer) nix3-flake-show-history))
   (switch-to-buffer buffer))
 
-(defun nix3-flake-back ()
+(defun nix3-flake-show-back ()
+  "Go to the flake buffer."
   (interactive)
   (when (eq major-mode 'nix3-flake-show-mode)
     (when-let (buffer (pop nix3-flake-show-history))
@@ -452,6 +455,7 @@ This is a helper macro for traversing a tree."
 
 ;;;###autoload
 (defun nix3-flake-init ()
+  "Initialize the current project from a flake template."
   (interactive)
   (when (and (or (file-exists-p "flake.nix")
                  (project-current))
@@ -459,13 +463,14 @@ This is a helper macro for traversing a tree."
                                        default-directory))))
     (user-error "Aborted"))
   (nix3-flake--prompt-template "nix flake init: "
-                                #'nix3-flake-init-with-template))
+                               #'nix3-flake-init-with-template))
 
 ;;;###autoload
 (defun nix3-flake-new ()
+  "Create a new project from a flake template."
   (interactive)
   (nix3-flake--prompt-template "nix flake new: "
-                                #'nix3-flake--new-with-template))
+                               #'nix3-flake--new-with-template))
 
 (defun nix3-flake--new-with-template (template)
   (let* ((dir (read-directory-name "New directory: "))

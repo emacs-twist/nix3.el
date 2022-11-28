@@ -12,7 +12,7 @@
 
 (defun nix3-registry--global-url ()
   "Return the URL to the global registry."
-  (nix3-config-lookup-value "flake-registry"))
+  (nix3-config-lookup "flake-registry"))
 
 (defcustom nix3-registry-system-file "/etc/nix/registry.json"
   ""
@@ -53,7 +53,7 @@
 (defun nix3-registry--global-entries ()
   (if (and nix3-registry-global-cache
            (< (car nix3-registry-global-cache)
-              (+ (float-time) (nix3-config-lookup-value "tarball-ttl"))))
+              (+ (float-time) (nix3-config-lookup "tarball-ttl"))))
       (cdr nix3-registry-global-cache)
     (let ((buffer (url-retrieve-synchronously (nix3-registry--global-url) t t))
           (message-log-max nil))
