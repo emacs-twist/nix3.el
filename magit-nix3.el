@@ -1,4 +1,4 @@
-;;; magit-nix3-flake.el ---  -*- lexical-binding: t -*-
+;;; magit-nix3.el --- Nix3.el integration for Magit -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2022 Akira Komamura
 
