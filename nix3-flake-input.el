@@ -50,6 +50,53 @@
     (assq 'lastModified)
     (cdr)))
 
+(defun nix3-flake-input--revision (&optional data)
+  (thread-last
+    (or data nix3-flake-input-data)
+    (assq 'locked)
+    (cdr)
+    (assq 'rev)
+    (cdr)))
+
+(defun nix3-flake-input--html-url (&optional data)
+  (cl-labels
+      ((to-url (alist)
+         (let-alist alist
+           (pcase \.type
+             ("indirect"
+              (require 'nix3-registry)
+              (if-let (entry (thread-last
+                               (nix3-registry--collect-entries)
+                               (cl-remove-if (lambda (x)
+                                               (equal (cdr (assq 'type (cddr x)))
+                                                      "path")))
+                               (assoc \.id)))
+                  (to-url (cddr entry))
+                (error "Failed to find a registry entry for %s" \.id)))
+             ("github"
+              (format "https://github.com/%s/%s/%s" \.owner \.repo
+                      (if \.ref
+                          (concat "tree/" \.ref)
+                        "")))
+             ("sourcehut"
+              (format "https://git.sr.ht/%s/%s/%s" \.owner \.repo
+                      (if \.ref
+                          (concat "log/" \.ref)
+                        "")))
+             ("url"
+              (let ((url (thread-last
+                           \.url
+                           (string-remove-prefix "git+")
+                           (string-remove-suffix ".git"))))
+                (if (string-prefix-p "https://" url)
+                    url
+                  (error "Not an https url, so cannot retrieve an HTML url: %s" url))))
+             ("path"
+              (error "Path entry, so cannot be accessed using URL"))
+             (_
+              (error "Unsupported scheme for HTML URL: %s" \.type))))))
+    (to-url (assq 'original (or data nix3-flake-input-data)))))
+
 (transient-define-prefix nix3-flake-input-dispatch (name data)
   [:description
    (lambda () (format "Original: %s" (nix3-flake-input--original-url)))
@@ -62,8 +109,8 @@
                                           (nix3-flake-input--last-modified))))
    ("u" "Update" nix3-flake-input-update :if nix3-flake-input--local-p)
    ("e" "Edit worktree" ignore)
-   ("g" "Browse remote" ignore)
-   ("w" "Copy revision" ignore)
+   ("g" "Browse remote" nix3-flake-input-browse-remote)
+   ("w" "Copy revision" nix3-flake-input-copy-revision)
    ("l" "Magit log" ignore)]
   (interactive (nix3-flake--input-at-point))
   (setq nix3-flake-input-name name
@@ -84,6 +131,17 @@
 (defun nix3-flake-show-locked-input (&optional data)
   (interactive)
   (nix3-flake-show-url (nix3-flake-input--locked-url data)))
+
+(defun nix3-flake-input-copy-revision (&optional data)
+  (interactive)
+  (kill-new (nix3-flake-input--revision data))
+  (message "Saved the revision into kill ring"))
+
+(defun nix3-flake-input-browse-remote (&optional data)
+  (interactive)
+  (require 'nix3-browse-url)
+  (funcall nix3-browse-url-for-repository
+           (nix3-flake-input--html-url data)))
 
 ;;;; Commands
 
