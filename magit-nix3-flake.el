@@ -33,16 +33,18 @@
 ;;; Code:
 
 (defcustom magit-nix3-sections
-  '(nix3-flake-insert-outputs)
+  '(nix3-flake-insert-outputs
+    nix3-flake-insert-inputs)
   "Sections inserted into the magit buffer."
   :type 'hook)
 
-(defcustom magit-nix3-insert-positions 'magit-insert-status-headers
+(defcustom magit-nix3-insert-positions nil
   "Position at which nix flake sections are inserted.
 
-This should be a value which is already included in
+The value should be either nil or one of the existing members of
 `magit-status-sections-hook'."
-  :type 'function)
+  :type '(choice function
+                 (const nil)))
 
 (defcustom magit-nix3-append t
   "Whether to insert the section after the position."
