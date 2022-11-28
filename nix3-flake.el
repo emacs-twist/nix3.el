@@ -221,17 +221,17 @@ This is a helper macro for traversing a tree."
   (let (result)
     (cl-labels
         ((go (rev-path node)
-             (if-let (type (cdr (assq 'type node)))
-                 (push (cons type rev-path) result)
-               (pcase-dolist (`(,name . ,child) node)
-                 (go (cons name rev-path) child)))))
+           (if-let (type (cdr (assq 'type node)))
+               (push (cons type rev-path) result)
+             (pcase-dolist (`(,name . ,child) node)
+               (go (cons name rev-path) child)))))
       (go nil root))
     (thread-last result
-      (seq-group-by #'car)
-      (mapcar (pcase-lambda (`(,type . ,cells))
-                (cons type (thread-last (reverse cells)
-                             (mapcar #'cdr)))))
-      (seq-sort-by #'car #'string<))))
+                 (seq-group-by #'car)
+                 (mapcar (pcase-lambda (`(,type . ,cells))
+                           (cons type (thread-last (reverse cells)
+                                                   (mapcar #'cdr)))))
+                 (seq-sort-by #'car #'string<))))
 
 (defun nix3-flake-insert-inputs ()
   (when-let (result (nix3-flake--get-metadata-result))
@@ -253,8 +253,8 @@ This is a helper macro for traversing a tree."
                              nix3-flake-input-name-max-width))))
           (cl-flet
               ((pad-column
-                (len s)
-                (s-pad-right len " " (s-truncate len s))))
+                 (len s)
+                 (s-pad-right len " " (s-truncate len s))))
             (pcase-dolist (`(,name . ,data) nodes)
               (magit-insert-section (flake-input name t)
                 (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
@@ -484,17 +484,17 @@ This is a helper macro for traversing a tree."
     (nix3-flake--record-template template)
     (let ((default-directory parent))
       (nix3-flake--run-template `(lambda ()
-                                    (let ((default-directory ,dir))
-                                      (run-hooks 'nix3-flake-new-hook)
-                                      (dired default-directory)))
-                                 "new" "-t" template (expand-file-name dir)))))
+                                   (let ((default-directory ,dir))
+                                     (run-hooks 'nix3-flake-new-hook)
+                                     (dired default-directory)))
+                                "new" "-t" template (expand-file-name dir)))))
 
 (defun nix3-flake--prompt-template (prompt callback)
   (let ((item (nix3-registry-complete prompt
-                                       :add-to-registry t
-                                       :require-match nil
-                                       :extra-entries nix3-flake-template-history
-                                       :no-exact t)))
+                                      :add-to-registry t
+                                      :require-match nil
+                                      :extra-entries nix3-flake-template-history
+                                      :no-exact t)))
     (if (nix3-flake--template-p item)
         (funcall callback item)
       (let ((name-or-url (if (stringp item)

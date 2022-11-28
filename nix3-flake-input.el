@@ -89,12 +89,12 @@
                      current-prefix-arg))
   ;; TODO This is a quick-and-dirty implementation, so rewrite it
   (nix3-run-process-background nix3-nix-executable
-                                "flake"
-                                "lock"
-                                "--update-input"
-                                (cl-etypecase name
-                                  (string name)
-                                  (symbol (symbol-name name)))))
+                               "flake"
+                               "lock"
+                               "--update-input"
+                               (cl-etypecase name
+                                 (string name)
+                                 (symbol (symbol-name name)))))
 
 (provide 'nix3-flake-input)
 ;;; nix3-flake-input.el ends here
