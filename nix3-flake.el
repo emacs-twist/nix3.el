@@ -370,7 +370,7 @@ directory-local variables for per-project configuration."
   (insert (propertize "Flake: " 'face 'magit-section-heading))
   (if-let (metadata (nix3-flake-metadata--get url))
       (if (member (nix3-lookup-tree '(original type) metadata)
-                  '("indirect" "path"))
+                  '("indirect" "path" "git"))
           (insert (cdr (assq 'originalUrl metadata)))
         (insert-text-button (cdr (assq 'originalUrl metadata))
                             'type 'nix3-flake-remote-link
