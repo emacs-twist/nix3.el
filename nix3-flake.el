@@ -430,7 +430,8 @@ This is a helper macro for traversing a tree."
     (magit-insert-section (flake)
       (magit-insert-heading)
       (nix3-flake-insert-header (nix3-flake--buffer-url))
-      (run-hooks 'nix3-flake-show-sections))))
+      (run-hooks 'nix3-flake-show-sections)
+      (goto-char (point-min)))))
 
 (defun nix3-flake--buffer-url ()
   (or nix3-flake-url
