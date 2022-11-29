@@ -28,32 +28,24 @@
 (defun nix3-flake-input--original-url ()
   (thread-last
     (cdr (nix3-flake-input-at-point))
-    (assq 'original)
-    (cdr)
+    (alist-get 'original)
     (nix3-flake-ref-alist-to-url)))
 
 (defun nix3-flake-input--locked-url ()
   (thread-last
     (cdr (nix3-flake-input-at-point))
-    (assq 'locked)
-    (cdr)
+    (alist-get 'locked)
     (nix3-flake-ref-alist-to-url)))
 
 (defun nix3-flake-input--last-modified ()
   (thread-last
     (cdr (nix3-flake-input-at-point))
-    (assq 'locked)
-    (cdr)
-    (assq 'lastModified)
-    (cdr)))
+    (nix3-lookup-tree '(locked lastModified))))
 
 (defun nix3-flake-input--revision ()
   (thread-last
     (cdr (nix3-flake-input-at-point))
-    (assq 'locked)
-    (cdr)
-    (assq 'rev)
-    (cdr)))
+    (nix3-lookup-tree '(locked rev))))
 
 (defun nix3-flake-input--html-url ()
   (cl-labels
