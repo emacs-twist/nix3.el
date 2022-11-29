@@ -3,7 +3,6 @@
 (require 'nix3-core)
 (require 'nix3-repl)
 (require 'nix3-utils)
-(require 'nix3-flake-input)
 (require 'nix3-registry)
 (require 'nix3-section)
 
@@ -340,6 +339,7 @@ directory-local variables for per-project configuration."
                  (seq-sort-by #'car #'string<))))
 
 (defun nix3-flake-insert-inputs ()
+  (require 'nix3-flake-input)
   (when-let (result (nix3-flake--get-metadata-result))
     (nix3-section-with-keymap nix3-flake-input-map
       (magit-insert-section (flake-inputs nil nix3-flake-toplevel-sections-unfolded)
