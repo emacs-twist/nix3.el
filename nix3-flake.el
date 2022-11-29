@@ -351,57 +351,55 @@ This is a helper macro for traversing a tree."
 
 (defun nix3-flake-insert-inputs ()
   (when-let (result (nix3-flake--get-metadata-result))
-    (magit-insert-section (flake-inputs nil nix3-flake-toplevel-sections-unfolded)
-      (magit-insert-heading "Flake inputs")
-
-      (when-let (nodes (thread-last
-                         result
-                         (assq 'locks)
-                         (cdr)
-                         (assq 'nodes)
-                         (cdr)
-                         (assq-delete-all 'root)))
-        (let ((name-width (thread-last
-                            nodes
-                            (mapcar (lambda (cell)
-                                      (symbol-name (car cell))))
-                            (nix3-format--column-width
-                             nix3-flake-input-name-max-width))))
-          (cl-flet
-              ((pad-column
-                 (len s)
-                 (s-pad-right len " " (s-truncate len s))))
-            (pcase-dolist (`(,name . ,data) nodes)
-              (magit-insert-section (flake-input name t)
-                (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
-                       (original (cdr (assq 'original data)))
-                       (name-string (symbol-name name))
-                       (url (nix3-flake-ref-alist-to-url original)))
-                  (insert (make-string 2 ?\s)
-                          (propertize (pad-column name-width name-string)
-                                      'help-echo name-string
-                                      'face 'nix3-flake-input-name-face)
-                          " ")
-                  (if is-flake
-                      (insert-text-button url
-                                          'type 'nix3-flake-url-link
-                                          'help-args
-                                          (list (if (nix3-flake--path-p original)
-                                                    (nix3-flake--resolve-path
-                                                     (cdr (assq 'path original)))
-                                                  url)))
-                    (insert url))
-                  (insert "  "
-                          (propertize (if is-flake
-                                          "(flake)"
-                                        "(non-flake)")
-                                      'face 'font-lock-constant-face)
-                          "\n")
-                  (nix3-put-overlay-on-region (line-beginning-position 0) (line-end-position 0)
-                    'keymap nix3-flake-input-map
-                    'nix3-flake-input-name name
-                    'nix3-flake-input-data data)))))))
-      (insert ?\n))))
+    (nix3-section-with-keymap nix3-flake-input-map
+      (magit-insert-section (flake-inputs nil nix3-flake-toplevel-sections-unfolded)
+        (magit-insert-heading "Flake inputs")
+        (when-let (nodes (thread-last
+                           result
+                           (assq 'locks)
+                           (cdr)
+                           (assq 'nodes)
+                           (cdr)
+                           (assq-delete-all 'root)))
+          (let ((name-width (thread-last
+                              nodes
+                              (mapcar (lambda (cell)
+                                        (symbol-name (car cell))))
+                              (nix3-format--column-width
+                               nix3-flake-input-name-max-width))))
+            (cl-flet
+                ((pad-column
+                   (len s)
+                   (s-pad-right len " " (s-truncate len s))))
+              (pcase-dolist (`(,name . ,data) nodes)
+                (magit-insert-section (flake-input (cons (symbol-name name)
+                                                         data)
+                                                   t)
+                  (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
+                         (original (cdr (assq 'original data)))
+                         (name-string (symbol-name name))
+                         (url (nix3-flake-ref-alist-to-url original)))
+                    (insert (make-string 2 ?\s)
+                            (propertize (pad-column name-width name-string)
+                                        'help-echo name-string
+                                        'face 'nix3-flake-input-name-face)
+                            " ")
+                    (if is-flake
+                        (insert-text-button url
+                                            'type 'nix3-flake-url-link
+                                            'help-args
+                                            (list (if (nix3-flake--path-p original)
+                                                      (nix3-flake--resolve-path
+                                                       (cdr (assq 'path original)))
+                                                    url)))
+                      (insert url))
+                    (insert "  "
+                            (propertize (if is-flake
+                                            "(flake)"
+                                          "(non-flake)")
+                                        'face 'font-lock-constant-face)
+                            "\n")))))))
+        (insert ?\n)))))
 
 (put 'nix3-flake-insert-inputs 'nix3-loader #'nix3-flake--make-metadata-process)
 

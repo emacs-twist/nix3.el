@@ -2,6 +2,14 @@
 
 (require 'magit-section)
 
+(defmacro nix3-section-with-keymap (map &rest body)
+  (declare (indent 1))
+  `(let ((start (point)))
+     (prog1 (progn
+              ,@body)
+       (let ((ov (make-overlay start (point))))
+         (overlay-put ov 'keymap ,map)))))
+
 (defmacro nix3-section--heading (body)
   `(propertize ,body 'face 'magit-section-heading))
 
