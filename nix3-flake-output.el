@@ -91,7 +91,7 @@
   (interactive)
   (nix3-flake-output--compile-it "run"))
 
-(defun nix3-flake-output--compile-it (command attr)
+(defun nix3-flake-output--compile-it (command)
   (compile (mapconcat #'shell-quote-argument
                       `(,nix3-nix-executable
                         ,@(if (listp command)
