@@ -31,6 +31,61 @@
 ;;; Code:
 
 (require 'nix3-core)
+(require 'promise)
+(require 'nix3-flake)
+
+;;;###autoload
+(defun nix3-build ()
+  "Build an output in the flake."
+  (interactive)
+  (promise-chain (nix3--demand-outputs)
+    (then (lambda (_)
+            (nix3--compile-output "nix build (%s): " "build")))))
+
+;;;###autoload
+(defun nix3-run ()
+  "Run an app in the flake."
+  (interactive)
+  (promise-chain (nix3--demand-outputs)
+    (then (lambda (_)
+            (nix3--compile-output "nix run (%s): " "run")))))
+
+(defun nix3--compile-output (prompt nix-command)
+  (let* ((default-directory (nix3-flake--buffer-url))
+         (attr (nix3--select-output-attribute
+                (format prompt (abbreviate-file-name default-directory))
+                nix-command)))
+    (compile (mapconcat #'shell-quote-argument
+                        `(,nix3-nix-executable
+                          ,@(if (listp nix-command)
+                                nix-command
+                              (list nix-command))
+                          ,(concat ".#" attr))
+                        " "))))
+
+(defun nix3--demand-outputs ()
+  (promise-new (apply-partially
+                #'nix3-flake--make-show-process
+                (string-remove-suffix
+                 "/"
+                 (file-truename (locate-dominating-file default-directory "flake.nix")))
+                nil)))
+
+(defun nix3--select-output-attribute (prompt command)
+  (let ((alist (nix3-flake--filter-outputs command)))
+    (cl-labels
+        ((group (candidate transform)
+           (if transform
+               candidate
+             (or (cdr (assoc candidate alist))
+                 "")))
+         (completions (string pred action)
+           (if (eq action 'metadata)
+               (cons 'metadata
+                     (list (cons 'category 'nix3-attribute)
+                           (cons 'group-function #'group)))
+             (complete-with-action action alist string pred))))
+      (completing-read prompt #'completions))))
 
 (provide 'nix3)
 ;;; nix3.el ends here
