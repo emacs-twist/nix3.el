@@ -35,6 +35,16 @@
 (require 'promise)
 (require 'nix3-flake)
 
+(defvar nix3-prefix-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "s" #'nix3-flake-show)
+    (define-key map "b" #'nix3-build)
+    (define-key map "r" #'nix3-run)
+    map)
+  "Prefix map for Nix commands.
+
+This is EXPERIMENTAL.")
+
 ;;;###autoload
 (defun nix3-build ()
   "Build an output in the flake."
