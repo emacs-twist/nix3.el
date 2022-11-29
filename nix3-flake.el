@@ -113,11 +113,13 @@ directory-local variables for per-project configuration."
 
 (defun nix3-flake--attr-path-string (path)
   (cl-flet ((attr-name-string (sym)
-              (let ((s (symbol-name sym)))
-                (if (string-match-p (rx bol (+ (any "-_" alnum)) eol) s)
-                    s
-                  (concat "\"" s "\"")))))
+              (nix3-flake--escape-attr-name (symbol-name sym))))
     (mapconcat #'attr-name-string path ".")))
+
+(defun nix3-flake--escape-attr-name (s)
+  (if (string-match-p (rx bol (+ (any "-_" alnum)) eol) s)
+      s
+    (concat "\"" s "\"")))
 
 (defun nix3-flake--path-p (url-alist)
   "Return non-nil if URL-ALIST points to a path."
