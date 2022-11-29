@@ -270,48 +270,50 @@ directory-local variables for per-project configuration."
 (put 'nix3-flake-insert-metadata 'nix3-loader #'nix3-flake--make-metadata-process)
 
 (defun nix3-flake-insert-outputs ()
+  (require 'nix3-flake-output)
   (magit-insert-section (flake-outputs nil nix3-flake-toplevel-sections-unfolded)
     (magit-insert-heading "Flake outputs")
-
-    (let ((result (nix3-flake--get-show-result))
-          (nix-system (nix3-system)))
-      (pcase-dolist (`(,type-name . ,outputs)
-                     (nix3-flake--group-outputs result))
-        (magit-insert-section (flake-output-type type-name)
-          (magit-insert-heading
-            (make-string 2 ?\s)
-            (propertize type-name 'face 'nix3-flake-drv-type-face))
-
-          (pcase-dolist (`(,branch-reverse . ,leaves)
-                         (seq-group-by #'cdr outputs))
-            (let* ((branch (reverse branch-reverse))
-                   (name (symbol-name (car branch-reverse)))
-                   (invisible (and (string-match-p (rx "-" (or "darwin" "linux") eol)
-                                                   name)
-                                   (not (equal name nix-system)))))
-              (magit-insert-section (flake-output-subgroup branch invisible)
-                (when branch
-                  (magit-insert-heading
-                    (make-string 4 ?\s)
-                    (propertize (mapconcat #'symbol-name branch ".")
-                                'face 'nix3-flake-drv-parent-face)))
-
-                (dolist (output-reverse leaves)
-                  (let* ((path (reverse output-reverse))
-                         (node (nix3-lookup-tree path result))
-                         ;; (package-name (cdr (assq 'name node)))
-                         (description (cdr (assq 'description node))))
-                    (magit-insert-section (flake-output path)
-                      (magit-insert-heading
-                        (make-string 6 ?\s)
-                        (apply #'propertize
-                               (symbol-name (car output-reverse))
-                               'nix-flake-output (mapconcat #'symbol-name
-                                                            path ".")
-                               'nix-flake-show node
-                               'face 'nix3-flake-drv-name-face
-                               (when description
-                                 (list 'help-echo description)))))))))))))
+    (nix3-section-with-keymap nix3-flake-output-map
+      (let ((result (nix3-flake--get-show-result))
+            (nix-system (nix3-system)))
+        (pcase-dolist (`(,type-name . ,outputs)
+                       (nix3-flake--group-outputs result))
+          (magit-insert-section (flake-output-type type-name)
+            (magit-insert-heading
+              (make-string 2 ?\s)
+              (propertize type-name 'face 'nix3-flake-drv-type-face))
+            (pcase-dolist (`(,branch-reverse . ,leaves)
+                           (seq-group-by #'cdr outputs))
+              (let* ((branch (reverse branch-reverse))
+                     (name (symbol-name (car branch-reverse)))
+                     (invisible (and (string-match-p (rx "-" (or "darwin" "linux") eol)
+                                                     name)
+                                     (not (equal name nix-system)))))
+                (magit-insert-section (flake-output-subgroup
+                                       (nix3-flake--attr-path-string branch)
+                                       invisible)
+                  (when branch
+                    (magit-insert-heading
+                      (make-string 4 ?\s)
+                      (propertize (mapconcat #'symbol-name branch ".")
+                                  'face 'nix3-flake-drv-parent-face)))
+                  (dolist (output-reverse leaves)
+                    (let* ((path (reverse output-reverse))
+                           (node (nix3-lookup-tree path result))
+                           ;; (package-name (cdr (assq 'name node)))
+                           (description (cdr (assq 'description node))))
+                      (magit-insert-section (flake-output
+                                             (nix3-flake--attr-path-string path))
+                        (magit-insert-heading
+                          (make-string 6 ?\s)
+                          (apply #'propertize
+                                 (symbol-name (car output-reverse))
+                                 'nix-flake-output (mapconcat #'symbol-name
+                                                              path ".")
+                                 'nix-flake-show node
+                                 'face 'nix3-flake-drv-name-face
+                                 (when description
+                                   (list 'help-echo description))))))))))))))
     (insert ?\n)))
 
 (put 'nix3-flake-insert-outputs 'nix3-loader #'nix3-flake--make-show-process)
