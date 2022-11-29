@@ -98,6 +98,11 @@ directory-local variables for per-project configuration."
   'help-function #'nix3-flake-show-url
   'help-echo (purecopy "mouse-2, RET: Show the flake"))
 
+(define-button-type 'nix3-flake-remote-link
+  :supertype 'help-xref
+  'help-function #'nix3-flake-browse-remote
+  'help-echo (purecopy "mouse-2, RET: Browse the remote url"))
+
 ;;;; Variables
 
 (defvar nix3-flake-url nil
@@ -297,9 +302,11 @@ directory-local variables for per-project configuration."
       (let-alist metadata
         (nix3-section-dlist 0
           nil
-          ("Resolved URL: " (and .resolvedUrl
+          ("Resolved URL: " (and \.resolvedUrl
                                  (not (equal \.resolvedUrl \.originalUrl)))
-           (insert \.resolvedUrl))
+           (insert-text-button \.resolvedUrl
+                               'type 'nix3-flake-remote-link
+                               'help-args (list \.resolved)))
           ("Description:" .description
            (insert \.description))
           ("Revision:" .revision
@@ -360,12 +367,16 @@ directory-local variables for per-project configuration."
 (put 'nix3-flake-insert-outputs 'nix3-loader #'nix3-flake--make-show-process)
 
 (defun nix3-flake-insert-header (url)
-  (insert (propertize "Flake: " 'face 'magit-section-heading)
-          (if-let (metadata (nix3-flake-metadata--get url))
-              (cdr (assq 'originalUrl metadata))
-            url)
-          "\n")
-  (insert ?\n))
+  (insert (propertize "Flake: " 'face 'magit-section-heading))
+  (if-let (metadata (nix3-flake-metadata--get url))
+      (if (member (nix3-lookup-tree '(original type) metadata)
+                  '("indirect" "path"))
+          (insert (cdr (assq 'originalUrl metadata)))
+        (insert-text-button (cdr (assq 'originalUrl metadata))
+                            'type 'nix3-flake-remote-link
+                            'help-args (list (cdr (assq 'original metadata)))))
+    (insert url))
+  (insert "\n" ?\n))
 
 (defun nix3-flake--group-outputs (root)
   (let (result)
@@ -437,6 +448,12 @@ directory-local variables for per-project configuration."
         (insert ?\n)))))
 
 (put 'nix3-flake-insert-inputs 'nix3-loader #'nix3-flake--make-metadata-process)
+
+;;;;; Button actions
+
+(defun nix3-flake-browse-remote (alist)
+  (require 'nix3-browse-url)
+  (funcall nix3-browse-url-for-repository (nix3-flake-html-url alist)))
 
 ;;;; nix3-flake-show-mode
 
