@@ -563,17 +563,18 @@ directory-local variables for per-project configuration."
         (apply #'vector)
         (promise-all)))))
 
-(defun nix3-flake--show-process-error (plist)
-  (message "Error from \"nix %s %s\": %s"
-           (mapconcat #'shell-quote-argument (plist-get plist :subcommand) " ")
-           (plist-get plist :url)
-           (with-current-buffer (plist-get plist :error-buffer)
-             (let ((case-fold-search t))
-               (save-excursion
-                 (goto-char (point-max))
-                 (when (re-search-backward (rx bol "error") nil t)
-                   (buffer-substring (line-beginning-position)
-                                     (line-end-position))))))))
+(defun nix3-flake--show-process-error (payload)
+  (let ((plist (cadr payload)))
+    (message "Error from \"nix %s %s\": %s"
+             (mapconcat #'shell-quote-argument (plist-get plist :subcommand) " ")
+             (plist-get plist :url)
+             (with-current-buffer (plist-get plist :error-buffer)
+               (let ((case-fold-search t))
+                 (save-excursion
+                   (goto-char (point-max))
+                   (when (re-search-backward (rx bol "error") nil t)
+                     (buffer-substring (line-beginning-position)
+                                       (line-end-position)))))))))
 
 (cl-defmacro nix3-flake--nix-json-process (func-name &key name buffer stderr
                                                       subcommand
