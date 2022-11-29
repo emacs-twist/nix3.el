@@ -49,6 +49,8 @@
     :if nix3-flake-output--buildable-p)
    ("r" "nix run" nix3-flake-output-run
     :if nix3-flake-output--runnable-p)
+   ("d" "dired" nix3-flake-output-dired-template
+    :if nix3-flake-output--template-p)
    ("a" "Attributes" nix3-flake-output-browse-attribute)]
   (interactive)
   (unless (nix3-flake-output-path-at-point)
@@ -59,6 +61,17 @@
 (defun nix3-flake-output-description ()
   (format "%s (%s)" (nix3-flake-output-path-at-point)
           nix3-flake-output-type))
+
+(defun nix3-flake-output--template-p ()
+  (equal nix3-flake-output-type "template"))
+
+(defun nix3-flake-output-dired-template ()
+  (interactive)
+  (dired (nix3-read-nix-json-command "eval"
+                                     (concat (nix3-flake--buffer-url)
+                                             "#" (concat (nix3-flake-output-path-at-point)
+                                                         ".path"))
+                                     "--json")))
 
 (defun nix3-flake-output--buildable-p ()
   (member nix3-flake-output-type '("derivation")))
