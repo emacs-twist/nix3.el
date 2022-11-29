@@ -112,16 +112,6 @@ directory-local variables for per-project configuration."
 
 ;;;; Small utilities
 
-(defun nix3-flake-lookup-tree (path data)
-  "Look up PATH in a tree DATA.
-
-This is a helper macro for traversing a tree."
-  (cl-reduce (lambda (acc f)
-               (cdr (assq f acc)))
-             (cdr path)
-             :initial-value
-             (cdr (assq (car path) data))))
-
 (defun nix3-flake--attr-path-string (path)
   (cl-flet ((attr-name-string (sym)
               (let ((s (symbol-name sym)))
@@ -307,7 +297,7 @@ This is a helper macro for traversing a tree."
 
                 (dolist (output-reverse leaves)
                   (let* ((path (reverse output-reverse))
-                         (node (nix3-flake-lookup-tree path result))
+                         (node (nix3-lookup-tree path result))
                          ;; (package-name (cdr (assq 'name node)))
                          (description (cdr (assq 'description node))))
                     (magit-insert-section (flake-output path)

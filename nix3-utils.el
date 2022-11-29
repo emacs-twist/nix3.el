@@ -65,8 +65,16 @@
        (format "%s (%s)"
                (format-time-string "%F %X" time)
                (nix3-format-duration (- (float-time)
-                                         offset
-                                         time)))))))
+                                        offset
+                                        time)))))))
+
+(defun nix3-lookup-tree (path data)
+  "Look up PATH in a tree DATA."
+  (cl-reduce (lambda (acc f)
+               (cdr (assq f acc)))
+             (cdr path)
+             :initial-value
+             (cdr (assq (car path) data))))
 
 (provide 'nix3-utils)
 ;;; nix3-utils.el ends here
