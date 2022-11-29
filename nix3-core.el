@@ -38,6 +38,7 @@
 (defun nix3-read-nix-json-command (&rest args)
   "Run nix and return its output string."
   (json-parse-string (apply #'nix3-read-nix-command args)
+                     :false-object nil
                      :object-type 'alist
                      :array-type 'list))
 
