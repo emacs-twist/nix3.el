@@ -110,6 +110,14 @@ This is a helper macro for traversing a tree."
              :initial-value
              (cdr (assq (car path) data))))
 
+(defun nix3-flake--attr-path-string (path)
+  (cl-flet ((attr-name-string (sym)
+              (let ((s (symbol-name sym)))
+                (if (string-match-p (rx bol (+ (any "-_" alnum)) eol) s)
+                    s
+                  (concat "\"" s "\"")))))
+    (mapconcat #'attr-name-string path ".")))
+
 (defun nix3-flake--path-p (url-alist)
   "Return non-nil if URL-ALIST points to a path."
   (equal "path" (assq 'type url-alist)))
@@ -198,39 +206,34 @@ This is a helper macro for traversing a tree."
                        (and "nixos-configuration"
                             (guard (equal command "build"))))
                    type)
-              (push (cons (make-attr-path path)
+              (push (cons (nix3-flake--attr-path-string path)
                           type)
                     result))
              ("unknown"
               (when-let (match (seq-find (apply-partially #'prefixp path) extra-derivations))
                 (let ((rest (seq-drop match (length path))))
                   (go2 path rest))))))
-         (attr-name-string (sym)
-           (let ((s (symbol-name sym)))
-             (if (string-match-p (rx bol (+ (any "-_" alnum)) eol) s)
-                 s
-               (concat "\"" s "\""))))
-         (make-attr-path (path)
-           (mapconcat #'attr-name-string path "."))
          (go2 (path rest)
            (pcase (car rest)
              (`nil
-              (push (cons (make-attr-path path)
+              (push (cons (nix3-flake--attr-path-string path)
                           nil)
                     result))
              (`t
-              (dolist (name (nix3-read-nix-json-command "eval"
-                                                        (concat (nix3-flake--buffer-url)
-                                                                "#" (make-attr-path path))
-                                                        "--apply" "builtins.attrNames"))
+              (dolist (name (nix3-read-nix-json-command
+                             "eval"
+                             (concat (nix3-flake--buffer-url)
+                                     "#" (nix3-flake--attr-path-string path))
+                             "--apply" "builtins.attrNames"))
                 (go2 (append path (list (intern name))) (cdr rest))))
              (name
-              (when (nix3-read-nix-json-command "eval"
-                                                (concat (nix3-flake--buffer-url)
-                                                        "#" (make-attr-path path))
-                                                "--apply"
-                                                (format "builtins.hasAttr \"%s\""
-                                                        name))
+              (when (nix3-read-nix-json-command
+                     "eval"
+                     (concat (nix3-flake--buffer-url)
+                             "#" (nix3-flake--attr-path-string path))
+                     "--apply"
+                     (format "builtins.hasAttr \"%s\""
+                             name))
                 (go2 (append path (list name)) (cdr rest)))))))
       (setq extra-derivations (mapcar #'decode-path nix3-flake-extra-derivations))
       (go nil (nix3-flake--get-show-result)))
