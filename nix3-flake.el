@@ -17,9 +17,13 @@
   :prefix "nix3-flake-"
   :group 'nix3)
 
+;;;; Constants
+
 (defconst nix3-flake-show-error-buffer "*Nix-Flake-Show Errors*")
 (defconst nix3-flake-metadata-error-buffer "*Nix-Flake-Metadata Errors*")
 (defconst nix3-flake-init-buffer "*Nix-Flake-Init*")
+
+;;;; Custom variables
 
 (defcustom nix3-flake-show-sections
   '(nix3-flake-insert-metadata
@@ -70,6 +74,8 @@ The user should set this variable in \".dir-locals.el\" as
 directory-local variables for per-project configuration."
   :type '(repeat string))
 
+;;;; Variables
+
 (defface nix3-flake-drv-type-face
   '((t :inherit font-lock-constant-face))
   "")
@@ -86,10 +92,14 @@ directory-local variables for per-project configuration."
   '((t :inherit magit-section-secondary-heading))
   "")
 
+;;;; Button types
+
 (define-button-type 'nix3-flake-url-link
   :supertype 'help-xref
   'help-function #'nix3-flake-show-url
   'help-echo (purecopy "mouse-2, RET: Show the flake"))
+
+;;;; Variables
 
 (defvar nix3-flake-url nil
   "Set to the URL of a flake when the flake is not local.")
@@ -99,6 +109,8 @@ directory-local variables for per-project configuration."
 (defvar nix3-flake-template-history nil)
 
 (defvar nix3-flake-template-alist nil)
+
+;;;; Small utilities
 
 (defun nix3-flake-lookup-tree (path data)
   "Look up PATH in a tree DATA.
@@ -144,6 +156,8 @@ This is a helper macro for traversing a tree."
               (nix3-normalize-path (expand-file-name relative default-directory)))))
         (error "Failed to match against a path \"%s\"" path)))))
 
+;;;; nix flake show data
+
 (defvar nix3-flake-show-results nil)
 
 (defun nix3-flake--ensure-show-cache ()
@@ -159,6 +173,8 @@ This is a helper macro for traversing a tree."
   (gethash (string-remove-suffix "/" directory)
            nix3-flake-show-results))
 
+;;;; nix flake metadata data
+
 (defvar nix3-flake-metadata-results nil)
 
 (defun nix3-flake--ensure-metadata-cache ()
@@ -173,6 +189,8 @@ This is a helper macro for traversing a tree."
   (nix3-flake--ensure-metadata-cache)
   (gethash (string-remove-suffix "/" directory)
            nix3-flake-metadata-results))
+
+;;;; Processing data
 
 (defun nix3-flake--filter-outputs (command)
   "Return a list of apps and derivations for the system."
@@ -238,6 +256,8 @@ This is a helper macro for traversing a tree."
       (setq extra-derivations (mapcar #'decode-path nix3-flake-extra-derivations))
       (go nil (nix3-flake--get-show-result)))
     result))
+
+;;;; Magit sections
 
 (defun nix3-flake-insert-metadata ()
   (magit-insert-section (flake-metadata nil nix3-flake-toplevel-sections-unfolded)
@@ -384,6 +404,8 @@ This is a helper macro for traversing a tree."
       (insert ?\n))))
 
 (put 'nix3-flake-insert-inputs 'nix3-loader #'nix3-flake--make-metadata-process)
+
+;;;; nix3-flake-show-mode
 
 (defun nix3-flake-show-buffer (dir-or-url is-url)
   (let ((default-directory (if is-url
@@ -562,6 +584,8 @@ This is a helper macro for traversing a tree."
   (when (eq major-mode 'nix3-flake-show-mode)
     (when-let (buffer (pop nix3-flake-show-history))
       (switch-to-buffer buffer))))
+
+;;;; nix flake init/new
 
 ;;;###autoload
 (defun nix3-flake-init ()
