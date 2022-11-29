@@ -51,6 +51,25 @@ Each function in this hook is called without arguments in the
 created directory."
   :type 'hook)
 
+(defcustom nix3-flake-extra-derivations
+  ;; FIXME: Make it nil by default
+  '("homeConfigurations.%s.*")
+  "List of non-standard installables in the flake.
+
+This is a list of attribute paths to outputs.
+The following substitutes are made:
+
+ * \"*\": Substituted with the name of an attribute in the
+   parent. The parent should be an attribute set, and each
+   attribute should be a derivation.
+
+ * \"%s\": Substituted with the name of the system like
+   \"x86_64-linux\".
+
+The user should set this variable in \".dir-locals.el\" as
+directory-local variables for per-project configuration."
+  :type '(repeat string))
+
 (defface nix3-flake-drv-type-face
   '((t :inherit font-lock-constant-face))
   "")
@@ -146,6 +165,76 @@ This is a helper macro for traversing a tree."
   (nix3-flake--ensure-metadata-cache)
   (gethash (string-remove-suffix "/" directory)
            nix3-flake-metadata-results))
+
+(defun nix3-flake--filter-outputs (command)
+  "Return a list of apps and derivations for the system."
+  (let* ((system (intern (nix3-system)))
+         extra-derivations
+         result)
+    (cl-labels
+        ((substitute-segment (s)
+           (pcase s
+             ("*" t)
+             ("%s" system)
+             (_ (intern s))))
+         (decode-path (s)
+           (mapcar #'substitute-segment (split-string s "\\.")))
+         (prefixp (path1 path2)
+           (equal path1 (take (length path1) path2)))
+         (go (path tree)
+           (pcase (alist-get 'type tree)
+             (`nil
+              (pcase-dolist (`(,key . ,subtree) tree)
+                (unless (and (= 1 (length path))
+                             (memq (car path) '(apps
+                                                devShells
+                                                packages
+                                                checks))
+                             (not (eq key system)))
+                  (go (append path (list key)) subtree))))
+             ((and (or "derivation"
+                       (and "app"
+                            (guard (equal command "run")))
+                       (and "nixos-configuration"
+                            (guard (equal command "build"))))
+                   type)
+              (push (cons (make-attr-path path)
+                          type)
+                    result))
+             ("unknown"
+              (when-let (match (seq-find (apply-partially #'prefixp path) extra-derivations))
+                (let ((rest (seq-drop match (length path))))
+                  (go2 path rest))))))
+         (attr-name-string (sym)
+           (let ((s (symbol-name sym)))
+             (if (string-match-p (rx bol (+ (any "-_" alnum)) eol) s)
+                 s
+               (concat "\"" s "\""))))
+         (make-attr-path (path)
+           (mapconcat #'attr-name-string path "."))
+         (go2 (path rest)
+           (pcase (car rest)
+             (`nil
+              (push (cons (make-attr-path path)
+                          nil)
+                    result))
+             (`t
+              (dolist (name (nix3-read-nix-json-command "eval"
+                                                        (concat (nix3-flake--buffer-url)
+                                                                "#" (make-attr-path path))
+                                                        "--apply" "builtins.attrNames"))
+                (go2 (append path (list (intern name))) (cdr rest))))
+             (name
+              (when (nix3-read-nix-json-command "eval"
+                                                (concat (nix3-flake--buffer-url)
+                                                        "#" (make-attr-path path))
+                                                "--apply"
+                                                (format "builtins.hasAttr \"%s\""
+                                                        name))
+                (go2 (append path (list name)) (cdr rest)))))))
+      (setq extra-derivations (mapcar #'decode-path nix3-flake-extra-derivations))
+      (go nil (nix3-flake--get-show-result)))
+    result))
 
 (defun nix3-flake-insert-metadata ()
   (magit-insert-section (flake-metadata nil nix3-flake-toplevel-sections-unfolded)
