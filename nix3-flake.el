@@ -147,6 +147,47 @@ directory-local variables for per-project configuration."
               (nix3-normalize-path (expand-file-name relative default-directory)))))
         (error "Failed to match against a path \"%s\"" path)))))
 
+;;;; Browse remote
+
+(defun nix3-flake-html-url (alist)
+  (cl-labels
+      ((to-url (alist)
+         (let-alist alist
+           (pcase \.type
+             ("indirect"
+              (require 'nix3-registry)
+              (if-let (entry (thread-last
+                               (nix3-registry--collect-entries)
+                               (cl-remove-if (lambda (x)
+                                               (equal (cdr (assq 'type (cddr x)))
+                                                      "path")))
+                               (assoc \.id)))
+                  (to-url (cddr entry))
+                (error "Failed to find a registry entry for %s" \.id)))
+             ("github"
+              (format "https://github.com/%s/%s/%s" \.owner \.repo
+                      (if \.ref
+                          (concat "tree/" \.ref)
+                        "")))
+             ("sourcehut"
+              (format "https://git.sr.ht/%s/%s/%s" \.owner \.repo
+                      (if \.ref
+                          (concat "log/" \.ref)
+                        "")))
+             ("url"
+              (let ((url (thread-last
+                           \.url
+                           (string-remove-prefix "git+")
+                           (string-remove-suffix ".git"))))
+                (if (string-prefix-p "https://" url)
+                    url
+                  (error "Not an https url, so cannot retrieve an HTML url: %s" url))))
+             ("path"
+              (error "Path entry, so cannot be accessed using URL"))
+             (_
+              (error "Unsupported scheme for HTML URL: %s" \.type))))))
+    (to-url alist)))
+
 ;;;; nix flake show data
 
 (defvar nix3-flake-show-results nil)
