@@ -286,7 +286,7 @@ This is a helper macro for traversing a tree."
           (nix-system (nix3-system)))
       (pcase-dolist (`(,type-name . ,outputs)
                      (nix3-flake--group-outputs result))
-        (magit-insert-section (flake-output-group type-name)
+        (magit-insert-section (flake-output-type type-name)
           (magit-insert-heading
             (make-string 2 ?\s)
             (propertize type-name 'face 'nix3-flake-drv-type-face))
