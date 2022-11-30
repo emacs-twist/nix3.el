@@ -3,6 +3,20 @@
 (require 'transient)
 (require 'nix3-core)
 (require 'nix3-utils)
+(require 'nix3-flake)
+
+(defcustom nix3-flake-use-nix-store t
+  "Whether to use `nix-store-show-path' on stores.
+
+If this variable is non-nil, some commands run
+`nix-store-show-path' on string results that look like store
+paths.
+
+To use this option take effect, you have to install nix-store.el
+which is distributed as part of nix-mode:
+<https://github.com/NixOS/nix-mode/>"
+  :type 'boolean
+  :group 'nix3-flake)
 
 (defvar nix3-flake-output-map
   (let ((map (make-sparse-keymap)))
@@ -144,7 +158,8 @@
                  ("set" (go new-path))
                  ("string" (let ((value (get-value new-path)))
                              (if (string-prefix-p "/nix/store/" value)
-                                 (if (and (require 'nix-store nil t)
+                                 (if (and nix3-flake-use-nix-store
+                                          (require 'nix-store nil t)
                                           (fboundp 'nix-store-show-path))
                                      (nix-store-show-path value)
                                    (find-file value))
