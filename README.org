@@ -1,4 +1,4 @@
-* nix3.el
+* nix3.el: Nix maintains a graph of your projects
 =nix3.el= is an experimental Emacs interface to [[https://nixos.org/manual/nix/unstable/command-ref/experimental-commands.html][experimental commands of Nix]].
 Its goal is to enable the user to easily work across multiple projects.
 
