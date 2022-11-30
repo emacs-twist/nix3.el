@@ -81,11 +81,7 @@ which is distributed as part of nix-mode:
 
 (defun nix3-flake-output-dired-template ()
   (interactive)
-  (dired (nix3-read-nix-json-command "eval"
-                                     (concat (nix3-flake--buffer-url)
-                                             "#" (concat (nix3-flake-output-path-at-point)
-                                                         ".path"))
-                                     "--json")))
+  (dired (nix3-flake-eval-json (concat (nix3-flake-output-path-at-point) ".path"))))
 
 (defun nix3-flake-output--buildable-p ()
   (member nix3-flake-output-type '("derivation")))
@@ -120,30 +116,15 @@ which is distributed as part of nix-mode:
   (interactive)
   (cl-labels
       ((get-attr-names (path)
-         (nix3-read-nix-json-command "eval"
-                                     (concat (or nix3-flake-url ".")
-                                             "#" path)
-                                     "--apply" "builtins.attrNames"
-                                     "--json"))
+         (nix3-flake-eval-json path :apply "builtins.attrNames"))
        (get-type (path)
          (message "nix eval %s" (concat (nix3-flake--buffer-url)
                                         "#" path))
-         (nix3-read-nix-json-command "eval"
-                                     (concat (or nix3-flake-url ".")
-                                             "#" path)
-                                     "--apply" "builtins.typeOf"
-                                     "--json"))
+         (nix3-flake-eval-json path :apply "builtins.typeOf"))
        (is-path (path)
-         (nix3-read-nix-json-command "eval"
-                                     (concat (or nix3-flake-url ".")
-                                             "#" path)
-                                     "--json"
-                                     "--apply" "builtins.isPath"))
+         (nix3-flake-eval-json path :apply "builtins.isPath"))
        (get-value (path)
-         (nix3-read-nix-json-command "eval"
-                                     (concat (or nix3-flake-url ".")
-                                             "#" path)
-                                     "--json"))
+         (nix3-flake-eval-json path))
        (print-obj (obj)
          (pp-display-expression obj "*nix eval*"))
        (go (path)

@@ -179,6 +179,24 @@ directory-local variables for per-project configuration."
        (or (locate-dominating-file default-directory "flake.nix")
            (error "No flake.nix is found")))))
 
+;;;; nix eval
+
+(cl-defun nix3-flake-eval-json (attr &key apply)
+  (apply #'nix3-read-nix-json-command
+         "eval"
+         (concat (or nix3-flake-url ".") "#" attr)
+         "--json"
+         (when apply
+           (list "--apply" apply))))
+
+(cl-defun nix3-flake-eval-raw (attr &key apply)
+  (apply #'nix3-read-nix-json-command
+         "eval"
+         (concat (or nix3-flake-url ".") "#" attr)
+         "--raw"
+         (when apply
+           (list "--apply" apply))))
+
 ;;;; Browse remote
 
 (defun nix3-flake-html-url (alist)
