@@ -1,10 +1,14 @@
 * nix3.el
-=nix3.el= is an experimental Emacs interface to experimental commands of Nix.
+=nix3.el= is an experimental Emacs interface to [[https://nixos.org/manual/nix/unstable/command-ref/experimental-commands.html][experimental commands of Nix]].
 Its goal is to enable the user to easily work across multiple projects.
 
-A typical use case is a multi-repository project that consists of a main application that is a flake and its dependencies in separate repositories which may be or may not be flakes.
-You clone the source of a dependency, fix a bug or add a feature, and rebuild the main application.
-=nix3.el= should accelerate this cycle by supporting both local and remote flakes.
+A typical use case is a complex application/program that consists of multiple repositories:
+
+- The main application is a [[https://nixos.wiki/wiki/Flakes][Nix flake]].
+- Its dependencies are maintained in separate repositories. They may be or may not be flakes.
+
+In a project like this, you typically clone the source of a dependency, fix a bug or add a feature, and rebuild the main application.
+The goal of =nix3.el= is to accelerate this cycle by supporting both local and remote flakes.
 ** Usage
 - =nix3-transient= dispatches a transient interface for the current flake.
 - =nix3-flake-show= command displays information on a flake on filesystem.
