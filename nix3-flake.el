@@ -167,6 +167,13 @@ directory-local variables for per-project configuration."
               (nix3-normalize-path (expand-file-name relative default-directory)))))
         (error "Failed to match against a path \"%s\"" path)))))
 
+(defun nix3-flake-location ()
+  "Return the URL or path to the current flake."
+  (or nix3-flake-url
+      (nix3-normalize-path
+       (or (locate-dominating-file default-directory "flake.nix")
+           (error "No flake.nix is found")))))
+
 ;;;; Browse remote
 
 (defun nix3-flake-html-url (alist)
@@ -513,6 +520,7 @@ directory-local variables for per-project configuration."
   (let ((m (make-composed-keymap nil magit-section-mode-map)))
     (define-key m "l" #'nix3-flake-show-back)
     (define-key m "g" #'nix3-flake-show-revert)
+    (define-key m "'" #'nix3-transient)
     m))
 
 (define-derived-mode nix3-flake-show-mode magit-section-mode
