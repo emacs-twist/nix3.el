@@ -27,8 +27,8 @@ The goal of =nix3.el= is to accelerate this cycle by supporting both local and r
 =nix3-flake-show-url= displays a remote flake without cloning the repository:
 [[https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show-url.png?raw=true][file:https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show-url.png?raw=true]]
 ** Installation
-=nix3.el= is not available from any of the popular Emacs Lisp package registries (GNU/nonGNU ELPA, MELPA, etc.).
-Clone this repository and add a load-path.
+=nix3.el= is not available from any of the popular Emacs Lisp package registries (GNU/nonGNU ELPA, MELPA, etc.) yet.
+Clone this repository and add the directory to the load-path.
 
 [[file:extra/][extra]] directory contains extra packages that depend on =nix3.el=.
 You can use the following MELPA-style recipes:
