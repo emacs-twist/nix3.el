@@ -190,7 +190,7 @@ directory-local variables for per-project configuration."
            (list "--apply" apply))))
 
 (cl-defun nix3-flake-eval-raw (attr &key apply)
-  (apply #'nix3-read-nix-json-command
+  (apply #'nix3-read-nix-command
          "eval"
          (concat (or nix3-flake-url ".") "#" attr)
          "--raw"
