@@ -422,51 +422,60 @@ directory-local variables for per-project configuration."
     (nix3-section-with-keymap nix3-flake-input-map
       (magit-insert-section (flake-inputs nil nix3-flake-toplevel-sections-unfolded)
         (magit-insert-heading "Flake inputs")
-        (when-let (nodes (thread-last
-                           result
-                           (assq 'locks)
-                           (cdr)
-                           (assq 'nodes)
-                           (cdr)
-                           (assq-delete-all 'root)))
+        (when-let* ((nodes (nix3-lookup-tree '(locks nodes) result))
+                    (other-nodes (assq-delete-all 'root (copy-sequence nodes))))
           (let ((name-width (thread-last
-                              nodes
+                              other-nodes
                               (mapcar (lambda (cell)
                                         (symbol-name (car cell))))
                               (nix3-format--column-width
-                               nix3-flake-input-name-max-width))))
+                               nix3-flake-input-name-max-width)))
+                (direct-inputs (nix3-lookup-tree '(root inputs) nodes)))
+            (message "%s" direct-inputs)
             (cl-flet
                 ((pad-column
                    (len s)
-                   (s-pad-right len " " (s-truncate len s))))
-              (pcase-dolist (`(,name . ,data) nodes)
-                (magit-insert-section (flake-input (cons (symbol-name name)
-                                                         data)
-                                                   t)
-                  (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
-                         (original (cdr (assq 'original data)))
-                         (name-string (symbol-name name))
-                         (url (nix3-flake-ref-alist-to-url original)))
-                    (insert (make-string 2 ?\s)
-                            (propertize (pad-column name-width name-string)
-                                        'help-echo name-string
-                                        'face 'nix3-flake-input-name-face)
-                            " ")
-                    (if is-flake
-                        (insert-text-button url
-                                            'type 'nix3-flake-url-link
-                                            'help-args
-                                            (list (if (nix3-flake--path-p original)
-                                                      (nix3-flake--resolve-path
-                                                       (cdr (assq 'path original)))
-                                                    url)))
-                      (insert url))
-                    (insert "  "
-                            (propertize (if is-flake
-                                            "(flake)"
-                                          "(non-flake)")
-                                        'face 'nix3-flake-flake-state-face)
-                            "\n")))))))
+                   (s-pad-right len " " (s-truncate len s)))
+                 (direct-input-p (node)
+                   (and (assq (car node) direct-inputs)
+                        t)))
+              (pcase-dolist (`(,group . ,group-nodes) (thread-last
+                                                        other-nodes
+                                                        (seq-group-by #'direct-input-p)))
+                (magit-insert-section (input-group group group)
+                  (magit-insert-heading
+                    (make-string 2 ?\s)
+                    (if group
+                        "Direct inputs"
+                      "Indirect inputs"))
+                  (pcase-dolist (`(,name . ,data) group-nodes)
+                    (magit-insert-section (flake-input (cons (symbol-name name)
+                                                             data)
+                                                       (assq name direct-inputs))
+                      (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
+                             (original (cdr (assq 'original data)))
+                             (name-string (symbol-name name))
+                             (url (nix3-flake-ref-alist-to-url original)))
+                        (insert (make-string 3 ?\s)
+                                (propertize (pad-column name-width name-string)
+                                            'help-echo name-string
+                                            'face 'nix3-flake-input-name-face)
+                                " ")
+                        (if is-flake
+                            (insert-text-button url
+                                                'type 'nix3-flake-url-link
+                                                'help-args
+                                                (list (if (nix3-flake--path-p original)
+                                                          (nix3-flake--resolve-path
+                                                           (cdr (assq 'path original)))
+                                                        url)))
+                          (insert url))
+                        (insert "  "
+                                (propertize (if is-flake
+                                                "(flake)"
+                                              "(non-flake)")
+                                            'face 'nix3-flake-flake-state-face)
+                                "\n")))))))))
         (insert ?\n)))))
 
 (put 'nix3-flake-insert-inputs 'nix3-loader #'nix3-flake--make-metadata-process)
