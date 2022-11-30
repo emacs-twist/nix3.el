@@ -536,7 +536,7 @@ directory-local variables for per-project configuration."
                   (nix3-flake-switch-to-buffer (nix3-flake-show-buffer truename nil))
                   (let (message-log-max)
                     (message "Fetched the flake"))))
-          (promise-catch #'nix3-flake--show-process-error)))
+          (promise-catch #'nix3-flake--handle-process-error)))
     (user-error "Directory %s does not contain flake.nix" dir)))
 
 (defun nix3-flake-select-locally ()
@@ -558,7 +558,7 @@ directory-local variables for per-project configuration."
             (nix3-flake-switch-to-buffer (nix3-flake-show-buffer url t))
             (let (message-log-max)
               (message "Fetched the flake"))))
-    (promise-catch #'nix3-flake--show-process-error)))
+    (promise-catch #'nix3-flake--handle-process-error)))
 
 (defun nix3-flake--get-promise (dir-or-url is-url &optional hook-var)
   (cl-flet
@@ -578,18 +578,21 @@ directory-local variables for per-project configuration."
         (apply #'vector)
         (promise-all)))))
 
-(defun nix3-flake--show-process-error (payload)
-  (let ((plist (cadr payload)))
-    (message "Error from \"nix %s %s\": %s"
-             (mapconcat #'shell-quote-argument (plist-get plist :subcommand) " ")
-             (plist-get plist :url)
-             (with-current-buffer (plist-get plist :error-buffer)
-               (let ((case-fold-search t))
-                 (save-excursion
-                   (goto-char (point-max))
-                   (when (re-search-backward (rx bol "error") nil t)
-                     (buffer-substring (line-beginning-position)
-                                       (line-end-position)))))))))
+(defun nix3-flake--handle-process-error (payload)
+  (pcase payload
+    (`(:timeouted)
+     (error "Timeout while fetching the Nix flake"))
+    (`(:rejected ,plist)
+     (message "Error from \"nix %s %s\": %s"
+              (mapconcat #'shell-quote-argument (plist-get plist :subcommand) " ")
+              (plist-get plist :url)
+              (with-current-buffer (plist-get plist :error-buffer)
+                (let ((case-fold-search t))
+                  (save-excursion
+                    (goto-char (point-max))
+                    (when (re-search-backward (rx bol "error") nil t)
+                      (buffer-substring (line-beginning-position)
+                                        (line-end-position))))))))))
 
 (cl-defmacro nix3-flake--nix-json-process (func-name &key name buffer stderr
                                                       subcommand
