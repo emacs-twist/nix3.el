@@ -5,7 +5,8 @@
 (defgroup nix3 nil
   "Interface to experimental commands of Nix."
   :prefix "nix3-"
-  :group 'nix3)
+  :group 'nix)
+
 
 (defcustom nix3-nix-executable "nix"
   "Executable file of Nix."
