@@ -178,7 +178,11 @@ directory-local variables for per-project configuration."
 
 (defun nix3-flake-html-url (alist)
   (cl-labels
-      ((to-url (alist)
+      ((check-url (url)
+                  (if (string-prefix-p "https://" url)
+                      url
+                    (error "Not an https url, so cannot retrieve an HTML url: %s" url)))
+       (to-url (alist)
          (let-alist alist
            (pcase \.type
              ("indirect"
@@ -202,13 +206,12 @@ directory-local variables for per-project configuration."
                           (concat "log/" \.ref)
                         "")))
              ("url"
-              (let ((url (thread-last
+              (check-url (thread-last
                            \.url
                            (string-remove-prefix "git+")
                            (string-remove-suffix ".git"))))
-                (if (string-prefix-p "https://" url)
-                    url
-                  (error "Not an https url, so cannot retrieve an HTML url: %s" url))))
+             ("git"
+              (check-url \.url))
              ("path"
               (error "Path entry, so cannot be accessed using URL"))
              (_
