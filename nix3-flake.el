@@ -499,6 +499,7 @@ directory-local variables for per-project configuration."
       (goto-char (point-min)))))
 
 (defun nix3-flake--buffer-url ()
+  "Return the flake for the current `nix-flake-show' buffer."
   (or nix3-flake-url
       (nix3-normalize-path default-directory)))
 
