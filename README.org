@@ -1,4 +1,8 @@
+# -*- mode: org; mode: org-make-toc -*-
 * nix3.el: Nix maintains a graph of your projects
+:PROPERTIES:
+:TOC:      :include descendants :depth 2
+:END:
 =nix3.el= is an experimental Emacs interface to [[https://nixos.org/manual/nix/unstable/command-ref/experimental-commands.html][experimental commands of Nix]].
 Its goal is to enable the user to easily work across multiple projects.
 
@@ -9,6 +13,13 @@ A typical use case is a complex application/program that consists of multiple re
 
 In a project like this, you typically clone the source of a dependency, fix a bug or add a feature, and rebuild the main application.
 The goal of =nix3.el= is to accelerate this cycle by supporting both local and remote flakes.
+
+:CONTENTS:
+- [[#screenshots][Screenshots]]
+- [[#installation][Installation]]
+- [[#configuration][Configuration]]
+- [[#usage][Usage]]
+:END:
 ** Screenshots
 =nix3-flake-show= displays the outputs and inputs of a flake:
 [[https:/github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show.png?raw=true][file:https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show.png?raw=true]]
