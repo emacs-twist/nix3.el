@@ -9,6 +9,31 @@ A typical use case is a complex application/program that consists of multiple re
 
 In a project like this, you typically clone the source of a dependency, fix a bug or add a feature, and rebuild the main application.
 The goal of =nix3.el= is to accelerate this cycle by supporting both local and remote flakes.
+** Installation
+=nix3.el= is not available from any of the popular Emacs Lisp package registries (GNU/nonGNU ELPA, MELPA, etc.).
+Clone this repository and add a load-path.
+
+[[file:extra/][extra]] directory contains extra packages that depend on =nix3.el=.
+You can use the following MELPA-style recipes:
+
+#+begin_src lisp-data
+  (magit-nix3 :fetcher github :repo "emacs-twist/nix3.el"
+              :files ("extra/magit-nix3.el"))
+#+end_src
+** Configuration
+=nix3.el= doesn't require specific configuration, but =nix3= customization group provides several options.
+
+=magit-nix3-flake-mode= adds flake input and output sections to =magit-status-mode=.
+You can use the following configuration:
+
+#+begin_src emacs-lisp
+  (use-package magit-nix3
+    :after magit-status
+    :config
+    (magit-nix3-flake-mode t))
+#+end_src
+
+See =magit-nix3= customization group for more options.
 ** Usage
 - =nix3-transient= dispatches a transient interface for the current flake.
 - =nix3-flake-show= command displays information on a flake on filesystem.
