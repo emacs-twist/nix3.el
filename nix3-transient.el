@@ -13,6 +13,7 @@
    nix3-transient--flake-description
    ("h" "Show metadata and outputs" nix3-transient-show)]
   ["Nix commands"
+   :class transient-row
    ("b" "build" nix3-build)
    ("r" "run" nix3-run)]
   (interactive)
