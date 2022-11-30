@@ -50,6 +50,16 @@
 (defun nix3-flake-input--html-url ()
   (nix3-flake-html-url (assq 'original (cdr (nix3-flake-input-at-point)))))
 
+(defun nix3-flake-input--direct-p ()
+  (rassoc (car (nix3-flake-input-at-point))
+          (thread-last
+            (nix3-flake--get-metadata-result)
+            (nix3-lookup-tree '(locks nodes root inputs)))))
+
+(defun nix3-flake-input--updatable-p ()
+  (and (nix3-flake-input--local-p)
+       (nix3-flake-input--direct-p)))
+
 (transient-define-prefix nix3-flake-input-dispatch ()
   [:description
    (lambda () (format "Original: %s" (nix3-flake-input--original-url)))
@@ -60,7 +70,7 @@
                       (nix3-flake-input--locked-url)
                       (format-time-string "%F %R"
                                           (nix3-flake-input--last-modified))))
-   ("u" "Update" nix3-flake-input-update :if nix3-flake-input--local-p)
+   ("u" "Update" nix3-flake-input-update :if nix3-flake-input--updatable-p)
    ("e" "Edit worktree" ignore)
    ("r" "Browse remote" nix3-flake-input-browse-remote)
    ("w" "Copy revision" nix3-flake-input-copy-revision)
