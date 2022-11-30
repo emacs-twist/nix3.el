@@ -28,6 +28,10 @@
 
 ;;;; Custom variables
 
+(defcustom nix3-flake-wait 0.5
+  "Number of seconds to wait for nix flake show/metadata to return."
+  :type 'number)
+
 (defcustom nix3-flake-show-sections
   '(nix3-flake-insert-metadata
     nix3-flake-insert-outputs
@@ -562,7 +566,7 @@ directory-local variables for per-project configuration."
          (promise-new (apply-partially loader dir-or-url is-url)))
        (uniq (items)
          (cl-remove-duplicates items :test #'eq)))
-    (promise-wait 0.5
+    (promise-wait nix3-flake-wait
       (thread-last
         (or hook-var nix3-flake-show-sections)
         (mapcar (lambda (func)
