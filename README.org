@@ -53,7 +53,7 @@ You can use the following configuration:
 See =magit-nix3= customization group for more options.
 ** Usage
 - =nix3-transient= dispatches a transient interface for the current flake.
-- =nix3-flake-show= command displays information on a flake on filesystem.
-- =nix3-flake-show-url= command displays information on a remote flake.
-- =nix3-flake-init= command picks up a template from the registry and run =nix flake init= command.
-- =nix3-flake-new= command creates a new repository from a template.
+- =nix3-flake-show= command displays information on a flake on filesystem. This is a wrapper for =nix flake show= and =nix flake metadata= command.
+- =nix3-flake-show-url= command displays information on a remote flake. This is a remote variant of =nix3-flake-show=.
+- =nix3-flake-init= command lets you pick a template from the registry and copy the files into the current repository. This is a wrapper for =nix flake init= command.
+- =nix3-flake-new= command creates a new repository from a template. This is a wrapper for =nix flake new= command.
