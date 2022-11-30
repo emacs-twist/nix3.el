@@ -63,7 +63,8 @@
 (transient-define-prefix nix3-flake-input-dispatch ()
   [:description
    (lambda () (format "Original: %s" (nix3-flake-input--original-url)))
-   ("d" "Show" nix3-flake-show-original-input)
+   ("d" "Show the flake" nix3-flake-show-original-input)
+   ("r" "Browse remote" nix3-flake-input-browse-remote)
    ("c" "Clone" ignore)]
   [:description
    (lambda () (format "Locked: %s (%s)"
@@ -72,7 +73,6 @@
                                           (nix3-flake-input--last-modified))))
    ("u" "Update" nix3-flake-input-update :if nix3-flake-input--updatable-p)
    ("e" "Edit worktree" ignore)
-   ("r" "Browse remote" nix3-flake-input-browse-remote)
    ("w" "Copy revision" nix3-flake-input-copy-revision)
    ("l" "Magit log" ignore)]
   (interactive)
