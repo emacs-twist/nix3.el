@@ -12,7 +12,7 @@
 (require 'promise)
 
 (defgroup nix3-flake nil
-  ""
+  "Interactive interface to Nix flakes."
   :prefix "nix3-flake-"
   :group 'nix3)
 
