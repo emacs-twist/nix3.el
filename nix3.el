@@ -35,6 +35,9 @@
 (require 'promise)
 (require 'nix3-flake)
 
+(declare-function nix-store-show-path "ext:nix-store")
+(declare-function nix-store-realise "ext:nix-store")
+
 (defvar nix3-prefix-map
   (let ((map (make-sparse-keymap)))
     (define-key map "s" #'nix3-flake-show)
@@ -99,6 +102,19 @@ This is EXPERIMENTAL.")
                            (cons 'group-function #'group)))
              (complete-with-action action alist string pred))))
       (completing-read prompt #'completions))))
+
+(defun nix3-realise-and-show-store (path)
+  "Show PATH using nix-store.el. Realise it if necessary."
+  (if (file-readable-p path)
+      (nix-store-show-path path)
+    (cl-flet ((sentinel (process _event)
+                (when (eq 'exit (process-status process))
+                  (if (= 0 (process-exit-status process))
+                      (nix-store-show-path path)
+                    (error "Failed to realise the store path %s" path)))))
+      (message "Realising %s..." path)
+      (let ((proc (nix-store-realise path)))
+        (set-process-sentinel proc #'sentinel)))))
 
 (provide 'nix3)
 ;;; nix3.el ends here

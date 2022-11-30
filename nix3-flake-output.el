@@ -148,7 +148,7 @@ which is distributed as part of nix-mode:
                                  (if (and nix3-flake-use-nix-store
                                           (require 'nix-store nil t)
                                           (fboundp 'nix-store-show-path))
-                                     (nix-store-show-path value)
+                                     (nix3-realise-and-show-store value)
                                    (find-file value))
                                (print-obj (get-value new-path)))))
                  ("lambda" (message "%s is a function, so its value cannot be displayed"
