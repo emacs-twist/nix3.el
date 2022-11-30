@@ -1,12 +1,12 @@
 * nix3.el
 =nix3.el= is an experimental Emacs interface to experimental commands of Nix.
 Its goal is to enable the user to easily work across multiple projects.
-It is also intended to provide a common infrastructure for [[https://github.com/emacs-twist/twist.el][twist.el]].
 
 A typical use case is a multi-repository project that consists of a main application that is a flake and its dependencies in separate repositories which may be or may not be flakes.
 You clone the source of a dependency, fix a bug or add a feature, and rebuild the main application.
 =nix3.el= should accelerate this cycle by supporting both local and remote flakes.
 ** Usage
+- =nix3-transient= dispatches a transient interface for the current flake.
 - =nix3-flake-show= command displays information on a flake on filesystem.
 - =nix3-flake-show-url= command displays information on a remote flake.
 - =nix3-flake-init= command picks up a template from the registry and run =nix flake init= command.
