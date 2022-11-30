@@ -62,16 +62,18 @@ This is EXPERIMENTAL.")
             (nix3--compile-output "nix run (%s): " "run")))))
 
 (defun nix3--compile-output (prompt nix-command)
-  (let* ((default-directory (nix3-flake--buffer-url))
-         (attr (nix3--select-output-attribute
-                (format prompt (abbreviate-file-name default-directory))
-                nix-command)))
+  (let ((attr (nix3--select-output-attribute
+               (format prompt (abbreviate-file-name default-directory))
+               nix-command)))
     (compile (mapconcat #'shell-quote-argument
                         `(,nix3-nix-executable
                           ,@(if (listp nix-command)
                                 nix-command
                               (list nix-command))
-                          ,(concat ".#" attr))
+                          ;; The command can be run on a remote flake if it is
+                          ;; called from inside a `nix-flake-show-mode' buffer.
+                          ,(concat (or nix3-flake-url ".")
+                                   "#" attr))
                         " "))))
 
 (defun nix3--demand-outputs ()
