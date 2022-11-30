@@ -125,8 +125,6 @@ directory-local variables for per-project configuration."
 
 (defvar nix3-flake-template-history nil)
 
-(defvar nix3-flake-template-alist nil)
-
 ;;;; Small utilities
 
 (defun nix3-flake--attr-path-string (path)
@@ -760,23 +758,25 @@ directory-local variables for per-project configuration."
 (defun nix3-flake--complete-template (prompt templates)
   (unless templates
     (user-error "The flake provides no template"))
-  (setq nix3-flake-template-alist
-        (mapcar (pcase-lambda (`(,name . ,alist))
-                  (cons (symbol-name name) (alist-get 'description alist)))
-                templates))
-  (completing-read prompt
-                   `(lambda (string pred action)
-                      (if (eq action 'metadata)
-                          '(metadata . ((category . nix3-registry-entry)
-                                        (annotation-function . nix3-flake--annotate-template)))
-                        (complete-with-action action ',(mapcar #'car nix3-flake-template-alist)
-                                              string pred)))
-                   nil t))
-
-(defun nix3-flake--annotate-template (template)
-  (if-let (cell (assoc template nix3-flake-template-alist))
-      (concat " " (propertize (cdr cell) 'face 'font-lock-comment-face))
-    ""))
+  (let ((template-alist (mapcar (lambda (cell)
+                                  (cons (symbol-name (car cell))
+                                        (alist-get 'description (cdr cell))))
+                                templates)))
+    (cl-labels
+        ((annotator (candidate)
+           (if-let (description (cdr (assoc template template-alist)))
+               (concat " " description)
+             ""))
+         (group (candidate transform)
+           (if transform
+               candidate))
+         (completions (string pred action)
+           (if (eq action 'metadata)
+               (cons 'metadata
+                     (list (cons 'category 'nix3-registry-entry)
+                           (cons 'annotation-function #'annotator)))
+             (complete-with-action action candidates string pred))))
+      (completing-read prompt #'completions nil t))))
 
 ;;;; Functions that can be added to nix3-flake-new-hook
 
