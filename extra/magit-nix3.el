@@ -32,6 +32,12 @@
 
 ;;; Code:
 
+(defgroup magit-nix3 nil
+  "Nix flake integration for Magit."
+  :prefix "magit-nix3-"
+  :type 'magit-status
+  :type 'nix3)
+
 (defcustom magit-nix3-sections
   '(nix3-flake-insert-outputs
     nix3-flake-insert-inputs)
