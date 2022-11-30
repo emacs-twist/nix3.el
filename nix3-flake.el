@@ -16,6 +16,10 @@
   :prefix "nix3-flake-"
   :group 'nix3)
 
+(defgroup nix3-flake-face nil
+  "Faces for `nix3-flake-show-mode'."
+  :group 'nix3-flake)
+
 ;;;; Constants
 
 (defconst nix3-flake-show-error-buffer "*Nix-Flake-Show Errors*")
@@ -75,21 +79,30 @@ directory-local variables for per-project configuration."
 
 ;;;; Variables
 
-(defface nix3-flake-drv-type-face
+(defface nix3-flake-output-type-face
   '((t :inherit font-lock-constant-face))
-  "")
+  "Face for output types."
+  :group 'nix3-flake-face)
 
-(defface nix3-flake-drv-parent-face
+(defface nix3-flake-output-parent-face
   '((t :inherit default))
-  "")
+  "Face for parents of outputs."
+  :group 'nix3-flake-face)
 
-(defface nix3-flake-drv-name-face
+(defface nix3-flake-output-name-face
   '((t :inherit magit-section-secondary-heading))
-  "")
+  "Face for output names."
+  :group 'nix3-flake-face)
 
 (defface nix3-flake-input-name-face
   '((t :inherit magit-section-secondary-heading))
-  "")
+  "Face for input names."
+  :group 'nix3-flake-face)
+
+(defface nix3-flake-flake-state-face
+  '((t (:inherit font-lock-constant-face)))
+  "Face for indicating whether an input is a flake."
+  :group 'nix3-flake-face)
 
 ;;;; Button types
 
@@ -329,7 +342,7 @@ directory-local variables for per-project configuration."
           (magit-insert-section (flake-output-type type-name)
             (magit-insert-heading
               (make-string 2 ?\s)
-              (propertize type-name 'face 'nix3-flake-drv-type-face))
+              (propertize type-name 'face 'nix3-flake-output-type-face))
             (pcase-dolist (`(,branch-reverse . ,leaves)
                            (seq-group-by #'cdr outputs))
               (let* ((branch (reverse branch-reverse))
@@ -344,7 +357,7 @@ directory-local variables for per-project configuration."
                     (magit-insert-heading
                       (make-string 4 ?\s)
                       (propertize (mapconcat #'symbol-name branch ".")
-                                  'face 'nix3-flake-drv-parent-face)))
+                                  'face 'nix3-flake-output-parent-face)))
                   (dolist (output-reverse leaves)
                     (let* ((path (reverse output-reverse))
                            (node (nix3-lookup-tree path result))
@@ -359,7 +372,7 @@ directory-local variables for per-project configuration."
                                  'nix-flake-output (mapconcat #'symbol-name
                                                               path ".")
                                  'nix-flake-show node
-                                 'face 'nix3-flake-drv-name-face
+                                 'face 'nix3-flake-output-name-face
                                  (when description
                                    (list 'help-echo description))))))))))))))
     (insert ?\n)))
@@ -443,7 +456,7 @@ directory-local variables for per-project configuration."
                             (propertize (if is-flake
                                             "(flake)"
                                           "(non-flake)")
-                                        'face 'font-lock-constant-face)
+                                        'face 'nix3-flake-flake-state-face)
                             "\n")))))))
         (insert ?\n)))))
 
