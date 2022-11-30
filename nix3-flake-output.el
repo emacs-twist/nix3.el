@@ -127,14 +127,20 @@ which is distributed as part of nix-mode:
          (nix3-flake-eval-json path))
        (print-obj (obj)
          (pp-display-expression obj "*nix eval*"))
+       (make-candidate (parent attr)
+         (concat (propertize (concat parent ".") 'invisible t)
+                 (nix3-flake--escape-attr-name attr)))
        (go (path)
          (if-let (names (get-attr-names path))
-             (let ((new-path (thread-last
-                               (completing-read (format "Attribute (%s): " path)
-                                                names
-                                                nil t)
-                               (nix3-flake--escape-attr-name)
-                               (concat path "."))))
+             (let ((new-path (completing-read (format "Attribute (%s): " path)
+                                              ;; Build candidates that are full
+                                              ;; attribute paths. This will make
+                                              ;; the completion more useful for
+                                              ;; integration with packages like
+                                              ;; embark.
+                                              (mapcar (apply-partially #'make-candidate path)
+                                                      names)
+                                              nil t)))
                (pcase (get-type new-path)
                  ("set" (go new-path))
                  ("string" (let ((value (get-value new-path)))
