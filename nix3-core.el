@@ -7,6 +7,7 @@
   :prefix "nix3-"
   :group 'nix)
 
+;;;; Custom variables
 
 (defcustom nix3-nix-executable "nix"
   "Executable file of Nix."
@@ -16,7 +17,11 @@
   "Number of seconds for which `nix3--config' is memoized."
   :type 'number)
 
+;;;; Variables
+
 (defvar nix3-config-cache nil)
+
+;;;; Functions
 
 (defun nix3-read-nix-command (&rest args)
   "Run nix and return its output string."
