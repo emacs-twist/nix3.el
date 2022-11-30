@@ -202,9 +202,9 @@ directory-local variables for per-project configuration."
 (defun nix3-flake-html-url (alist)
   (cl-labels
       ((check-url (url)
-                  (if (string-prefix-p "https://" url)
-                      url
-                    (error "Not an https url, so cannot retrieve an HTML url: %s" url)))
+         (if (string-prefix-p "https://" url)
+             url
+           (error "Not an https url, so cannot retrieve an HTML url: %s" url)))
        (to-url (alist)
          (let-alist alist
            (pcase \.type
