@@ -104,8 +104,13 @@ directory-local variables for per-project configuration."
   :group 'nix3-flake-face)
 
 (defface nix3-flake-flake-state-face
-  '((t (:inherit font-lock-constant-face)))
-  "Face for indicating whether an input is a flake."
+  '((t (:inherit font-lock-comment-face :weight bold)))
+  "Face for indicating the input is a flake."
+  :group 'nix3-flake-face)
+
+(defface nix3-flake-non-flake-state-face
+  '((t (:inherit font-lock-comment-face)))
+  "Face for indicating the input is not a flake."
   :group 'nix3-flake-face)
 
 ;;;; Button types
@@ -474,10 +479,11 @@ directory-local variables for per-project configuration."
                                                         url)))
                           (insert url))
                         (insert "  "
-                                (propertize (if is-flake
-                                                "(flake)"
-                                              "(non-flake)")
-                                            'face 'nix3-flake-flake-state-face)
+                                (if is-flake
+                                    (propertize "(flake)"
+                                                'face 'nix3-flake-flake-state-face)
+                                  (propertize "(non-flake)"
+                                              'face 'nix3-flake-non-flake-state-face))
                                 "\n")))))))))
         (insert ?\n)))))
 
