@@ -9,6 +9,12 @@ A typical use case is a complex application/program that consists of multiple re
 
 In a project like this, you typically clone the source of a dependency, fix a bug or add a feature, and rebuild the main application.
 The goal of =nix3.el= is to accelerate this cycle by supporting both local and remote flakes.
+** Screenshots
+=nix3-flake-show= displays the outputs and inputs of a flake:
+[[https:/github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show.png?raw=true][file:https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show.png?raw=true]]
+
+=nix3-flake-show-url= displays a remote flake without cloning the repository:
+[[https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show-url.png?raw=true][file:https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show-url.png?raw=true]]
 ** Installation
 =nix3.el= is not available from any of the popular Emacs Lisp package registries (GNU/nonGNU ELPA, MELPA, etc.).
 Clone this repository and add a load-path.
