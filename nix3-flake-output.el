@@ -63,9 +63,9 @@ which is distributed as part of nix-mode:
     :if nix3-flake-output--buildable-p)
    ("r" "nix run" nix3-flake-output-run
     :if nix3-flake-output--runnable-p)
-   ("d" "dired" nix3-flake-output-dired-template
+   ("d" "View the template path" nix3-flake-output-dired-template
     :if nix3-flake-output--template-p)
-   ("a" "Attributes" nix3-flake-output-browse-attribute)]
+   ("e" "nix eval ATTR" nix3-flake-output-browse-attribute)]
   (interactive)
   (unless (nix3-flake-output-path-at-point)
     (user-error "No output at point"))
