@@ -181,6 +181,13 @@ directory-local variables for per-project configuration."
 
 ;;;; nix eval
 
+(cl-defun nix3-flake-eval-nix (attr &key apply strict)
+  (apply #'nix3-read-nix-command
+         "eval"
+         (concat (or nix3-flake-url ".") "#" attr)
+         (when apply
+           (list "--apply" apply))))
+
 (cl-defun nix3-flake-eval-json (attr &key apply)
   (apply #'nix3-read-nix-json-command
          "eval"
