@@ -446,10 +446,13 @@ directory-local variables for per-project configuration."
                    (s-pad-right len " " (s-truncate len s)))
                  (direct-input-p (node)
                    (and (assq (car node) direct-inputs)
-                        t)))
+                        t))
+                 (compare-bool (x y)
+                   x))
               (pcase-dolist (`(,group . ,group-nodes) (thread-last
                                                         other-nodes
-                                                        (seq-group-by #'direct-input-p)))
+                                                        (seq-group-by #'direct-input-p)
+                                                        (seq-sort-by #'car #'compare-bool)))
                 (magit-insert-section (input-group group group)
                   (magit-insert-heading
                     (make-string 2 ?\s)
