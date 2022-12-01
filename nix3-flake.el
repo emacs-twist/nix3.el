@@ -62,9 +62,7 @@ Each function in this hook is called without arguments in the
 created directory."
   :type 'hook)
 
-(defcustom nix3-flake-extra-derivations
-  ;; FIXME: Make it nil by default
-  '("homeConfigurations.%s.*")
+(defcustom nix3-flake-extra-derivations nil
   "List of non-standard installables in the flake.
 
 This is a list of attribute paths to outputs.
