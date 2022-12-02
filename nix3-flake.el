@@ -824,7 +824,7 @@ directory-local variables for per-project configuration."
                                 templates)))
     (cl-labels
         ((annotator (candidate)
-           (if-let (description (cdr (assoc template template-alist)))
+           (if-let (description (cdr (assoc candidate template-alist)))
                (concat " " description)
              ""))
          (group (candidate transform)
@@ -835,7 +835,7 @@ directory-local variables for per-project configuration."
                (cons 'metadata
                      (list (cons 'category 'nix3-registry-entry)
                            (cons 'annotation-function #'annotator)))
-             (complete-with-action action candidates string pred))))
+             (complete-with-action action template-alist string pred))))
       (completing-read prompt #'completions nil t))))
 
 ;;;; Functions that can be added to nix3-flake-new-hook
