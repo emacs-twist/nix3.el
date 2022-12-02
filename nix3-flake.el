@@ -765,14 +765,14 @@ directory-local variables for per-project configuration."
           (then `(lambda (_)
                    (let (message-log-max)
                      (message nil))
-                   (concat ,name-or-url
-                           "#"
-                           (thread-last
-                             (nix3-flake-show--get ,url)
-                             ;; Since Nix 2.7, the default template is templates.default, so we
-                             ;; won't consider defaultTemplate.
-                             (alist-get 'templates)
-                             (nix3-flake--complete-template ,prompt)))))
+                   (if-let (templates (thread-last
+                                        (nix3-flake-show--get ,url)
+                                        ;; Since Nix 2.7, the default template is templates.default, so we
+                                        ;; won't consider defaultTemplate.
+                                        (alist-get 'templates)))
+                       (concat ,name-or-url
+                               "#" (nix3-flake--complete-template ,prompt templates))
+                     (error "No template"))))
           (then callback)
           (promise-catch #'error))))))
 
