@@ -3,11 +3,16 @@
 (require 'transient)
 (require 'nix3-core)
 (require 'nix3-utils)
+(require 'nix3-browse-url)
+(require 'subr-x)
+(require 'magit-section)
 
 ;; Set to non-nil when the flake is not local.
 (defvar nix3-flake-url)
 
 (declare-function nix3-flake-show-url "nix3-flake")
+(declare-function nix3-flake--get-metadata-result "nix3-flake")
+(declare-function nix3-flake-html-url "nix3-flake")
 
 (defvar nix3-flake-input-map
   (let ((map (make-keymap)))

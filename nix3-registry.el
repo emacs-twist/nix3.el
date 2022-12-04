@@ -2,6 +2,9 @@
 
 (require 'nix3-core)
 (require 'nix3-utils)
+(require 'subr-x)
+
+(declare-function xdg-config-home "xdg")
 
 ;; Silent byte-compile
 (defvar url-http-end-of-headers)

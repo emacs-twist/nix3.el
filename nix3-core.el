@@ -2,6 +2,8 @@
 
 (require 'map)
 
+(declare-function string-remove-suffix "subr-x")
+
 (defgroup nix3 nil
   "Interface to experimental commands of Nix."
   :prefix "nix3-"

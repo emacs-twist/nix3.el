@@ -5,6 +5,8 @@
 (require 'nix3-utils)
 (require 'nix3-flake)
 
+(declare-function nix3-realise-and-show-store "nix3")
+
 (defcustom nix3-flake-use-nix-store t
   "Whether to use `nix-store-show-path' on stores.
 
@@ -53,7 +55,7 @@ which is distributed as part of nix-mode:
                 ;; If there is no heading for the parent branch, the position
                 ;; doesn't change, so move the position to the previous line.
                 (when (eq pos (point))
-                  (previous-line)))
+                  (forward-line -1)))
             (throw 'output-type nil)))))))
 
 (transient-define-prefix nix3-flake-output-dispatch ()
@@ -114,6 +116,8 @@ which is distributed as part of nix-mode:
 (defun nix3-flake-output-browse-attribute ()
   "Explore the attribute at point."
   (interactive)
+  ;; For nix3-realise-and-show-store
+  (require 'nix3)
   (cl-labels
       ((get-attr-names (path)
          (nix3-flake-eval-json path :apply "builtins.attrNames"))

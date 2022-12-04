@@ -10,6 +10,12 @@
 (require 'magit-section)
 (require 'project)
 (require 'promise)
+(require 'help-mode)
+
+(declare-function nix3-transient "nix3-transient")
+(defvar nix3-browse-url-for-repository)
+(defvar nix3-flake-input-map)
+(defvar nix3-flake-output-map)
 
 (defgroup nix3-flake nil
   "Interactive interface to Nix flakes."
@@ -179,7 +185,7 @@ directory-local variables for per-project configuration."
 
 ;;;; nix eval
 
-(cl-defun nix3-flake-eval-nix (attr &key apply strict)
+(cl-defun nix3-flake-eval-nix (attr &key apply)
   (apply #'nix3-read-nix-command
          "eval"
          (concat (or nix3-flake-url ".") "#" attr)
@@ -470,7 +476,7 @@ directory-local variables for per-project configuration."
                  (direct-input-p (node)
                    (and (assq (car node) direct-inputs)
                         t))
-                 (compare-bool (x y)
+                 (compare-bool (x _y)
                    x))
               (pcase-dolist (`(,group . ,group-nodes) (thread-last
                                                         other-nodes
