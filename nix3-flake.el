@@ -38,6 +38,10 @@
   "Number of seconds to wait for nix flake show/metadata to return."
   :type 'number)
 
+(defcustom nix3-flake-remote-wait 10
+  "Number of seconds to wait for data from a remote repository."
+  :type 'number)
+
 (defcustom nix3-flake-show-sections
   '(nix3-flake-insert-metadata
     nix3-flake-insert-outputs
@@ -612,20 +616,20 @@ directory-local variables for per-project configuration."
                            ent
                          (car ent)))))
   (message "Fetching a flake...")
-  (promise-chain (nix3-flake--get-promise url t)
+  (promise-chain (nix3-flake--get-promise url t :wait nix3-flake-remote-wait)
     (then (lambda (_)
             (nix3-flake-switch-to-buffer (nix3-flake-show-buffer url t))
             (let (message-log-max)
               (message "Fetched the flake"))))
     (promise-catch #'nix3-flake--handle-process-error)))
 
-(cl-defun nix3-flake--get-promise (dir-or-url is-url &key sections)
+(cl-defun nix3-flake--get-promise (dir-or-url is-url &key sections wait)
   (cl-flet
       ((make-loader (loader)
          (promise-new (apply-partially loader dir-or-url is-url)))
        (uniq (items)
          (cl-remove-duplicates items :test #'eq)))
-    (promise-wait nix3-flake-wait
+    (promise-wait (or wait nix3-flake-wait)
       (thread-last
         (or sections nix3-flake-show-sections)
         (mapcar (lambda (func)
