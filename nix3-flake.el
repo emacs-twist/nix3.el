@@ -619,7 +619,7 @@ directory-local variables for per-project configuration."
               (message "Fetched the flake"))))
     (promise-catch #'nix3-flake--handle-process-error)))
 
-(defun nix3-flake--get-promise (dir-or-url is-url &optional hook-var)
+(cl-defun nix3-flake--get-promise (dir-or-url is-url &key sections)
   (cl-flet
       ((make-loader (loader)
          (promise-new (apply-partially loader dir-or-url is-url)))
@@ -627,7 +627,7 @@ directory-local variables for per-project configuration."
          (cl-remove-duplicates items :test #'eq)))
     (promise-wait nix3-flake-wait
       (thread-last
-        (or hook-var nix3-flake-show-sections)
+        (or sections nix3-flake-show-sections)
         (mapcar (lambda (func)
                   (when (symbolp func)
                     (get func 'nix3-loader))))

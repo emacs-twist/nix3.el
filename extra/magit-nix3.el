@@ -67,7 +67,7 @@ The value should be either nil or one of the existing members of
   (when (file-exists-p "flake.nix")
     (nix3-flake--get-promise (nix3-normalize-path default-directory)
                              nil
-                             magit-nix3-sections)
+                             :sections magit-nix3-sections)
     (run-hooks 'magit-nix3-sections)))
 
 ;;;###autoload
