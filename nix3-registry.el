@@ -163,5 +163,22 @@
   (and (not (string-match-p "#" url))
        (string-match-p ":" url)))
 
+;;;###autoload
+(defun nix3-registry-insert (name-or-entry)
+  "Insert a flake input entry from the registry."
+  (interactive (list (nix3-registry-complete "Add flake Input: " :system nil)))
+  (pcase-let
+      ((`(,name . ,alist) (pcase name-or-entry
+                            ((and `(,name . ,alist)
+                                  (guard (stringp name))
+                                  (guard (listp alist)))
+                             name-or-entry)
+                            ((pred stringp)
+                             (assoc name-or-entry (nix3-registry--collect-entries
+                                                   :global t :system nil :user t))))))
+    (insert (format "inputs.%s.url = \"%s\";"
+                    name
+                    (nix3-flake-ref-alist-to-url alist)))))
+
 (provide 'nix3-registry)
 ;;; nix3-registry.el ends here
