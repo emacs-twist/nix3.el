@@ -27,18 +27,20 @@
               ("path" (concat "path:" \.path))
               ("indirect" (concat "flake:" \.id))
               (_ (format "error: %s: %s" \.type url-alist)))
-            (if (or \.ref \.rev)
-                "?"
-              "")
-            (if \.ref
-                (format "ref=%s" \.ref)
-              "")
-            (if (and \.ref \.rev)
-                "&"
-              "")
-            (if \.rev
-                (format "rev=%s" \.rev)
-              ""))))
+            (if (and \.ref (equal \.type "github"))
+                (concat "/" .ref)
+              (concat (if (or \.ref \.rev)
+                          "?"
+                        "")
+                      (if \.ref
+                          (format "ref=%s" \.ref)
+                        "")
+                      (if (and \.ref \.rev)
+                          "&"
+                        "")
+                      (if \.rev
+                          (format "rev=%s" \.rev)
+                        ""))))))
 
 (defun nix3-format-duration (seconds)
   (cond
