@@ -54,7 +54,9 @@ This is EXPERIMENTAL.")
   (interactive)
   (promise-chain (nix3--demand-outputs)
     (then (lambda (_)
-            (nix3--compile-output "nix build (%s): " "build")))))
+            (compile (nix3--make-nix-command-line "build"
+                       (nix3--select-output-attribute "nix build (%s): "
+                                                      "build")))))))
 
 ;;;###autoload
 (defun nix3-run ()
@@ -62,22 +64,19 @@ This is EXPERIMENTAL.")
   (interactive)
   (promise-chain (nix3--demand-outputs)
     (then (lambda (_)
-            (nix3--compile-output "nix run (%s): " "run")))))
+            (compile (nix3--make-nix-command-line "run"
+                       (nix3--select-output-attribute "nix run (%s): "
+                                                      "run")))))))
 
-(defun nix3--compile-output (prompt nix-command)
-  (let ((attr (nix3--select-output-attribute
-               (format prompt (abbreviate-file-name default-directory))
-               nix-command)))
-    (compile (mapconcat #'shell-quote-argument
-                        `(,nix3-nix-executable
-                          ,@(if (listp nix-command)
-                                nix-command
-                              (list nix-command))
-                          ;; The command can be run on a remote flake if it is
-                          ;; called from inside a `nix-flake-show-mode' buffer.
-                          ,(concat (or nix3-flake-url ".")
-                                   "#" attr))
-                        " "))))
+(defun nix3--make-nix-command-line (nix-command attr)
+  (declare (indent 1))
+  (format "%s %s %s#%s"
+          (shell-quote-argument nix3-nix-executable)
+          (if (listp nix-command)
+              (string-join nix-command " ")
+            nix-command)
+          (or nix3-flake-url ".")
+          attr))
 
 (defun nix3--demand-outputs ()
   (promise-new (apply-partially
@@ -87,7 +86,7 @@ This is EXPERIMENTAL.")
                  (file-truename (locate-dominating-file default-directory "flake.nix")))
                 nil)))
 
-(defun nix3--select-output-attribute (prompt command)
+(defun nix3--select-output-attribute (prompt-format command)
   (let ((alist (nix3-flake--filter-outputs command)))
     (cl-labels
         ((group (candidate transform)
@@ -101,7 +100,9 @@ This is EXPERIMENTAL.")
                      (list (cons 'category 'nix3-attribute)
                            (cons 'group-function #'group)))
              (complete-with-action action alist string pred))))
-      (completing-read prompt #'completions))))
+      (completing-read (format prompt-format
+                               (or nix3-flake-url (abbreviate-file-name default-directory)))
+                       #'completions))))
 
 (defun nix3-realise-and-show-store (path)
   "Show PATH using nix-store.el. Realise it if necessary."
