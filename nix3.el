@@ -37,6 +37,7 @@
 
 (declare-function nix-store-show-path "ext:nix-store")
 (declare-function nix-store-realise "ext:nix-store")
+(declare-function compilation-read-command "compile")
 
 (defvar nix3-prefix-map
   (let ((map (make-sparse-keymap)))
@@ -64,9 +65,14 @@ This is EXPERIMENTAL.")
   (interactive)
   (promise-chain (nix3--demand-outputs)
     (then (lambda (_)
-            (compile (nix3--make-nix-command-line "run"
-                       (nix3--select-output-attribute "nix run (%s): "
-                                                      "run")))))))
+            (let ((command (nix3--make-nix-command-line "run"
+                             (nix3--select-output-attribute "nix run (%s): "
+                                                            "run"))))
+              (compile (compilation-read-command
+                        ;; Reuse the last command if possible.
+                        (if (string-prefix-p command compile-command)
+                            compile-command
+                          command))))))))
 
 (defun nix3--make-nix-command-line (nix-command attr)
   (declare (indent 1))
