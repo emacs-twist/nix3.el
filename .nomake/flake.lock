@@ -35,11 +35,11 @@
     "magit-nix3": {
       "flake": false,
       "locked": {
-        "lastModified": 1669645993,
-        "narHash": "sha256-Dt+VD4VpHop1yXRd7iMJxyeW/jv7edxUmq88nXcBeXM=",
+        "lastModified": 1670670214,
+        "narHash": "sha256-9rQjiqI0qgn5nzRVf4ZlW5KUIU9qchQWlZRfhameIhY=",
         "owner": "emacs-twist",
         "repo": "nix3.el",
-        "rev": "6ae0523df942efdd1eafd992e357e9016329ab3a",
+        "rev": "35648933c36070846c4b9cf1b0e957a8160f4c3e",
         "type": "github"
       },
       "original": {
@@ -51,11 +51,11 @@
     "magit-section": {
       "flake": false,
       "locked": {
-        "lastModified": 1669588046,
-        "narHash": "sha256-cCKu+EbL7BUZtinxo7Rd2jiZuFf9AVg7NEm1YsI9094=",
+        "lastModified": 1670525337,
+        "narHash": "sha256-8cjfAWM1NM7NC0nMQ6SKALp+bUWx6T7+yyDisj7hgDc=",
         "owner": "magit",
         "repo": "magit",
-        "rev": "3cf308c1c4cdb9404e3d3c6f9935ad9f628311d9",
+        "rev": "99d9b3008adf72a0c2cdb7df70b5ae03ea9271c8",
         "type": "github"
       },
       "original": {
@@ -67,11 +67,11 @@
     "nix3": {
       "flake": false,
       "locked": {
-        "lastModified": 1669645993,
-        "narHash": "sha256-Dt+VD4VpHop1yXRd7iMJxyeW/jv7edxUmq88nXcBeXM=",
+        "lastModified": 1670670214,
+        "narHash": "sha256-9rQjiqI0qgn5nzRVf4ZlW5KUIU9qchQWlZRfhameIhY=",
         "owner": "emacs-twist",
         "repo": "nix3.el",
-        "rev": "6ae0523df942efdd1eafd992e357e9016329ab3a",
+        "rev": "35648933c36070846c4b9cf1b0e957a8160f4c3e",
         "type": "github"
       },
       "original": {
