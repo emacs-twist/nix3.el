@@ -238,6 +238,11 @@ directory-local variables for per-project configuration."
                       (if \.ref
                           (concat "tree/" \.ref)
                         "")))
+             ("gitlab"
+              (format "https://gitlab.com/%s/%s/%s" \.owner \.repo
+                      (if \.ref
+                          (concat "tree/" \.ref)
+                        "")))
              ("sourcehut"
               (format "https://git.sr.ht/%s/%s/%s" \.owner \.repo
                       (if \.ref

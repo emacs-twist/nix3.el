@@ -21,6 +21,7 @@
   (let-alist url-alist
     (concat (pcase \.type
               ("github" (format "github:%s/%s" \.owner \.repo))
+              ("gitlab" (format "gitlab:%s/%s" \.owner \.repo))
               ("sourcehut" (format "sourcehut:%s/%s" \.owner \.repo))
               ("git" (concat "git+" \.url))
               ("tarball" \.url)
