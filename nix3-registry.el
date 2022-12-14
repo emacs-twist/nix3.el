@@ -150,14 +150,25 @@
 ;;;###autoload
 (defun nix3-registry-add (name flake)
   "Add a new entry to the user registry."
-  (interactive (let* ((url (read-string "Url: "))
-                      (name (read-string (format "Name for \"%s\": " url))))
+  (interactive (let* ((url (read-from-minibuffer "Url: "
+                                                 ;; TODO: flake url at point
+                                                 (or (bound-and-true-p nix3-flake-url)
+                                                     (nix3-registry--maybe-origin-flake-url))))
+                      (name (read-from-minibuffer (format "Registry name for %s: " url)
+                                                  (when (string-match (rx (+ (not (any "/"))) eol)
+                                                                      url)
+                                                    (match-string 0 url)))))
                  (list name url)))
   (unless (nix3-registry--flake-url-p flake)
     (user-error "Invalid flake URL: %s" flake))
   (call-process nix3-nix-executable nil nil nil
                 "registry" "add"
                 name flake))
+
+(defun nix3-registry--maybe-origin-flake-url ()
+  (when-let (git-url (cdr (assoc "origin" (nix3-git-remotes))))
+    (nix3-flake-ref-alist-to-url
+     (nix3-git-url-to-flake-alist git-url))))
 
 (defun nix3-registry--flake-url-p (url)
   (and (not (string-match-p "#" url))
