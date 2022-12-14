@@ -19,6 +19,10 @@
   "Number of seconds for which `nix3--config' is memoized."
   :type 'number)
 
+(defcustom nix3-git-executable "git"
+  "Name of the Git executable."
+  :type 'file)
+
 ;;;; Variables
 
 (defvar nix3-config-cache nil)
@@ -101,6 +105,12 @@ This command discard the exit code or output of the command."
   (if-let (h (map-elt (nix3--config-memoized) key))
       (map-elt h "value")
     (error "Key %s is not found in the nix conf" key)))
+
+(defun nix3--git-config-list (&optional scope)
+  (apply #'process-lines nix3-git-executable "config" "--list"
+         (pcase scope
+           (`local "--local")
+           (`global "--global"))))
 
 (provide 'nix3-core)
 ;;; nix3-core.el ends here
