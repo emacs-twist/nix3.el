@@ -50,6 +50,9 @@ This should be a function that takes a name in a registry as an argument."
 
 (defvar nix3-registry-global-cache nil)
 
+(defvar nix3-registry-table nil
+  "Hash table that stores registry entries during completion.")
+
 (defun nix3-registry--parse-buffer ()
   (goto-char (point-min))
   (thread-last
@@ -122,6 +125,7 @@ registry type and the \"to\" value of the entry."
                                                 :system system
                                                 :user user))
          (items (append extra-entries (map-keys table))))
+    (setq nix3-registry-table table)
     (cl-labels
         ((annotator (id)
            (pcase-exhaustive (gethash id table)
@@ -155,6 +159,12 @@ registry type and the \"to\" value of the entry."
             (let ((name (read-string (format "Name for %s: " input))))
               (nix3-registry-add name input)))
           input)))))
+
+(defun nix3-registry-completion-lookup (name)
+  "Retrieve a registry entry by NAME during completion."
+  (unless nix3-registry-table
+    (error "Not initialized `nix3-registry-table'"))
+  (cdr (gethash name nix3-registry-table)))
 
 ;;;###autoload
 (defun nix3-registry-add (name flake)
