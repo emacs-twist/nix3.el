@@ -32,6 +32,12 @@
   ""
   :type 'file)
 
+(defcustom nix3-registry-list-action #'nix3-flake-show-url
+  "Default action to run in `nix3-registry-list' command.
+
+This should be a function that takes a name in a registry as an argument."
+  :type 'function)
+
 (defface nix3-registry-type-face
   '((t :inherit font-lock-type-face))
   ""
@@ -190,6 +196,17 @@
     (insert (format "inputs.%s.url = \"%s\";"
                     name
                     (nix3-flake-ref-alist-to-url alist)))))
+
+;;;###autoload
+(defun nix3-registry-list ()
+  "Display a list of entries in the flake registries."
+  (interactive)
+  (let ((name (car (nix3-registry-complete "Flake: "
+                                           :add-to-registry t
+                                           :require-match nil
+                                           :no-exact t))))
+    (message "Selected a registry entry %s" name)
+    (funcall nix3-registry-list-action name)))
 
 (provide 'nix3-registry)
 ;;; nix3-registry.el ends here
