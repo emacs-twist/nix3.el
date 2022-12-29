@@ -50,8 +50,6 @@ This should be a function that takes a name in a registry as an argument."
 
 (defvar nix3-registry-global-cache nil)
 
-(defvar nix3-registry-entries nil)
-
 (defun nix3-registry--parse-buffer ()
   (goto-char (point-min))
   (thread-last
@@ -84,74 +82,79 @@ This should be a function that takes a name in a registry as an argument."
       (nix3-registry--parse-buffer))))
 
 (cl-defun nix3-registry--collect-entries (&key no-exact
-                                                (global t)
-                                                (system t)
-                                                (user t))
-  (let (result)
-    (pcase-dolist (`(,type . ,entries)
-                   `((global . ,(when global
-                                  (nix3-registry--global-entries)))
-                     (system . ,(when system
-                                  (nix3-registry--from-file
-                                   nix3-registry-system-file)))
-                     (user . ,(when user
-                                (nix3-registry--from-file
-                                 nix3-registry-user-file)))))
-      (dolist (entry entries)
-        (let ((from (alist-get 'from entry))
-              (to (alist-get 'to entry))
-              (exact (alist-get 'exact entry)))
-          (when (and (not (and no-exact exact))
-                     (equal "indirect" (alist-get 'type from)))
-            (push (cons (alist-get 'id from)
-                        (cons type to))
-                  result)))))
-    result))
+                                               (global t)
+                                               (system t)
+                                               (user t))
+  "Return a hash table of registry entries.
+
+Each value in the resulting hash table will be a cons cell of the
+registry type and the \"to\" value of the entry."
+  (let ((table (make-hash-table :test #'equal)))
+    (cl-flet
+        ((add-entries (type entries)
+           (dolist (entry entries)
+             (let ((from (alist-get 'from entry))
+                   (to (alist-get 'to entry))
+                   (exact (alist-get 'exact entry)))
+               (when (and (not (and no-exact exact))
+                          (equal "indirect" (alist-get 'type from)))
+                 (puthash (alist-get 'id from)
+                          (cons type to)
+                          table))))))
+      (when global
+        (add-entries 'global (nix3-registry--global-entries)))
+      (when system
+        (add-entries 'system (nix3-registry--from-file nix3-registry-system-file)))
+      (when user
+        (add-entries 'user (nix3-registry--from-file nix3-registry-user-file))))
+    table))
 
 (cl-defun nix3-registry-complete (prompt &key
-                                          extra-entries
-                                          (require-match t)
-                                          add-to-registry
-                                          no-exact
-                                          (global t)
-                                          (system t)
-                                          (user t))
-  (let* ((entries (setq nix3-registry-entries
-                        (nix3-registry--collect-entries
-                         :no-exact no-exact
-                         :global global
-                         :system system
-                         :user user)))
-         (table `(lambda (string pred action)
-                   (if (eq action 'metadata)
-                       '(metadata . ((category . nix3-registry-entry)
-                                     (annotation-function . nix3-registry-annotate)))
-                     (complete-with-action action ',(append extra-entries
-                                                            (mapcar #'car entries))
-                                           string pred))))
-         (input (completing-read prompt table nil require-match))
-         (entry (assoc input entries)))
-    (if entry
-        (cons input (cddr entry))
-      (when (and add-to-registry
-                 (nix3-registry--flake-url-p input)
-                 (not require-match)
-                 user
-                 (yes-or-no-p "Add the flake to the user registry?"))
-        (let ((name (read-string (format "Name for %s: " input))))
-          (nix3-registry-add name input)))
-      input)))
-
-(defun nix3-registry-annotate (id)
-  (when-let (entry (assoc id nix3-registry-entries))
-    (let ((type (cadr entry))
-          (dest (cddr entry)))
-      (concat " "
-              (propertize (nix3-flake-ref-alist-to-url dest)
-                          'face 'nix3-registry-url-face)
-              " "
-              (propertize (symbol-name type)
-                          'face 'nix3-registry-type-face)))))
+                                         extra-entries
+                                         (require-match t)
+                                         add-to-registry
+                                         no-exact
+                                         (global t)
+                                         (system t)
+                                         (user t))
+  (let* ((table (nix3-registry--collect-entries :no-exact no-exact
+                                                :global global
+                                                :system system
+                                                :user user))
+         (items (append extra-entries (map-keys table))))
+    (cl-labels
+        ((annotator (id)
+           (pcase-exhaustive (gethash id table)
+             (`nil)
+             (`(,type . ,dest)
+              (concat " "
+                      (propertize (nix3-flake-ref-alist-to-url dest)
+                                  'face 'nix3-registry-url-face)))))
+         (group (id transform)
+           (if transform
+               id
+             (if-let (cell (gethash id table))
+                 (format "%s registry"
+                         (capitalize (symbol-name (car cell))))
+               "")))
+         (completions (string pred action)
+           (if (eq action 'metadata)
+               (cons 'metadata
+                     (list (cons 'category 'nix3-registry-entry)
+                           (cons 'group-function #'group)
+                           (cons 'annotation-function #'annotator)))
+             (complete-with-action action items string pred))))
+      (let ((input (completing-read prompt #'completions)))
+        (if-let (entry (gethash input table))
+            (cons input (cddr entry))
+          (when (and add-to-registry
+                     (nix3-registry--flake-url-p input)
+                     (not require-match)
+                     user
+                     (yes-or-no-p "Add the flake to the user registry?"))
+            (let ((name (read-string (format "Name for %s: " input))))
+              (nix3-registry-add name input)))
+          input)))))
 
 ;;;###autoload
 (defun nix3-registry-add (name flake)
@@ -191,8 +194,9 @@ This should be a function that takes a name in a registry as an argument."
                                   (guard (listp alist)))
                              name-or-entry)
                             ((pred stringp)
-                             (assoc name-or-entry (nix3-registry--collect-entries
-                                                   :global t :system nil :user t))))))
+                             ;; TODO: Don't fetch all entries
+                             (cdr (gethash name-or-entry (nix3-registry--collect-entries
+                                                          :global t :system nil :user t)))))))
     (insert (format "inputs.%s.url = \"%s\";"
                     name
                     (nix3-flake-ref-alist-to-url alist)))))
