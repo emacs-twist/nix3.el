@@ -76,10 +76,15 @@
                       (nix3-flake-input--locked-url)
                       (format-time-string "%F %R"
                                           (nix3-flake-input--last-modified))))
-   ("u" "Update" nix3-flake-input-update :if nix3-flake-input--updatable-p)
-   ("e" "Edit worktree" ignore)
    ("w" "Copy revision" nix3-flake-input-copy-revision)
-   ("l" "Magit log" ignore)]
+   ;; ("l" "Magit log" ignore)
+   ;; "Edit worktree"
+   ]
+  ["Update input"
+   :if nix3-flake-input--updatable-p
+   ("ul" "Update to latest" nix3-flake-input-update)
+   ("ur" "Update to revision" nix3-flake-input-update-to-rev)
+   ("uu" "Update to url" nix3-flake-input-update-to-url)]
   (interactive)
   (unless (nix3-flake-input-at-point)
     (user-error "No flake input at point"))
@@ -112,15 +117,40 @@
 
 ;;;; Commands
 
-(defun nix3-flake-input-update ()
+(defun nix3-flake-input-update (&optional url-or-alist)
   (interactive)
   (pcase (nix3-flake-input-at-point)
     (`(,name . ,_)
      ;; TODO This is a quick-and-dirty implementation, so rewrite it
-     (nix3-run-process-background nix3-nix-executable
-                                  "flake" "lock" "--update-input" name))
+     (apply #'nix3-run-process-background
+            nix3-nix-executable
+            "flake" "lock" "--update-input" name
+            (pcase-exhaustive url-or-alist
+              (`nil)
+              ((pred stringp)
+               (list "--override-input" name url-or-alist))
+              ((pred sequencep)
+               (list "--override-input" name (nix3-flake-ref-alist-to-url url-or-alist))))))
     (_
      (user-error "No input at point"))))
+
+(defun nix3-flake-input-update-to-rev (rev)
+  (interactive "sRevision: ")
+  (let ((alist (alist-get 'original (cdr (nix3-flake-input-at-point)))))
+    (if-let (cell (assq 'rev alist))
+        (setcdr cell rev)
+      (setq alist (cons (cons 'rev rev) alist)))
+    (nix3-flake-input-update alist)))
+
+(defun nix3-flake-input-update-to-url (url)
+  (interactive (let* ((input (nix3-flake-input-at-point))
+                      (default (nix3-flake-ref-alist-to-url (cdr (assq 'original input)))))
+                 (list (read-from-minibuffer (format-prompt
+                                              (format "Update %s to flake url"
+                                                      (car input))
+                                              default)
+                                             nil nil nil nil default))))
+  (nix3-flake-input-update url))
 
 (provide 'nix3-flake-input)
 ;;; nix3-flake-input.el ends here
