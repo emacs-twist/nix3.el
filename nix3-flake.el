@@ -683,14 +683,10 @@ directory-local variables for per-project configuration."
                       ((equal "finished\n" event)
                        (with-current-buffer (process-buffer process)
                          (goto-char (point-min))
-                         (if-let (result (json-parse-buffer :object-type 'alist
-                                                            :array-type 'list))
-                             (progn
-                               (,put-result url result)
-                               (funcall resolve result))
-                           (funcall reject (list :error-buffer ,stderr
-                                                 :subcommand ',subcommand
-                                                 :url url))))
+                         (let ((result (json-parse-buffer :object-type 'alist
+                                                          :array-type 'list)))
+                           (,put-result url result)
+                           (funcall resolve result)))
                        (kill-buffer (process-buffer process)))
                       ((string-prefix-p "exited abnormally" event)
                        (funcall reject (list :error-buffer ,stderr
