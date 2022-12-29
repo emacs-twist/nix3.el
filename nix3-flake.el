@@ -500,7 +500,7 @@ directory-local variables for per-project configuration."
                   (pcase-dolist (`(,name . ,data) group-nodes)
                     (magit-insert-section (flake-input (cons (symbol-name name)
                                                              data)
-                                                       (assq name direct-inputs))
+                                                       (not (assq name direct-inputs)))
                       (let* ((is-flake (not (eq :false (cdr (assq 'flake data)))))
                              (original (cdr (assq 'original data)))
                              (name-string (symbol-name name))
