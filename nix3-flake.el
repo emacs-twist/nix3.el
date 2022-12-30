@@ -477,7 +477,6 @@ directory-local variables for per-project configuration."
                               (nix3-format--column-width
                                nix3-flake-input-name-max-width)))
                 (direct-inputs (nix3-lookup-tree '(root inputs) nodes)))
-            (message "%s" direct-inputs)
             (cl-flet
                 ((pad-column
                    (len s)
