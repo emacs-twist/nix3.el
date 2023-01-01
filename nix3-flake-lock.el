@@ -71,11 +71,19 @@
 
 (defun nix3-flake-lock--blob (root rev filename)
   (let ((default-directory root))
-    (with-temp-buffer
-      (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
-                                   "rev-parse" (concat rev ":" filename)))
-        (error "git-rev-parse failed"))
-      (string-chop-newline (buffer-string)))))
+    (pcase-exhaustive rev
+      (`stage
+       (with-temp-buffer
+         (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
+                                      "ls-files" "--stage" "--" filename))
+           (error "git-ls-files failed"))
+         (nth 1 (split-string (buffer-string) " "))))
+      ((pred stringp)
+       (with-temp-buffer
+         (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
+                                      "rev-parse" (concat rev ":" filename)))
+           (error "git-rev-parse failed"))
+         (string-chop-newline (buffer-string)))))))
 
 (defun nix3-flake-lock--parse-buffer ()
   "Parse nodes in the buffer."
@@ -97,7 +105,11 @@
         (error "Failed to match a revision range: %s" magit-buffer-range-hashed))))
    (magit-buffer-revision-hash
     (list (concat magit-buffer-revision-hash "^")
-          magit-buffer-revision-hash))))
+          magit-buffer-revision-hash))
+   ((equal magit-buffer-typearg "--cached")
+    (list "HEAD" 'stage))
+   (t
+    (list "HEAD" nil))))
 
 (provide 'nix3-flake-lock)
 ;;; nix3-flake-lock.el ends here
