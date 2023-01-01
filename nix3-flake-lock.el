@@ -58,16 +58,18 @@
              :changed changed)))))
 
 (defun nix3-flake-lock--entries-at (root filename &optional rev)
-  (with-temp-buffer
-    (if rev
-        (let ((default-directory root)
-              (blob (nix3-flake-lock--blob root rev filename)))
-          (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
-                                       "cat-file" "blob" blob))
-            (error "git-cat-file failed on %s" blob)))
-      (insert-file-contents (expand-file-name filename root)))
-    (goto-char (point-min))
-    (nix3-flake-lock--parse-buffer)))
+  (catch 'no-lock-file
+    (with-temp-buffer
+      (if rev
+          (if-let* ((default-directory root)
+                    (blob (nix3-flake-lock--blob root rev filename)))
+              (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
+                                           "cat-file" "blob" blob))
+                (error "git-cat-file failed on %s" blob))
+            (throw 'no-lock-file))
+        (insert-file-contents (expand-file-name filename root)))
+      (goto-char (point-min))
+      (nix3-flake-lock--parse-buffer))))
 
 (defun nix3-flake-lock--blob (root rev filename)
   (let ((default-directory root))
@@ -80,10 +82,9 @@
          (nth 1 (split-string (buffer-string) " "))))
       ((pred stringp)
        (with-temp-buffer
-         (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
-                                      "rev-parse" (concat rev ":" filename)))
-           (error "git-rev-parse failed"))
-         (string-chop-newline (buffer-string)))))))
+         (when (zerop (call-process nix3-git-executable nil (list t nil) nil
+                                    "rev-parse" (concat rev ":" filename)))
+           (string-chop-newline (buffer-string))))))))
 
 (defun nix3-flake-lock--parse-buffer ()
   "Parse nodes in the buffer."
