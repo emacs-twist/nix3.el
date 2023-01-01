@@ -166,6 +166,21 @@ registry type and the \"to\" value of the entry."
     (error "Not initialized `nix3-registry-table'"))
   (cdr (gethash name nix3-registry-table)))
 
+(defun nix3-registry--non-indirect (url-alist)
+  (let (hash)
+    (cl-labels
+        ((go (x)
+           (let-alist x
+             (if (equal "indirect" .type)
+                 (progn
+                   (unless hash
+                     (setq hash (nix3-registry--collect-entries
+                                 :global t :system t :user t)))
+                   (go (cdr (or (gethash .id hash)
+                                (error "Registry entry for %s is not found" .id)))))
+               x))))
+      (go url-alist))))
+
 ;;;###autoload
 (defun nix3-registry-add (name flake)
   "Add a new entry to the user registry."

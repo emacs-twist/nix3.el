@@ -98,6 +98,11 @@ The value should be either nil or one of the existing members of
   '((t (:inherit magit-section-heading)))
   "Face for flake.lock nodes.")
 
+(defvar magit-nix3-diff-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'magit-nix3-diff-show)
+    map))
+
 (defun magit-nix3-diff-section ()
   (require 'nix3-flake-lock)
   (when-let (files (magit-nix3--search-flake-locks))
@@ -110,22 +115,25 @@ The value should be either nil or one of the existing members of
                            (nix3-flake-ref-alist-to-url
                             (alist-get 'locked node)))))
          (insert-node-change (event id &optional old new)
-           (magit-insert-section (flake-lock-node id t)
-             (magit-insert-heading
-               (propertize (format "%-8s %s" event id)
-                           'face 'magit-nix3-lock-node-heading)
-               (cond
-                ((and new old)
-                 (format " (%s -> %s)"
-                         (format-mtime (alist-get 'locked old))
-                         (format-mtime (alist-get 'locked new))))
-                (new
-                 (format " (%s)"
-                         (format-mtime (alist-get 'locked new))))))
-             (when old
-               (insert-node "old" old))
-             (when new
-               (insert-node "new" new)))))
+           (let ((start (point)))
+             (magit-insert-section (flake-lock-node (list id (cdr old) (cdr new)) t)
+               (magit-insert-heading
+                 (propertize (format "%-8s %s" event id)
+                             'face 'magit-nix3-lock-node-heading)
+                 (cond
+                  ((and new old)
+                   (format " (%s -> %s)"
+                           (format-mtime (alist-get 'locked old))
+                           (format-mtime (alist-get 'locked new))))
+                  (new
+                   (format " (%s)"
+                           (format-mtime (alist-get 'locked new))))))
+               (let ((ov (make-overlay start (point))))
+                 (overlay-put ov 'keymap magit-nix3-diff-map))
+               (when old
+                 (insert-node "old" old))
+               (when new
+                 (insert-node "new" new))))))
       (pcase-exhaustive (nix3-flake-lock--range)
         (`(,lrev ,rrev)
          (dolist (file files)
@@ -141,6 +149,24 @@ The value should be either nil or one of the existing members of
                 (pcase-dolist (`(,id ,old ,new) changed)
                   (insert-node-change "changed" id old new)))))))))
     (insert ?\n)))
+
+(defun magit-nix3-diff-show ()
+  (interactive)
+  (when-let (section (magit-current-section))
+    (pcase (oref section value)
+      (`(,_id ,old ,new)
+       (cond
+        ((and old new)
+         (nix3-flake-git-log-source (alist-get 'original new)
+                                    (list (concat (nix3-lookup-tree '(locked rev) old)
+                                                  "..."
+                                                  (nix3-lookup-tree '(locked rev) new)))))
+        (old
+         (nix3-flake-git-log-source (alist-get 'original old)
+                                    (list (nix3-lookup-tree '(locked rev) old))))
+        (new
+         (nix3-flake-git-log-source (alist-get 'original new)
+                                    (list (nix3-lookup-tree '(locked rev) new)))))))))
 
 (defun magit-nix3--search-flake-locks ()
   (let (files)
@@ -163,9 +189,14 @@ The value should be either nil or one of the existing members of
     (magit-add-section-hook 'magit-diff-sections-hook
                             #'magit-nix3-diff-section
                             'magit-insert-diff
+                            'append)
+    (magit-add-section-hook 'magit-revision-sections-hook
+                            #'magit-nix3-diff-section
+                            'magit-insert-revision-diff
                             'append))
    (t
-    (remove-hook 'magit-diff-sections-hook #'magit-nix3-diff-section))))
+    (remove-hook 'magit-diff-sections-hook #'magit-nix3-diff-section)
+    (remove-hook 'magit-revision-sections-hook #'magit-nix3-diff-section))))
 
 (provide 'magit-nix3-flake)
 ;;; magit-nix3-flake.el ends here

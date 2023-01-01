@@ -72,6 +72,14 @@ Each function in this hook is called without arguments in the
 created directory."
   :type 'hook)
 
+(defcustom nix3-flake-worktree-promise-fn #'ignore
+  "Function that returns a promise to a worktree.
+
+The function should take a url alist as an argument and return a
+promise or nil. The promise should resolve to a directory when
+the worktree becomes available."
+  :type 'function)
+
 (defcustom nix3-flake-extra-derivations nil
   "List of non-standard installables in the flake.
 
@@ -879,6 +887,21 @@ directory-local variables for per-project configuration."
   "Remember the current project."
   (when-let (pr (project-current))
     (project-remember-project pr)))
+
+;;;; Manage relationships between remote repositories and local copies
+
+(defun nix3-flake-git-log-source (url-alist revs)
+  (promise-chain (or (funcall nix3-flake-worktree-promise-fn
+                              (nix3-registry--non-indirect url-alist))
+                     (error "No promise"))
+    (then `(lambda (dir)
+             (let ((default-directory dir))
+               ;; TODO: Fetch data
+               (magit-log-other ',revs))))
+    (promise-catch #'nix3-flake--handle-repo-error)))
+
+(defun nix3-flake--handle-repo-error (payload)
+  (error "Error in nix3-flake--handle-repo-error: %s" payload))
 
 (provide 'nix3-flake)
 ;;; nix3-flake.el ends here
