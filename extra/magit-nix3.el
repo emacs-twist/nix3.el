@@ -32,11 +32,16 @@
 
 ;;; Code:
 
+(require 'map)
+(require 'magit-section)
+
 (defgroup magit-nix3 nil
   "Nix flake integration for Magit."
   :prefix "magit-nix3-"
   :type 'magit-status
   :type 'nix3)
+
+;;;; magit-status-mode integration
 
 (defcustom magit-nix3-sections
   '(nix3-flake-insert-outputs
@@ -82,6 +87,85 @@ The value should be either nil or one of the existing members of
                             magit-nix3-append))
    (t
     (remove-hook 'magit-status-sections-hook #'magit-nix3-flake-sections))))
+
+;;;; magit-diff-mode integration
+
+(defface magit-nix3-lock-file-heading
+  '((t (:inherit magit-diff-file-heading)))
+  "Face for flake.lock file paths.")
+
+(defface magit-nix3-lock-node-heading
+  '((t (:inherit magit-section-heading)))
+  "Face for flake.lock nodes.")
+
+(defun magit-nix3-diff-section ()
+  (require 'nix3-flake-lock)
+  (when-let (files (magit-nix3--search-flake-locks))
+    (cl-flet*
+        ((format-mtime (locked)
+           (format-time-string "%Y-%m-%d" (alist-get 'lastModified locked)))
+         (insert-node (old-or-new node)
+           (insert (format "  %s: %s\n"
+                           old-or-new
+                           (nix3-flake-ref-alist-to-url
+                            (alist-get 'locked node)))))
+         (insert-node-change (event id &optional old new)
+           (magit-insert-section (flake-lock-node id t)
+             (magit-insert-heading
+               (propertize (format "%-8s %s" event id)
+                           'face 'magit-nix3-lock-node-heading)
+               (cond
+                ((and new old)
+                 (format " (%s -> %s)"
+                         (format-mtime (alist-get 'locked old))
+                         (format-mtime (alist-get 'locked new))))
+                (new
+                 (format " (%s)"
+                         (format-mtime (alist-get 'locked new))))))
+             (when old
+               (insert-node "old" old))
+             (when new
+               (insert-node "new" new)))))
+      (pcase-exhaustive (nix3-flake-lock--range)
+        (`(,lrev ,rrev)
+         (dolist (file files)
+           (magit-insert-section (flake-lock file)
+             (magit-insert-heading (propertize file 'face 'magit-nix3-lock-file-heading))
+             (pcase-exhaustive (nix3-flake-lock--diff-entries default-directory
+                                                              file lrev rrev)
+               ((map :added :removed :changed)
+                (pcase-dolist (`(,id . ,new) added)
+                  (insert-node-change "added" id nil new))
+                (pcase-dolist (`(,id . ,old) removed)
+                  (insert-node-change "removed" id old))
+                (pcase-dolist (`(,id ,old ,new) changed)
+                  (insert-node-change "changed" id old new)))))))))
+    (insert ?\n)))
+
+(defun magit-nix3--search-flake-locks ()
+  (let (files)
+    (save-excursion
+      (while (text-property-search-backward 'magit-section)
+        (let ((section (magit-current-section)))
+          (when (and (eq (oref section type) 'file)
+                     (string-match-p (rx (or bol "/")
+                                         "flake.lock" eol)
+                                     (oref section value)))
+            (push (oref section value) files)))))
+    (seq-uniq files #'equal)))
+
+;;;###autoload
+(define-minor-mode magit-nix3-flake-lock-mode
+  "Minor mode to show flake.lock diffs in `magit-diff-mode' buffers."
+  :global t
+  (cond
+   (magit-nix3-flake-lock-mode
+    (magit-add-section-hook 'magit-diff-sections-hook
+                            #'magit-nix3-diff-section
+                            'magit-insert-diff
+                            'append))
+   (t
+    (remove-hook 'magit-diff-sections-hook #'magit-nix3-diff-section))))
 
 (provide 'magit-nix3-flake)
 ;;; magit-nix3-flake.el ends here
