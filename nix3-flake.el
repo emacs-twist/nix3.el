@@ -584,6 +584,7 @@ directory-local variables for per-project configuration."
 (define-derived-mode nix3-flake-show-mode magit-section-mode
   "Nix Flake"
   (setq-local revert-buffer-function #'nix3-flake-show-revert)
+  (setq-local bookmark-make-record-function #'nix3-flake-show-bookmark-record)
   (read-only-mode 1))
 
 ;;;###autoload
@@ -717,6 +718,25 @@ directory-local variables for per-project configuration."
   (when (eq major-mode 'nix3-flake-show-mode)
     (when-let (buffer (pop nix3-flake-show-history))
       (switch-to-buffer buffer))))
+
+;;;; Bookmark integration
+
+(defun nix3-flake-show-bookmark-record ()
+  "Return a bookmark record for the `nix3-flake-show-mode' buffer."
+  (list (concat "flake:" (or nix3-flake-url
+                             (string-remove-suffix "/" (abbreviate-file-name default-directory))))
+        '(handler . nix3-flake-show-bookmark-handler)
+        (if nix3-flake-url
+            `(url . ,nix3-flake-url)
+          `(default-directory . ,(abbreviate-file-name default-directory)))))
+
+;;;###autoload
+(defun nix3-flake-show-bookmark-handler (bookmark)
+  (if-let (url (bookmark-prop-get bookmark 'url))
+      (nix3-flake-show-url url)
+    (if-let (dir (bookmark-prop-get bookmark 'default-directory))
+        (nix3-flake-show dir)
+      (error "This bookmark handler requires either url or default-directory property"))))
 
 ;;;; nix flake init/new
 
