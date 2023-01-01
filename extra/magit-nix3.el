@@ -38,8 +38,8 @@
 (defgroup magit-nix3 nil
   "Nix flake integration for Magit."
   :prefix "magit-nix3-"
-  :type 'magit-status
-  :type 'nix3)
+  :group 'magit-status
+  :group 'nix3)
 
 ;;;; magit-status-mode integration
 
