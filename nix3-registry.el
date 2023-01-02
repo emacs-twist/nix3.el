@@ -150,7 +150,7 @@ registry type and the \"to\" value of the entry."
              (complete-with-action action items string pred))))
       (let ((input (completing-read prompt #'completions)))
         (if-let (entry (gethash input table))
-            (cons input (cddr entry))
+            (cons input (cdr entry))
           (when (and add-to-registry
                      (nix3-registry--flake-url-p input)
                      (not require-match)
