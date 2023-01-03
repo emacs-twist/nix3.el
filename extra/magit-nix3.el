@@ -105,50 +105,57 @@ The value should be either nil or one of the existing members of
 
 (defun magit-nix3-diff-section ()
   (require 'nix3-flake-lock)
-  (when-let (files (magit-nix3--search-flake-locks))
-    (cl-flet*
-        ((format-mtime (locked)
-           (format-time-string "%Y-%m-%d" (alist-get 'lastModified locked)))
-         (insert-node (old-or-new node)
-           (insert (format "  %s: %s\n"
-                           old-or-new
-                           (nix3-flake-ref-alist-to-url
-                            (alist-get 'locked node)))))
-         (insert-node-change (event id &optional old new)
-           (let ((start (point)))
-             (magit-insert-section (flake-lock-node (list id (cdr old) (cdr new)) t)
-               (magit-insert-heading
-                 (propertize (format "%-8s %s" event id)
-                             'face 'magit-nix3-lock-node-heading)
-                 (cond
-                  ((and new old)
-                   (format " (%s -> %s)"
-                           (format-mtime (alist-get 'locked old))
-                           (format-mtime (alist-get 'locked new))))
-                  (new
-                   (format " (%s)"
-                           (format-mtime (alist-get 'locked new))))))
-               (let ((ov (make-overlay start (point))))
-                 (overlay-put ov 'keymap magit-nix3-diff-map))
-               (when old
-                 (insert-node "old" old))
-               (when new
-                 (insert-node "new" new))))))
-      (pcase-exhaustive (nix3-flake-lock--range)
-        (`(,lrev ,rrev)
-         (dolist (file files)
-           (magit-insert-section (flake-lock file)
-             (magit-insert-heading (propertize file 'face 'magit-nix3-lock-file-heading))
-             (pcase-exhaustive (nix3-flake-lock--diff-entries default-directory
-                                                              file lrev rrev)
-               ((map :added :removed :changed)
-                (pcase-dolist (`(,id . ,new) added)
-                  (insert-node-change "added" id nil new))
-                (pcase-dolist (`(,id . ,old) removed)
-                  (insert-node-change "removed" id old))
-                (pcase-dolist (`(,id ,old ,new) changed)
-                  (insert-node-change "changed" id old new)))))))))
-    (insert ?\n)))
+  ;; When the user edits a commit message, magit displays diffs via
+  ;; `magit-revision-sections-hook', so this section will be called as well.
+  ;; However, it seems to block creating an actual commit, so I want to prevent
+  ;; this function from being called when creating a commit as a workaround. It
+  ;; seems that `this-command' is nil during hook call after a commit is made
+  ;; with a message, so use it as a guard.
+  (when this-command
+    (when-let (files (magit-nix3--search-flake-locks))
+      (cl-flet*
+          ((format-mtime (locked)
+             (format-time-string "%Y-%m-%d" (alist-get 'lastModified locked)))
+           (insert-node (old-or-new node)
+             (insert (format "  %s: %s\n"
+                             old-or-new
+                             (nix3-flake-ref-alist-to-url
+                              (alist-get 'locked node)))))
+           (insert-node-change (event id &optional old new)
+             (let ((start (point)))
+               (magit-insert-section (flake-lock-node (list id (cdr old) (cdr new)) t)
+                 (magit-insert-heading
+                   (propertize (format "%-8s %s" event id)
+                               'face 'magit-nix3-lock-node-heading)
+                   (cond
+                    ((and new old)
+                     (format " (%s -> %s)"
+                             (format-mtime (alist-get 'locked old))
+                             (format-mtime (alist-get 'locked new))))
+                    (new
+                     (format " (%s)"
+                             (format-mtime (alist-get 'locked new))))))
+                 (let ((ov (make-overlay start (point))))
+                   (overlay-put ov 'keymap magit-nix3-diff-map))
+                 (when old
+                   (insert-node "old" old))
+                 (when new
+                   (insert-node "new" new))))))
+        (pcase-exhaustive (nix3-flake-lock--range)
+          (`(,lrev ,rrev)
+           (dolist (file files)
+             (magit-insert-section (flake-lock file)
+               (magit-insert-heading (propertize file 'face 'magit-nix3-lock-file-heading))
+               (pcase-exhaustive (nix3-flake-lock--diff-entries default-directory
+                                                                file lrev rrev)
+                 ((map :added :removed :changed)
+                  (pcase-dolist (`(,id . ,new) added)
+                    (insert-node-change "added" id nil new))
+                  (pcase-dolist (`(,id . ,old) removed)
+                    (insert-node-change "removed" id old))
+                  (pcase-dolist (`(,id ,old ,new) changed)
+                    (insert-node-change "changed" id old new)))))))))
+      (insert ?\n))))
 
 (defun magit-nix3-diff-show ()
   (interactive)
