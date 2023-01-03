@@ -22,10 +22,12 @@ The goal of =nix3.el= is to accelerate this cycle by supporting both local and r
 :END:
 ** Screenshots
 [[https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show.png?raw=true][file:https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show.png?raw=true]]
-=nix3-flake-show= displays the outputs and inputs of a flake.
+
+(Figure) =nix3-flake-show= displays the outputs and inputs of a flake.
 
 [[https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show-url.png?raw=true][file:https://github.com/emacs-twist/nix3.el/blob/screenshots/nix3-flake-show-url.png?raw=true]]
-=nix3-flake-show-url= displays a remote flake without cloning the repository.
+
+(Figure) =nix3-flake-show-url= displays a remote flake without cloning the repository.
 ** Installation
 =nix3.el= is not available from any of the popular Emacs Lisp package registries (GNU/nonGNU ELPA, MELPA, etc.) yet.
 Clone this repository and add the directory to the load-path.
