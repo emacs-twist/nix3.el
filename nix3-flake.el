@@ -72,6 +72,24 @@ Each function in this hook is called without arguments in the
 created directory."
   :type 'hook)
 
+(defcustom nix3-flake-edit-find-file-fn #'find-file
+  "Function used to open flake.nix for editing.
+
+This command is used in `nix3-flake-edit' command.
+
+The function is called with the file name as an argument."
+  :type 'function
+  :options '(find-file
+             find-file-other-window))
+
+(defcustom nix3-flake-git-init-command #'magit-init
+  "Interactive function used to initialize a Git repository.
+
+The command should be run synchronously and should set
+`default-directory' to the root of the created repository when it
+is finished."
+  :type 'function)
+
 (defcustom nix3-flake-worktree-promise-fn #'ignore
   "Function that returns a promise to a worktree.
 
@@ -875,6 +893,33 @@ directory-local variables for per-project configuration."
                            (cons 'annotation-function #'annotator)))
              (complete-with-action action template-alist string pred))))
       (completing-read prompt #'completions nil t))))
+
+;;;###autoload
+(defun nix3-flake-edit ()
+  "Edit flake.nix in the current repository.
+
+This command discovers a flake.nix file closest to the current
+buffer and edit it. To open the buffer in a different window,
+customize `nix3-flake-edit-find-file-fn'.
+
+If there is no flake.nix found, this command initializes a new
+flake by running `nix3-flake-init' command in the root of the Git
+repository.
+
+If there is neither a flake.nix nor a Git repository, this
+function first initializes a Git repository by running
+`nix3-flake-git-init-command' which defaults to `magit-init', and
+then runs `nix3-flake-init'."
+  (interactive)
+  (when nix3-flake-url
+    (user-error "You must run this command inside a local flake"))
+  (if-let (dir (locate-dominating-file default-directory "flake.nix"))
+      (funcall nix3-flake-edit-find-file-fn (expand-file-name "flake.nix" dir))
+    (let ((default-directory (or (vc-git-root default-directory)
+                                 (progn
+                                   (call-interactively nix3-flake-git-init-command)
+                                   default-directory))))
+      (call-interactively #'nix3-flake-init))))
 
 ;;;; Functions that can be added to nix3-flake-new-hook
 
