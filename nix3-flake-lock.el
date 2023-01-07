@@ -5,6 +5,8 @@
 (require 'seq)
 (require 'map)
 
+(defvar magit-buffer-typearg)
+(defvar magit-buffer-revision-hash)
 (defvar magit-buffer-range-hashed)
 
 (defconst nix3-flake-lock-range-re
@@ -66,7 +68,7 @@
               (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
                                            "cat-file" "blob" blob))
                 (error "git-cat-file failed on %s" blob))
-            (throw 'no-lock-file))
+            (throw 'no-lock-file t))
         (insert-file-contents (expand-file-name filename root)))
       (goto-char (point-min))
       (nix3-flake-lock--parse-buffer))))

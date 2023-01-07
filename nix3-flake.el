@@ -13,6 +13,9 @@
 (require 'help-mode)
 
 (declare-function nix3-transient "nix3-transient")
+(declare-function vc-git-root "vc-git")
+(declare-function bookmark-prop-get "bookmark")
+(declare-function magit-init "ext:magit-status")
 (defvar nix3-browse-url-for-repository)
 (defvar nix3-flake-input-map)
 (defvar nix3-flake-output-map)

@@ -1,6 +1,7 @@
 ;;; nix3-utils.el ---  -*- lexical-binding: t -*-
 
 (require 'cl-lib)
+(require 'subr-x)
 (require 'nix3-core)
 
 (defun nix3-put-overlay-on-region (beg end &rest properties)

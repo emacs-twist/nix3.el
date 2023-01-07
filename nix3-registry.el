@@ -5,6 +5,7 @@
 (require 'subr-x)
 
 (declare-function xdg-config-home "xdg")
+(declare-function nix3-flake-show-url "nix3-flake")
 
 ;; Silent byte-compile
 (defvar url-http-end-of-headers)
@@ -130,7 +131,7 @@ registry type and the \"to\" value of the entry."
         ((annotator (id)
            (pcase-exhaustive (gethash id table)
              (`nil)
-             (`(,type . ,dest)
+             (`(,_type . ,dest)
               (concat " "
                       (propertize (nix3-flake-ref-alist-to-url dest)
                                   'face 'nix3-registry-url-face)))))
