@@ -17,6 +17,18 @@
       (group (+ hex))
       eol))
 
+;;;; Custom environment
+
+(defcustom nix3-flake-lock-file-regexp
+  (rx (or bol "/")
+      "flake.lock"
+      eol)
+  "Pattern to match the file names of lock files.
+
+The file should conform to the format of flake.lock."
+  :group 'nix3-flake
+  :type 'string)
+
 ;;;; Faces
 
 (defface nix3-flake-lock-file-heading
@@ -186,8 +198,7 @@
       (while (text-property-search-backward 'magit-section)
         (let ((section (magit-current-section)))
           (when (and (eq (oref section type) 'file)
-                     (string-match-p (rx (or bol "/")
-                                         "flake.lock" eol)
+                     (string-match-p nix3-flake-lock-file-regexp
                                      (oref section value)))
             (push (oref section value) files)))))
     (seq-uniq files #'equal)))
