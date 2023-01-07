@@ -9,33 +9,25 @@
 (defvar magit-buffer-revision-hash)
 (defvar magit-buffer-range-hashed)
 
+(declare-function text-property-search-backward "text-property-search")
+
 (defconst nix3-flake-lock-range-re
   (rx bol (group (+ hex))
       ".."
       (group (+ hex))
       eol))
 
-;; (defconst nix3-flake-lock-diff-buffer "*Nix3-Flake-Lock-Diff*")
+;;;; Faces
 
-;; (defun nix3-flake-lock-diff (base rev &optional subdir)
-;;   (interactive (append (nix3-flake-lock--range)
-;;                        (when (and nix3-flake-subflakes
-;;                                   (equal (vc-git-root default-directory)
-;;                                          default-directory))
-;;                          (completing-read "Directory: "
-;;                                           (cons "." nix3-flake-subflakes)))))
-;;   (let* ((root (vc-git-root default-directory))
-;;          (filename (file-relative-name (expand-file-name "flake.lock"
-;;                                                          (unless (and subdir (not (equal subdir ".")))
-;;                                                            subdir))
-;;                                        root)))
-;;     (with-current-buffer (get-buffer-create nix3-flake-lock-diff-buffer)
-;;       (let ((inhibit-read-only t))
-;;         (erase-buffer)
-;;         (apply #'nix3-flake-lock--insert-diff
-;;                (nix3-flake-lock--diff-entries root filename base rev))
-;;         (read-only-mode t))
-;;       (pop-to-buffer (current-buffer)))))
+(defface nix3-flake-lock-file-heading
+  '((t (:inherit magit-diff-file-heading)))
+  "Face for flake.lock file paths.")
+
+(defface nix3-flake-lock-node-heading
+  '((t (:inherit magit-section-heading)))
+  "Face for flake.lock nodes.")
+
+;;;;
 
 (defun nix3-flake-lock--diff-entries (root filename base rev)
   (pcase-exhaustive (mapcar (apply-partially #'nix3-flake-lock--entries-at
@@ -113,6 +105,92 @@
     (list "HEAD" 'stage))
    (t
     (list "HEAD" nil))))
+
+;;;; Magit integration
+
+(defvar nix3-flake-lock-diff-section-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'nix3-flake-lock-source-at-point)
+    map))
+
+;;;###autoload
+(defun nix3-flake-lock-diff-section ()
+  (when-let (files (nix3-flake-lock-magit-sections))
+    (cl-flet*
+        ((format-mtime (locked)
+           (format-time-string "%Y-%m-%d" (alist-get 'lastModified locked)))
+         (insert-node (old-or-new node)
+           (insert (format "  %s: %s\n"
+                           old-or-new
+                           (nix3-flake-ref-alist-to-url
+                            (alist-get 'locked node)))))
+         (insert-node-change (event id &optional old new)
+           (let ((start (point)))
+             (magit-insert-section (flake-lock-node (list id (cdr old) (cdr new)) t)
+               (magit-insert-heading
+                 (propertize (format "%-8s %s" event id)
+                             'face 'nix3-flake-lock-node-heading)
+                 (cond
+                  ((and new old)
+                   (format " (%s -> %s)"
+                           (format-mtime (alist-get 'locked old))
+                           (format-mtime (alist-get 'locked new))))
+                  (new
+                   (format " (%s)"
+                           (format-mtime (alist-get 'locked new))))))
+               (let ((ov (make-overlay start (point))))
+                 (overlay-put ov 'keymap nix3-flake-lock-diff-section-map))
+               (when old
+                 (insert-node "old" old))
+               (when new
+                 (insert-node "new" new))))))
+      (pcase-exhaustive (nix3-flake-lock--range)
+        (`(,lrev ,rrev)
+         (dolist (file files)
+           (magit-insert-section (flake-lock file)
+             (magit-insert-heading (propertize file 'face 'nix3-flake-lock-file-heading))
+             (pcase-exhaustive (nix3-flake-lock--diff-entries default-directory
+                                                              file lrev rrev)
+               ((map :added :removed :changed)
+                (pcase-dolist (`(,id . ,new) added)
+                  (insert-node-change "added" id nil new))
+                (pcase-dolist (`(,id . ,old) removed)
+                  (insert-node-change "removed" id old))
+                (pcase-dolist (`(,id ,old ,new) changed)
+                  (insert-node-change "changed" id old new)))))))))
+    (insert ?\n)))
+
+(defun nix3-flake-lock-source-at-point ()
+  "Display the source at point."
+  (interactive)
+  (when-let (section (magit-current-section))
+    (pcase (oref section value)
+      (`(,_id ,old ,new)
+       (cond
+        ((and old new)
+         (nix3-flake-git-log-source (alist-get 'original new)
+                                    (list (concat (nix3-lookup-tree '(locked rev) old)
+                                                  "..."
+                                                  (nix3-lookup-tree '(locked rev) new)))))
+        (old
+         (nix3-flake-git-log-source (alist-get 'original old)
+                                    (list (nix3-lookup-tree '(locked rev) old))))
+        (new
+         (nix3-flake-git-log-source (alist-get 'original new)
+                                    (list (nix3-lookup-tree '(locked rev) new)))))))))
+
+(defun nix3-flake-lock-magit-sections ()
+  "Return flake.lock files specified in magit sections."
+  (let (files)
+    (save-excursion
+      (while (text-property-search-backward 'magit-section)
+        (let ((section (magit-current-section)))
+          (when (and (eq (oref section type) 'file)
+                     (string-match-p (rx (or bol "/")
+                                         "flake.lock" eol)
+                                     (oref section value)))
+            (push (oref section value) files)))))
+    (seq-uniq files #'equal)))
 
 (provide 'nix3-flake-lock)
 ;;; nix3-flake-lock.el ends here

@@ -675,6 +675,11 @@ directory-local variables for per-project configuration."
         (apply #'vector)
         (promise-all)))))
 
+(defun nix3-flake-run-section (sections dir-or-url is-url)
+  (nix3-flake--get-promise dir-or-url is-url
+                           :sections (symbol-value sections))
+  (run-hooks sections))
+
 (defun nix3-flake--handle-process-error (payload)
   (pcase payload
     (`(:timeouted)
