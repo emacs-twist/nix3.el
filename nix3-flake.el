@@ -65,6 +65,11 @@
   "List of major modes that should be reverted after flake init."
   :type '(repeat symbol))
 
+(defcustom nix3-flake-default-json-options
+  '("--show-trace")
+  "List of Nix options used when retrieving data."
+  :type '(repeat string))
+
 (defcustom nix3-flake-new-hook
   '(nix3-flake-git-init
     nix3-flake-remember-this-project)
@@ -706,8 +711,8 @@ directory-local variables for per-project configuration."
                    :command (append (list nix3-nix-executable
                                           ,@subcommand
                                           url
-                                          "--show-trace"
                                           "--json")
+                                    nix3-flake-default-json-options
                                     (when is-url
                                       '("--no-write-lock-file")))
                    :sentinel
