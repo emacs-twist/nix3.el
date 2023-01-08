@@ -12,12 +12,14 @@
 (require 'help-mode)
 
 (declare-function nix3-transient "nix3-transient")
+(declare-function nix3-transient-on-output "nix3-transient")
 (declare-function vc-git-root "vc-git")
 (declare-function bookmark-prop-get "bookmark")
 (declare-function magit-init "ext:magit-status")
+(defvar nix3-transient-flake-output-type)
+(defvar nix3-transient-flake-output)
 (defvar nix3-browse-url-for-repository)
 (defvar nix3-flake-input-map)
-(defvar nix3-flake-output-map)
 
 (defgroup nix3-flake nil
   "Interactive interface to Nix flakes."
@@ -221,6 +223,19 @@ directory-local variables for per-project configuration."
        (or (locate-dominating-file default-directory "flake.nix")
            (error "No flake.nix is found")))))
 
+(defun nix3-flake--make-command-line (nix-command attr &rest args)
+  (declare (indent 1))
+  (format "%s %s %s#%s%s"
+          (shell-quote-argument nix3-nix-executable)
+          (if (listp nix-command)
+              (string-join nix-command " ")
+            nix-command)
+          (or nix3-flake-url ".")
+          attr
+          (if args
+              (concat " " (mapconcat #'shell-quote-argument (flatten-list args) " "))
+            "")))
+
 ;;;; nix eval
 
 (cl-defun nix3-flake-eval-nix (attr &key apply)
@@ -312,6 +327,14 @@ directory-local variables for per-project configuration."
   (gethash (string-remove-suffix "/" directory)
            nix3-flake-show-results))
 
+(defun nix3-flake-demand-outputs ()
+  (promise-new (apply-partially
+                #'nix3-flake--make-show-process
+                (string-remove-suffix
+                 "/"
+                 (file-truename (locate-dominating-file default-directory "flake.nix")))
+                nil)))
+
 ;;;; nix flake metadata data
 
 (defvar nix3-flake-metadata-results nil)
@@ -396,6 +419,31 @@ directory-local variables for per-project configuration."
       (go nil (nix3-flake--get-show-result)))
     result))
 
+;;;; Interaction
+
+(defun nix3-flake-select-output (prompt-format command &optional default-value)
+  (promise-wait (if nix3-flake-url
+                    nix3-flake-remote-wait
+                  nix3-flake-wait)
+    (nix3-flake-demand-outputs))
+  (let ((alist (nix3-flake--filter-outputs command)))
+    (cl-labels
+        ((group (candidate transform)
+           (if transform
+               candidate
+             (or (cdr (assoc candidate alist))
+                 "")))
+         (completions (string pred action)
+           (if (eq action 'metadata)
+               (cons 'metadata
+                     (list (cons 'category 'nix3-attribute)
+                           (cons 'group-function #'group)))
+             (complete-with-action action alist string pred))))
+      (completing-read (format prompt-format
+                               (or nix3-flake-url (abbreviate-file-name default-directory)))
+                       #'completions
+                       nil nil nil nil default-value))))
+
 ;;;; Magit sections
 
 (defun nix3-flake-insert-metadata ()
@@ -419,8 +467,45 @@ directory-local variables for per-project configuration."
 
 (put 'nix3-flake-insert-metadata 'nix3-loader #'nix3-flake--make-metadata-process)
 
+(defvar nix3-flake-output-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'nix3-flake-output-return)
+    ;; (define-key map "a" #'nix3-transient-explore-output)
+    ;; (define-key map "b" #'nix3-flake-output-build)
+    ;; (define-key map "r" #'nix3-flake-output-run)
+    map))
+
+(defun nix3-flake-output-return ()
+  (interactive)
+  (when-let (output (nix3-flake-output-path-at-point))
+    (setq nix3-transient-flake-output output)
+    (setq nix3-transient-flake-output-type (nix3-flake-output-type))
+    (nix3-transient-on-output)))
+
+(defun nix3-flake-output-path-at-point ()
+  (when-let (section (magit-current-section))
+    (when (eq (oref section type) 'flake-output)
+      (oref section value))))
+
+(defun nix3-flake-output-type ()
+  (save-excursion
+    (catch 'output-type
+      ;; Use of `while-let' could simplify this code
+      (let (section)
+        (while (setq section (magit-current-section))
+          (when (eq (oref section type) 'flake-output-type)
+            (throw 'output-type (oref section value)))
+          (if-let (parent (oref section parent))
+              (let ((pos (point)))
+                (magit-section-goto parent)
+                ;; If there is no heading for the parent branch, the position
+                ;; doesn't change, so move the position to the previous line.
+                (when (eq pos (point))
+                  (forward-line -1)))
+            (throw 'output-type nil)))))))
+
 (defun nix3-flake-insert-outputs ()
-  (require 'nix3-flake-output)
+  (require 'nix3-transient)
   (magit-insert-section (flake-outputs nil nix3-flake-toplevel-sections-unfolded)
     (magit-insert-heading "Flake outputs")
     (nix3-section-with-keymap nix3-flake-output-map

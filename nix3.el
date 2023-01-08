@@ -34,10 +34,17 @@
 (require 'nix3-core)
 (require 'promise)
 (require 'nix3-flake)
+(require 'nix3-transient)
+
+(defvar nix3-transient-flake)
+(defvar nix3-transient-flake-output)
 
 (declare-function nix-store-show-path "ext:nix-store")
 (declare-function nix-store-realise "ext:nix-store")
 (declare-function compilation-read-command "compile")
+(declare-function nix3-transient-run "nix3-transient")
+(declare-function nix3-transient-build "nix3-transient")
+(declare-function nix3-flake-select-output "nix3-flake")
 
 (defvar nix3-prefix-map
   (let ((map (make-sparse-keymap)))
@@ -50,78 +57,41 @@
 This is EXPERIMENTAL.")
 
 ;;;###autoload
-(defun nix3-build ()
-  "Build an output in the flake."
-  (interactive)
-  (promise-chain (nix3--demand-outputs)
-    (then (lambda (_)
-            (compile (nix3--make-nix-command-line "build"
-                       (nix3--select-output-attribute "nix build (%s): "
-                                                      "build")))))))
+(defun nix3-build (output)
+  "Build a derivation in the current flake."
+  (interactive (list (nix3-flake-select-output
+                      (format "nix build (%s): " (nix3-flake-location))
+                      "build")))
+  (setq nix3-transient-flake (nix3-flake-location))
+  (setq nix3-transient-flake-output output)
+  (call-interactively #'nix3-transient-build))
 
 ;;;###autoload
-(defun nix3-run ()
-  "Run an app in the flake."
-  (interactive)
-  (promise-chain (nix3--demand-outputs)
-    (then (lambda (_)
-            (let ((command (nix3--make-nix-command-line "run"
-                             (nix3--select-output-attribute "nix run (%s): "
-                                                            "run"))))
-              (compile (compilation-read-command
-                        ;; Reuse the last command if possible.
-                        (if (string-prefix-p command compile-command)
-                            compile-command
-                          command))))))))
-
-(defun nix3--make-nix-command-line (nix-command attr)
-  (declare (indent 1))
-  (format "%s %s %s#%s"
-          (shell-quote-argument nix3-nix-executable)
-          (if (listp nix-command)
-              (string-join nix-command " ")
-            nix-command)
-          (or nix3-flake-url ".")
-          attr))
-
-(defun nix3--demand-outputs ()
-  (promise-new (apply-partially
-                #'nix3-flake--make-show-process
-                (string-remove-suffix
-                 "/"
-                 (file-truename (locate-dominating-file default-directory "flake.nix")))
-                nil)))
-
-(defun nix3--select-output-attribute (prompt-format command)
-  (let ((alist (nix3-flake--filter-outputs command)))
-    (cl-labels
-        ((group (candidate transform)
-           (if transform
-               candidate
-             (or (cdr (assoc candidate alist))
-                 "")))
-         (completions (string pred action)
-           (if (eq action 'metadata)
-               (cons 'metadata
-                     (list (cons 'category 'nix3-attribute)
-                           (cons 'group-function #'group)))
-             (complete-with-action action alist string pred))))
-      (completing-read (format prompt-format
-                               (or nix3-flake-url (abbreviate-file-name default-directory)))
-                       #'completions))))
+(defun nix3-run (output)
+  "Run an app in the current flake."
+  (interactive (list (nix3-flake-select-output
+                      (format "nix run (%s): " (nix3-flake-location))
+                      "run")))
+  (setq nix3-transient-flake (nix3-flake-location))
+  (setq nix3-transient-flake-output output)
+  (call-interactively #'nix3-transient-run))
 
 (defun nix3-realise-and-show-store (path)
   "Show PATH using nix-store.el. Realise it if necessary."
-  (if (file-readable-p path)
-      (nix-store-show-path path)
+  (cond
+   ((file-directory-p path)
+    (dired path))
+   ((file-readable-p path)
+    (dired-jump nil path))
+   (t
     (cl-flet ((sentinel (process _event)
                 (when (eq 'exit (process-status process))
                   (if (= 0 (process-exit-status process))
-                      (nix-store-show-path path)
+                      (nix3-realise-and-show-store path)
                     (error "Failed to realise the store path %s" path)))))
       (message "Realising %s..." path)
       (let ((proc (nix-store-realise path)))
-        (set-process-sentinel proc #'sentinel)))))
+        (set-process-sentinel proc #'sentinel))))))
 
 (provide 'nix3)
 ;;; nix3.el ends here
