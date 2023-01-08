@@ -1,7 +1,6 @@
 ;;; nix3-flake.el --- Support for Nix flakes -*- lexical-binding: t -*-
 
 (require 'nix3-core)
-(require 'nix3-repl)
 (require 'nix3-utils)
 (require 'nix3-registry)
 (require 'nix3-section)
