@@ -612,7 +612,7 @@ directory-local variables for per-project configuration."
   (let ((m (make-composed-keymap nil magit-section-mode-map)))
     (define-key m "l" #'nix3-flake-show-back)
     (define-key m "g" #'nix3-flake-show-revert)
-    (define-key m "'" #'nix3-transient)
+    (define-key m "?" #'nix3-transient)
     m))
 
 (define-derived-mode nix3-flake-show-mode magit-section-mode
