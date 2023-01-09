@@ -56,6 +56,44 @@
   :required t
   :variable 'nix3-transient-flake-output)
 
+;;;;; Flags
+
+(defclass nix3-transient-multi-select (transient-variable)
+  ((variable :initarg :variable)
+   (table :initarg :table)))
+
+(cl-defmethod transient-init-value ((obj nix3-transient-multi-select))
+  (oset obj value (eval (oref obj variable))))
+
+(cl-defmethod transient-infix-read ((obj nix3-transient-multi-select))
+  (completing-read-multiple (oref obj prompt)
+                            (oref obj table)
+                            nil nil
+                            (string-join (oref obj value) ",")))
+
+(cl-defmethod transient-infix-set ((obj nix3-transient-multi-select) value)
+  (oset obj value value)
+  (set (oref obj variable) value))
+
+(cl-defmethod transient-format-value ((obj nix3-transient-multi-select))
+  (let ((value (oref obj value)))
+    (concat
+     (propertize "(" 'face 'transient-inactive-value)
+     (propertize (string-join value ",") 'face 'transient-value)
+     (propertize ")" 'face 'transient-inactive-value))))
+
+(defvar nix3-transient-flags nil)
+
+;; TODO: Add a completion table function for flags (with annotations and groups)
+
+(transient-define-infix nix3-transient-set-flags ()
+  :description "Other flags"
+  :class 'nix3-transient-multi-select
+  :variable 'nix3-transient-flags
+  :prompt "Flags: "
+  ;; TODO: Add more suggestions
+  :table '("--impure"))
+
 ;;;;; Command (nix run)
 
 (defclass nix3-transient-string-variable (transient-variable)
@@ -247,6 +285,8 @@
   ["nix run"
    ("#" nix3-transient-set-output)
    ("-c" nix3-transient-set-command-args)]
+  ["Options"
+   ("=" nix3-transient-set-flags)]
   ["Suffixes"
    ("RET" "Run in compile" nix3-transient--run-compile)
    ;; ("t" "Run in term" nix3-transient--run-term)
@@ -267,7 +307,8 @@
 ;;;; Utilities
 
 (defun nix3-transient--shell-command (attr &rest args)
-  (let ((nix-command nix3-transient-nix-command))
+  (let ((nix-command nix3-transient-nix-command)
+        (args (append nix3-transient-flags args)))
     (format "%s %s %s#%s%s"
             (shell-quote-argument nix3-nix-executable)
             (if (listp nix-command)
