@@ -308,12 +308,12 @@
 
 (defun nix3-transient--run-compile ()
   (interactive)
-  (compile (nix3-transient--shell-command
-            nix3-transient-flake-output
-            (transient-args 'nix3-transient-run)
-            (when nix3-transient-command-args
-              (list "--" nix3-transient-command-args)))))
-
+  (compile (concat (nix3-transient--shell-command
+                    nix3-transient-flake-output
+                    (transient-args 'nix3-transient-run))
+                   (if nix3-transient-command-args
+                       (concat " -- " nix3-transient-command-args)
+                     ""))))
 
 ;;;; Utilities
 
