@@ -84,6 +84,7 @@
    :if nix3-flake-input--updatable-p
    ("ul" "Update to latest" nix3-flake-input-update)
    ("ur" "Update to revision" nix3-flake-input-update-to-rev)
+   ("uf" "Update to ref" nix3-flake-input-update-to-ref)
    ("uu" "Update to url" nix3-flake-input-update-to-url)]
   (interactive)
   (unless (nix3-flake-input-at-point)
@@ -140,6 +141,14 @@
     (if-let (cell (assq 'rev alist))
         (setcdr cell rev)
       (setq alist (cons (cons 'rev rev) alist)))
+    (nix3-flake-input-update alist)))
+
+(defun nix3-flake-input-update-to-ref (ref)
+  (interactive "sRef: ")
+  (let ((alist (alist-get 'original (cdr (nix3-flake-input-at-point)))))
+    (if-let (cell (assq 'ref alist))
+        (setcdr cell ref)
+      (setq alist (cons (cons 'ref ref) alist)))
     (nix3-flake-input-update alist)))
 
 (defun nix3-flake-input-update-to-url (url)
