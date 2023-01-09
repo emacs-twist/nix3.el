@@ -223,19 +223,6 @@ directory-local variables for per-project configuration."
        (or (locate-dominating-file default-directory "flake.nix")
            (error "No flake.nix is found")))))
 
-(defun nix3-flake--make-command-line (nix-command attr &rest args)
-  (declare (indent 1))
-  (format "%s %s %s#%s%s"
-          (shell-quote-argument nix3-nix-executable)
-          (if (listp nix-command)
-              (string-join nix-command " ")
-            nix-command)
-          (or nix3-flake-url ".")
-          attr
-          (if args
-              (concat " " (mapconcat #'shell-quote-argument (flatten-list args) " "))
-            "")))
-
 ;;;; nix eval
 
 (cl-defun nix3-flake-eval-nix (attr &key apply)

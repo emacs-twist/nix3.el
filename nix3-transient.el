@@ -239,9 +239,9 @@
 
 (defun nix3-transient--build-compile ()
   (interactive)
-  (compile (nix3-flake--make-command-line "build"
-             nix3-transient-flake-output
-             (transient-args 'nix3-transient-build))))
+  (compile (nix3-transient--shell-command
+            nix3-transient-flake-output
+            (transient-args 'nix3-transient-build))))
 
 (transient-define-prefix nix3-transient-run ()
   ["nix run"
@@ -257,11 +257,27 @@
 
 (defun nix3-transient--run-compile ()
   (interactive)
-  (compile (nix3-flake--make-command-line "run"
-             nix3-transient-flake-output
-             (transient-args 'nix3-transient-run)
-             (when nix3-transient-command-args
-               (list "--" nix3-transient-command-args)))))
+  (compile (nix3-transient--shell-command
+            nix3-transient-flake-output
+            (transient-args 'nix3-transient-run)
+            (when nix3-transient-command-args
+              (list "--" nix3-transient-command-args)))))
+
+
+;;;; Utilities
+
+(defun nix3-transient--shell-command (attr &rest args)
+  (let ((nix-command nix3-transient-nix-command))
+    (format "%s %s %s#%s%s"
+            (shell-quote-argument nix3-nix-executable)
+            (if (listp nix-command)
+                (string-join nix-command " ")
+              nix-command)
+            (or nix3-flake-url ".")
+            attr
+            (if args
+                (concat " " (mapconcat #'shell-quote-argument (flatten-list args) " "))
+              ""))))
 
 (provide 'nix3-transient)
 ;;; nix3-transient.el ends here
