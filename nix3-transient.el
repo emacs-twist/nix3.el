@@ -264,11 +264,21 @@
            (message "%s is an empty attribute set" path))))
     (go nix3-transient-flake-output)))
 
+;;;; Generate items programmatically
+
+(defvar nix3-transient-common-options
+  ["Common options"
+   :class transient-row
+   ("-q" "No build output" "--no-build-output")
+   ("-L" "Print full build logs" ("-L" "--print-build-logs"))])
+
 ;;;; Nix commmands
 
 (transient-define-prefix nix3-transient-build ()
   ["nix build"
-   ("#" nix3-transient-set-output)]
+   ("#" nix3-transient-set-output)
+   ("=" nix3-transient-set-flags)]
+  nix3-transient-common-options
   ["Suffixes"
    ("RET" "Build in compile" nix3-transient--build-compile)]
   (interactive)
@@ -284,9 +294,9 @@
 (transient-define-prefix nix3-transient-run ()
   ["nix run"
    ("#" nix3-transient-set-output)
-   ("-c" nix3-transient-set-command-args)]
-  ["Options"
-   ("=" nix3-transient-set-flags)]
+   ("=" nix3-transient-set-flags)
+   ("--" nix3-transient-set-command-args)]
+  nix3-transient-common-options
   ["Suffixes"
    ("RET" "Run in compile" nix3-transient--run-compile)
    ;; ("t" "Run in term" nix3-transient--run-term)
