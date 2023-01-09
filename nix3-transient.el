@@ -266,11 +266,12 @@
 
 ;;;; Generate items programmatically
 
-(defvar nix3-transient-common-options
-  ["Common options"
-   :class transient-row
-   ("-q" "No build output" "--no-build-output")
-   ("-L" "Print full build logs" ("-L" "--print-build-logs"))])
+(eval-and-compile
+  (defvar nix3-transient-common-options
+    ["Common options"
+     :class transient-row
+     ("-q" "No build output" "--no-build-output")
+     ("-L" "Print full build logs" ("-L" "--print-build-logs"))]))
 
 ;;;; Nix commmands
 
