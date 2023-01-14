@@ -75,6 +75,7 @@
 
 (defcustom nix3-flake-new-hook
   '(nix3-flake-git-init
+    nix3-flake-git-add
     nix3-flake-remember-this-project)
   "Hook to run after `nix3-flake-new' scaffolds a new project.
 
@@ -1012,6 +1013,13 @@ then runs `nix3-flake-init'."
   "Run git init in the current directory if there is no repository."
   (unless (locate-dominating-file default-directory ".git")
     (call-process "git" nil nil nil "init")))
+
+(defun nix3-flake-git-add ()
+  "Add flake.nix (and flake.lock) if it exists."
+  (when (file-exists-p "flake.nix")
+    (call-process "git" nil nil nil "add" "flake.nix")
+    (when (file-exists-p "flake.lock")
+      (call-process "git" nil nil nil "add" "flake.lock"))))
 
 (defun nix3-flake-remember-this-project ()
   "Remember the current project."
