@@ -395,14 +395,14 @@ directory-local variables for per-project configuration."
              (`t
               (dolist (name (nix3-read-nix-json-command
                              "eval"
-                             (concat (nix3-flake--buffer-url)
+                             (concat (nix3-flake-location)
                                      "#" (nix3-flake--attr-path-string path))
                              "--apply" "builtins.attrNames"))
                 (go2 (append path (list (intern name))) (cdr rest))))
              (name
               (when (nix3-read-nix-json-command
                      "eval"
-                     (concat (nix3-flake--buffer-url)
+                     (concat (nix3-flake-location)
                              "#" (nix3-flake--attr-path-string path))
                      "--apply"
                      (format "builtins.hasAttr \"%s\""
@@ -681,10 +681,10 @@ directory-local variables for per-project configuration."
       (nix3-normalize-path default-directory)))
 
 (defun nix3-flake--get-show-result ()
-  (nix3-flake-show--get (nix3-flake--buffer-url)))
+  (nix3-flake-show--get (nix3-flake-location)))
 
 (defun nix3-flake--get-metadata-result ()
-  (nix3-flake-metadata--get (nix3-flake--buffer-url)))
+  (nix3-flake-metadata--get (nix3-flake-location)))
 
 (defvar nix3-flake-show-mode-map
   (let ((m (make-composed-keymap nil magit-section-mode-map)))
