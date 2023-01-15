@@ -279,7 +279,7 @@
 (transient-define-prefix nix3-transient-build ()
   ["nix build"
    ("#" nix3-transient-set-output)
-   ("=" nix3-transient-set-flags)]
+   ("--" nix3-transient-set-flags)]
   nix3-transient-common-options
   ["Suffixes"
    ("RET" "Build in compile" nix3-transient--build-compile)]
@@ -296,8 +296,8 @@
 (transient-define-prefix nix3-transient-run ()
   ["nix run"
    ("#" nix3-transient-set-output)
-   ("=" nix3-transient-set-flags)
-   ("--" nix3-transient-set-command-args)]
+   ("--" nix3-transient-set-flags)
+   ("-c" nix3-transient-set-command-args)]
   nix3-transient-common-options
   ["Suffixes"
    ("RET" "Run in compile" nix3-transient--run-compile)
@@ -318,7 +318,7 @@
 
 (transient-define-prefix nix3-transient-flake-check ()
   ["nix flake check"
-   ("=" nix3-transient-set-flags)]
+   ("--" nix3-transient-set-flags)]
   nix3-transient-common-options
   ["Suffixes"
    ("c" "Run in compile" nix3-transient--flake-check-compile)]
