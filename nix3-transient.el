@@ -345,8 +345,8 @@
               nix-command)
             " "
             (if attr-or-nil
-                (format "%s#%s" (or nix3-flake-url ".") attr-or-nil)
-              (or nix3-flake-url "."))
+                (format "%s#%s" (nix3-flake--buffer-url) attr-or-nil)
+              (nix3-flake--buffer-url))
             (if args
                 (concat " " (mapconcat #'shell-quote-argument (flatten-list args) " "))
               ""))))
