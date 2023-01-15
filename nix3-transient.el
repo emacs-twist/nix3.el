@@ -134,10 +134,11 @@
    :description
    nix3-transient--flake-description
    ("h" "Show metadata and outputs" nix3-transient-show)]
-  ["Nix commands"
+  ["Nix commands on installable"
    :class transient-row
    ("b" "build" nix3-transient-build)
-   ("r" "run" nix3-transient-run)]
+   ("r" "run" nix3-transient-run)
+   ("c" "flake check" nix3-transient-flake-check)]
   (interactive)
   (unless nix3-transient-flake
     (user-error "Variable nix3-transient-flake must be set in advance"))
@@ -315,18 +316,36 @@
                        (concat " -- " nix3-transient-command-args)
                      ""))))
 
+(transient-define-prefix nix3-transient-flake-check ()
+  ["nix flake check"
+   ("=" nix3-transient-set-flags)]
+  nix3-transient-common-options
+  ["Suffixes"
+   ("c" "Run in compile" nix3-transient--flake-check-compile)]
+  (interactive)
+  (setq nix3-transient-nix-command '("flake" "check"))
+  (transient-setup 'nix3-transient-flake-check))
+
+(defun nix3-transient--flake-check-compile ()
+  (interactive)
+  (compile (nix3-transient--shell-command
+            nil
+            (transient-args 'nix3-transient-flake-check))))
+
 ;;;; Utilities
 
-(defun nix3-transient--shell-command (attr &rest args)
+(defun nix3-transient--shell-command (attr-or-nil &rest args)
   (let ((nix-command nix3-transient-nix-command)
         (args (append nix3-transient-flags args)))
-    (format "%s %s %s#%s%s"
-            (shell-quote-argument nix3-nix-executable)
+    (concat (shell-quote-argument nix3-nix-executable)
+            " "
             (if (listp nix-command)
                 (string-join nix-command " ")
               nix-command)
-            (or nix3-flake-url ".")
-            attr
+            " "
+            (if attr-or-nil
+                (format "%s#%s" (or nix3-flake-url ".") attr-or-nil)
+              (or nix3-flake-url "."))
             (if args
                 (concat " " (mapconcat #'shell-quote-argument (flatten-list args) " "))
               ""))))
