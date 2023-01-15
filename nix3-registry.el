@@ -23,13 +23,12 @@
   :type 'file)
 
 (defcustom nix3-registry-user-file
-  (cl-case system-type
-    (gnu/linux
-     (progn
-       (require 'xdg)
-       (expand-file-name "nix/registry.json" (xdg-config-home))))
-    (otherwise
-     (error "Not defined for %s" system-type)))
+  (expand-file-name "nix/registry.json"
+                    ;; Nix seems to respect XDG_CONFIG_HOME environment variable
+                    ;; even on Mac, so we will use the xdg library.
+                    (if (require 'xdg nil t)
+                        (xdg-config-home)
+                      "~/.config/"))
   ""
   :type 'file)
 
