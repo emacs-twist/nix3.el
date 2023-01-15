@@ -370,11 +370,16 @@ directory-local variables for per-project configuration."
                   (go (append path (list key)) subtree))))
              ((and (or "derivation"
                        (and "app"
-                            (guard (equal command "run")))
-                       (and "nixos-configuration"
-                            (guard (equal command "build"))))
+                            (guard (equal command "run"))))
                    type)
               (push (cons (nix3-flake--attr-path-string path)
+                          type)
+                    result))
+             ((and "nixos-configuration"
+                   (guard (equal command "build"))
+                   type)
+              (push (cons (concat (nix3-flake--attr-path-string path)
+                                  ".config.system.build.toplevel")
                           type)
                     result))
              ("unknown"
