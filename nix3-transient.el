@@ -92,7 +92,8 @@
   :variable 'nix3-transient-flags
   :prompt "Flags: "
   ;; TODO: Add more suggestions
-  :table '("--impure"))
+  :table '("--impure"
+           "--dry-run"))
 
 ;;;;; Command (nix run)
 
