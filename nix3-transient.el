@@ -273,8 +273,8 @@
   (defvar nix3-transient-common-options
     ["Common options"
      :class transient-row
-     ("-q" "No build output" "--no-build-output")
-     ("-L" "Print full build logs" ("-L" "--print-build-logs"))]))
+     ("-q" "" "--no-build-output")
+     ("-L" "" ("-L" "--print-build-logs"))]))
 
 ;;;; Nix commmands
 
