@@ -135,7 +135,7 @@
    :description
    nix3-transient--flake-description
    ("h" "Show metadata and outputs" nix3-transient-show)]
-  ["Nix commands on installable"
+  ["Nix commands"
    :class transient-row
    ("b" "build" nix3-transient-build)
    ("r" "run" nix3-transient-run)
