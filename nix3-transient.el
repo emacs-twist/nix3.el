@@ -139,7 +139,8 @@
    :class transient-row
    ("b" "build" nix3-transient-build)
    ("r" "run" nix3-transient-run)
-   ("c" "flake check" nix3-transient-flake-check)]
+   ("c" "flake check" nix3-transient-flake-check)
+   ("l" "flake lock" nix3-transient-flake-lock)]
   (interactive)
   (unless nix3-transient-flake
     (user-error "Variable nix3-transient-flake must be set in advance"))
@@ -332,6 +333,22 @@
   (compile (nix3-transient--shell-command
             nil
             (transient-args 'nix3-transient-flake-check))))
+
+(transient-define-prefix nix3-transient-flake-lock ()
+  ["nix flake lock"
+   ("--" nix3-transient-set-flags)]
+  nix3-transient-common-options
+  ["Suffixes"
+   ("RET" "Run in compile" nix3-transient--flake-lock-compile)]
+  (interactive)
+  (setq nix3-transient-nix-command '("flake" "lock"))
+  (transient-setup 'nix3-transient-flake-lock))
+
+(defun nix3-transient--flake-lock-compile ()
+  (interactive)
+  (compile (nix3-transient--shell-command
+            nil
+            (transient-args 'nix3-transient-flake-lock))))
 
 ;;;; Utilities
 
