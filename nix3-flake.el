@@ -217,12 +217,16 @@ directory-local variables for per-project configuration."
               (nix3-normalize-path (expand-file-name relative default-directory)))))
         (error "Failed to match against a path \"%s\"" path)))))
 
-(defun nix3-flake-location ()
-  "Return the URL or path to the current flake."
+(defun nix3-flake-location (&optional allow-missing)
+  "Return the URL or path to the current flake.
+
+If the current buffer is not on a remote flake and ALLOW-MISSING
+is nil, the function throws an error if there is no flake.nix."
   (or nix3-flake-url
-      (nix3-normalize-path
-       (or (locate-dominating-file default-directory "flake.nix")
-           (error "No flake.nix is found")))))
+      (if-let (root (locate-dominating-file default-directory "flake.nix"))
+          (nix3-normalize-path root)
+        (unless allow-missing
+          (error "No flake.nix is found")))))
 
 ;;;; nix eval
 
@@ -858,13 +862,16 @@ directory-local variables for per-project configuration."
 ;;;; nix flake init/new
 
 ;;;###autoload
-(defun nix3-flake-init ()
-  "Initialize the current project from a flake template."
+(cl-defun nix3-flake-init (&key no-confirm)
+  "Initialize the current project from a flake template.
+
+If NO-CONFIRM is non-nil, "
   (interactive)
   (when (and (or (file-exists-p "flake.nix")
                  (project-current))
-             (not (yes-or-no-p (format "Are you sure you want to run the template in \"%s\"?"
-                                       default-directory))))
+             (not (or no-confirm
+                      (yes-or-no-p (format "Are you sure you want to run the template in \"%s\"?"
+                                           default-directory)))))
     (user-error "Aborted"))
   (nix3-flake--prompt-template "nix flake init: "
                                #'nix3-flake-init-with-template))
