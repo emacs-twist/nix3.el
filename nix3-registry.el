@@ -235,10 +235,10 @@ registry type and the \"to\" value of the entry."
 (defun nix3-registry-list ()
   "Display a list of entries in the flake registries."
   (interactive)
-  (let ((name (car (nix3-registry-complete "Flake: "
-                                           :add-to-registry t
-                                           :require-match nil
-                                           :no-exact t))))
+  (let ((name (nix3-registry-complete "Flake: "
+                                      :add-to-registry t
+                                      :require-match nil
+                                      :no-exact t)))
     (message "Selected a registry entry %s" name)
     (funcall nix3-registry-list-action name)))
 
