@@ -56,6 +56,48 @@
   :required t
   :variable 'nix3-transient-flake-output)
 
+;;;;; Directory
+
+(defvar nix3-transient-directory nil)
+
+(defun nix3-transient--default-directory ()
+  "Return a directory in which Nix should be run."
+  (if nix3-flake-url
+      default-directory
+    (thread-last
+      (or nix3-transient-flake
+          (error "Call this function after nix3-transient-flake is set"))
+      (file-name-as-directory))))
+
+(defclass nix3-transient-directory-variable (nix3-transient-string-variable)
+  ((variable :initarg :variable)))
+
+(cl-defmethod transient-infix-read ((obj nix3-transient-directory-variable))
+  (read-directory-name (oref obj prompt)
+                       (oref obj value)
+                       nil
+                       t))
+
+(cl-defmethod transient-format-value ((obj nix3-transient-directory-variable))
+  (let ((value (oref obj value)))
+    (concat
+     (propertize "(" 'face 'transient-inactive-value)
+     (propertize (abbreviate-file-name value) 'face 'transient-value)
+     (propertize ")" 'face 'transient-inactive-value))))
+
+(transient-define-infix nix3-transient-set-directory ()
+  :class 'nix3-transient-directory-variable
+  :description "Working directory"
+  :prompt "Directory: "
+  :variable 'nix3-transient-directory)
+
+(defmacro nix3-transient-with-directory (&rest body)
+  "Evaluate BODY with the default directory."
+  `(let ((default-directory (or nix3-transient-directory
+                                ;; The directory should be set, but just in case
+                                (nix3-transient--default-directory))))
+     ,@body))
+
 ;;;;; Flags
 
 (defclass nix3-transient-multi-select (transient-variable)
@@ -290,19 +332,22 @@
    ("RET" "Build in compile" nix3-transient--build-compile)]
   (interactive)
   (setq nix3-transient-nix-command "build")
+  (setq nix3-transient-directory (nix3-transient--default-directory))
   (transient-setup 'nix3-transient-build))
 
 (defun nix3-transient--build-compile ()
   (interactive)
-  (compile (nix3-transient--shell-command
-            nix3-transient-flake-output
-            (transient-args 'nix3-transient-build))))
+  (nix3-transient-with-directory
+   (compile (nix3-transient--shell-command
+             nix3-transient-flake-output
+             (transient-args 'nix3-transient-build)))))
 
 (transient-define-prefix nix3-transient-run ()
   ["nix run"
    ("#" nix3-transient-set-output)
    ("--" nix3-transient-set-flags)
-   ("-c" nix3-transient-set-command-args)]
+   ("-c" nix3-transient-set-command-args)
+   ("-d" nix3-transient-set-directory)]
   nix3-transient-common-options
   ["Suffixes"
    ("RET" "Run in compile" nix3-transient--run-compile)
@@ -310,16 +355,18 @@
    ]
   (interactive)
   (setq nix3-transient-nix-command "run")
+  (setq nix3-transient-directory (nix3-transient--default-directory))
   (transient-setup 'nix3-transient-run))
 
 (defun nix3-transient--run-compile ()
   (interactive)
-  (compile (concat (nix3-transient--shell-command
-                    nix3-transient-flake-output
-                    (transient-args 'nix3-transient-run))
-                   (if nix3-transient-command-args
-                       (concat " -- " nix3-transient-command-args)
-                     ""))))
+  (nix3-transient-with-directory
+   (compile (concat (nix3-transient--shell-command
+                     nix3-transient-flake-output
+                     (transient-args 'nix3-transient-run))
+                    (if nix3-transient-command-args
+                        (concat " -- " nix3-transient-command-args)
+                      "")))))
 
 (transient-define-prefix nix3-transient-flake-check ()
   ["nix flake check"
@@ -329,13 +376,15 @@
    ("c" "Run in compile" nix3-transient--flake-check-compile)]
   (interactive)
   (setq nix3-transient-nix-command '("flake" "check"))
+  (setq nix3-transient-directory (nix3-transient--default-directory))
   (transient-setup 'nix3-transient-flake-check))
 
 (defun nix3-transient--flake-check-compile ()
   (interactive)
-  (compile (nix3-transient--shell-command
-            nil
-            (transient-args 'nix3-transient-flake-check))))
+  (nix3-transient-with-directory
+   (compile (nix3-transient--shell-command
+             nil
+             (transient-args 'nix3-transient-flake-check)))))
 
 (transient-define-prefix nix3-transient-flake-lock ()
   ["nix flake lock"
@@ -345,13 +394,15 @@
    ("RET" "Run in compile" nix3-transient--flake-lock-compile)]
   (interactive)
   (setq nix3-transient-nix-command '("flake" "lock"))
+  (setq nix3-transient-directory (nix3-transient--default-directory))
   (transient-setup 'nix3-transient-flake-lock))
 
 (defun nix3-transient--flake-lock-compile ()
   (interactive)
-  (compile (nix3-transient--shell-command
-            nil
-            (transient-args 'nix3-transient-flake-lock))))
+  (nix3-transient-with-directory
+   (compile (nix3-transient--shell-command
+             nil
+             (transient-args 'nix3-transient-flake-lock)))))
 
 ;;;; Utilities
 
