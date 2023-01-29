@@ -158,7 +158,8 @@
   :prompt "Flags: "
   ;; TODO: Add more suggestions
   :table '("--impure"
-           "--dry-run"))
+           "--dry-run"
+           "--accept-flake-config"))
 
 ;;;;; Command (nix run)
 
