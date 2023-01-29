@@ -69,7 +69,7 @@
 
 (defcustom nix3-flake-default-json-options
   '("--show-trace"
-    "--allow-import-from-derivation")
+    "--accept-flake-config")
   "List of Nix options used when retrieving data."
   :type '(repeat string))
 
