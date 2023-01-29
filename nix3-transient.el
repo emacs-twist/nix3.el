@@ -199,7 +199,7 @@
       (progn
         (setq nix3-transient-flake (nix3-flake--buffer-url))
         (call-interactively #'nix3-transient--dispatch))
-    (setq nix3-transient-flake (nix3-flake-location t))
+    (setq nix3-transient-flake (nix3-flake-location))
     (if nix3-transient-flake
         (if (and (nix3-flake-metadata--get nix3-transient-flake)
                  (nix3-flake-show--get nix3-transient-flake))
