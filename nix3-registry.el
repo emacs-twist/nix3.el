@@ -156,7 +156,12 @@ registry type and the \"to\" value of the entry."
                      (not require-match)
                      user
                      (yes-or-no-p "Add the flake to the user registry?"))
-            (let ((name (read-string (format "Name for %s: " input))))
+            (let* ((default-name (save-match-data
+                                   (when (string-match (rx (+ (not (any "/"))) eol)
+                                                       input)
+                                     (match-string 0 input))))
+                   (name (read-from-minibuffer "Name in the registry: "
+                                               default-name)))
               (nix3-registry-add name input)))
           input)))))
 
