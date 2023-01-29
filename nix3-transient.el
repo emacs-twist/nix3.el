@@ -19,6 +19,29 @@
 
 ;;;; Infixes and suffixes
 
+;;;;; General classes
+
+(defclass nix3-transient-string-variable (transient-variable)
+  ((variable :initarg :variable)))
+
+(cl-defmethod transient-init-value ((obj nix3-transient-string-variable))
+  (oset obj value (eval (oref obj variable))))
+
+(cl-defmethod transient-infix-read ((obj nix3-transient-string-variable))
+  (read-from-minibuffer (oref obj prompt) (oref obj value)))
+
+(cl-defmethod transient-infix-set ((obj nix3-transient-string-variable) value)
+  (oset obj value value)
+  (set (oref obj variable) value))
+
+(cl-defmethod transient-format-value ((obj nix3-transient-string-variable))
+  (let ((value (oref obj value)))
+    (concat (propertize "(" 'face 'transient-inactive-value)
+            (if value
+                (propertize value 'face 'transient-value)
+              "")
+            (propertize ")" 'face 'transient-inactive-value))))
+
 ;;;;; Output
 
 (defclass nix3-transient-output-variable (transient-variable)
@@ -138,27 +161,6 @@
            "--dry-run"))
 
 ;;;;; Command (nix run)
-
-(defclass nix3-transient-string-variable (transient-variable)
-  ((variable :initarg :variable)))
-
-(cl-defmethod transient-init-value ((obj nix3-transient-string-variable))
-  (oset obj value (eval (oref obj variable))))
-
-(cl-defmethod transient-infix-read ((obj nix3-transient-string-variable))
-  (read-from-minibuffer (oref obj prompt) (oref obj value)))
-
-(cl-defmethod transient-infix-set ((obj nix3-transient-string-variable) value)
-  (oset obj value value)
-  (set (oref obj variable) value))
-
-(cl-defmethod transient-format-value ((obj nix3-transient-string-variable))
-  (let ((value (oref obj value)))
-    (concat (propertize "(" 'face 'transient-inactive-value)
-            (if value
-                (propertize value 'face 'transient-value)
-              "")
-            (propertize ")" 'face 'transient-inactive-value))))
 
 (defvar nix3-transient-command-args nil)
 
