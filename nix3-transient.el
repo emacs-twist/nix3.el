@@ -367,7 +367,8 @@ This is a function that takes a command line as an argument."
   ["Suffixes"
    :class transient-row
    ("RET" "Run in compile" nix3-transient--run-compile)
-   ("t" "Run in terminal" nix3-transient--run-term)]
+   ("t" "Run in terminal" nix3-transient--run-term)
+   ("&" "Run async" nix3-transient--run-async)]
   (interactive)
   (setq nix3-transient-nix-command "run")
   (setq nix3-transient-directory (nix3-transient--default-directory))
@@ -393,6 +394,17 @@ This is a function that takes a command line as an argument."
                     (if nix3-transient-command-args
                         (concat " -- " nix3-transient-command-args)
                       "")))))
+
+(defun nix3-transient--run-async ()
+  (interactive)
+  (nix3-transient-with-directory
+   (shell-command (concat (nix3-transient--shell-command
+                           nix3-transient-flake-output
+                           (transient-args 'nix3-transient-run))
+                          (if nix3-transient-command-args
+                              (concat " -- " nix3-transient-command-args)
+                            "")
+                          "&"))))
 
 (transient-define-prefix nix3-transient-flake-check ()
   ["nix flake check"
