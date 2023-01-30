@@ -6,6 +6,18 @@
 (require 'nix3-utils)
 
 (declare-function nix3-realise-and-show-store "nix3")
+(declare-function nix3-vterm-shell-command "nix3-utils")
+(declare-function term "term")
+
+(defcustom nix3-terminal-function #'term
+  "Function to run a shell command in a terminal.
+
+This is a function that takes a command line as an argument."
+  :group 'nix3
+  :type '(choice (const :tag "Built-in term" term)
+                 (const :tag "nix3-vterm-shell-command (requires vterm.el)"
+                        nix3-vterm-shell-command)
+                 (function :tag "Any function")))
 
 (defvar-local nix3-transient-flake nil
   "Location of the flake.")
@@ -353,9 +365,9 @@
    ("-d" nix3-transient-set-directory)]
   nix3-transient-common-options
   ["Suffixes"
+   :class transient-row
    ("RET" "Run in compile" nix3-transient--run-compile)
-   ;; ("t" "Run in term" nix3-transient--run-term)
-   ]
+   ("t" "Run in terminal" nix3-transient--run-term)]
   (interactive)
   (setq nix3-transient-nix-command "run")
   (setq nix3-transient-directory (nix3-transient--default-directory))
@@ -365,6 +377,17 @@
   (interactive)
   (nix3-transient-with-directory
    (compile (concat (nix3-transient--shell-command
+                     nix3-transient-flake-output
+                     (transient-args 'nix3-transient-run))
+                    (if nix3-transient-command-args
+                        (concat " -- " nix3-transient-command-args)
+                      "")))))
+
+(defun nix3-transient--run-term ()
+  (interactive)
+  (nix3-transient-with-directory
+   (funcall nix3-terminal-function
+            (concat (nix3-transient--shell-command
                      nix3-transient-flake-output
                      (transient-args 'nix3-transient-run))
                     (if nix3-transient-command-args

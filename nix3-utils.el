@@ -4,6 +4,10 @@
 (require 'subr-x)
 (require 'nix3-core)
 
+(declare-function vterm "ext:vterm")
+(declare-function vterm-send-string "ext:vterm")
+(declare-function vterm-send-return "ext:vterm")
+
 (defun nix3-put-overlay-on-region (beg end &rest properties)
   "A shorthand for putting overlay properties on a region."
   (declare (indent 2))
@@ -127,6 +131,17 @@
       (nix3--git-config-list)
       (mapcar #'remote-url)
       (delq nil))))
+
+;;;###autoload
+(defun nix3-vterm-shell-command (shell-command)
+  "Run SHELL-COMMAND in `vterm'.
+
+It always creates a new buffer."
+  (with-current-buffer (save-window-excursion (vterm 'new))
+    (rename-buffer (generate-new-buffer-name "*nix run*"))
+    (vterm-send-string shell-command)
+    (vterm-send-return)
+    (pop-to-buffer (current-buffer))))
 
 (provide 'nix3-utils)
 ;;; nix3-utils.el ends here
