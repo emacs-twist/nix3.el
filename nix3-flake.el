@@ -671,6 +671,7 @@ is nil, the function throws an error if there is no flake.nix."
 (defun nix3-flake-show-revert (&rest _args)
   "Revert the `nix3-flake-show' buffer."
   (interactive)
+  (nix3-flake--get-promise (nix3-flake-location) nix3-flake-url)
   (let ((inhibit-read-only t))
     (erase-buffer)
     (magit-insert-section (flake)
