@@ -82,6 +82,7 @@
    ]
   ["Update input"
    :if nix3-flake-input--updatable-p
+   ("-c" "" "--accept-flake-config")
    ("ul" "Update to latest" nix3-flake-input-update)
    ("ur" "Update to revision" nix3-flake-input-update-to-rev)
    ("uf" "Update to ref" nix3-flake-input-update-to-ref)
@@ -126,12 +127,14 @@
      (apply #'nix3-run-process-background
             nix3-nix-executable
             "flake" "lock" "--update-input" name
-            (pcase-exhaustive url-or-alist
-              (`nil)
-              ((pred stringp)
-               (list "--override-input" name url-or-alist))
-              ((pred sequencep)
-               (list "--override-input" name (nix3-flake-ref-alist-to-url url-or-alist))))))
+            (append (transient-args 'nix3-flake-input-dispatch)
+                    (pcase-exhaustive url-or-alist
+                      (`nil)
+                      ((pred stringp)
+                       (list "--override-input" name url-or-alist))
+                      ((pred sequencep)
+                       (list "--override-input" name
+                             (nix3-flake-ref-alist-to-url url-or-alist)))))))
     (_
      (user-error "No input at point"))))
 
