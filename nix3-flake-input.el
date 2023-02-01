@@ -86,7 +86,8 @@
    ("ul" "Update to latest" nix3-flake-input-update)
    ("ur" "Update to revision" nix3-flake-input-update-to-rev)
    ("uf" "Update to ref" nix3-flake-input-update-to-ref)
-   ("uu" "Update to url" nix3-flake-input-update-to-url)]
+   ("uu" "Update to url" nix3-flake-input-update-to-url)
+   ("up" "Update to project directory" nix3-flake-input-update-to-project)]
   (interactive)
   (unless (nix3-flake-input-at-point)
     (user-error "No flake input at point"))
@@ -163,6 +164,10 @@
                                               default)
                                              nil nil nil nil default))))
   (nix3-flake-input-update url))
+
+(defun nix3-flake-input-update-to-project (dir)
+  (interactive (list (project-prompt-project-dir)))
+  (nix3-flake-input-update (concat "path:" (expand-file-name dir))))
 
 (provide 'nix3-flake-input)
 ;;; nix3-flake-input.el ends here
