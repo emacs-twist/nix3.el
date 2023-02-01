@@ -13,6 +13,7 @@
 (declare-function nix3-flake-show-url "nix3-flake")
 (declare-function nix3-flake--get-metadata-result "nix3-flake")
 (declare-function nix3-flake-html-url "nix3-flake")
+(declare-function project-prompt-project-dir "project")
 
 (defvar nix3-flake-input-map
   (let ((map (make-keymap)))
@@ -166,7 +167,9 @@
   (nix3-flake-input-update url))
 
 (defun nix3-flake-input-update-to-project (dir)
-  (interactive (list (project-prompt-project-dir)))
+  (interactive (list (progn
+                       (require 'project)
+                       (project-prompt-project-dir))))
   (nix3-flake-input-update (concat "path:" (expand-file-name dir))))
 
 (provide 'nix3-flake-input)
