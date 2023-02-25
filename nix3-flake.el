@@ -607,7 +607,7 @@ is nil, the function throws an error if there is no flake.nix."
                                                         other-nodes
                                                         (seq-group-by #'direct-input-p)
                                                         (seq-sort-by #'car #'compare-bool)))
-                (magit-insert-section (input-group group group)
+                (magit-insert-section (input-group group (not group))
                   (magit-insert-heading
                     (make-string 2 ?\s)
                     (if group
