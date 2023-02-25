@@ -197,7 +197,9 @@ This is a function that takes a command line as an argument."
    ("b" "build" nix3-transient-build)
    ("r" "run" nix3-transient-run)
    ("c" "flake check" nix3-transient-flake-check)
-   ("l" "flake lock" nix3-transient-flake-lock)]
+   ("l" "flake lock" nix3-transient-flake-lock)
+   ("u" "Update input" nix3-transient-update-input
+    :transient t)]
   (interactive)
   (unless nix3-transient-flake
     (user-error "Variable nix3-transient-flake must be set in advance"))
@@ -441,6 +443,15 @@ This is a function that takes a command line as an argument."
    (compile (nix3-transient--shell-command
              nil
              (transient-args 'nix3-transient-flake-lock)))))
+
+(defun nix3-transient-update-input ()
+  (interactive)
+  (setq nix3-transient-directory (nix3-transient--default-directory))
+  (nix3-transient-with-directory
+   (let* ((alist (nix3-flake--direct-inputs))
+          (input (completing-read "Select input: " alist)))
+     (setq nix3-flake-input (cons input (cdr (assq (intern input) alist))))
+     (nix3-flake-input-dispatch))))
 
 ;;;; Utilities
 

@@ -579,6 +579,16 @@ is nil, the function throws an error if there is no flake.nix."
                                                    (mapcar #'cdr)))))
                  (seq-sort-by #'car #'string<))))
 
+(defun nix3-flake--direct-inputs ()
+  (if-let (result (nix3-flake--get-metadata-result))
+      (let* ((nodes (nix3-lookup-tree '(locks nodes) result))
+             (names (mapcar #'car (nix3-lookup-tree '(root inputs) nodes))))
+        (mapcar (lambda (name)
+                  (assq name nodes))
+                names))
+    (nix3-lookup-tree '(locks nodes root inputs) result)
+    (error "No flake metadata")))
+
 (defun nix3-flake-insert-inputs ()
   (require 'nix3-flake-input)
   (when-let (result (nix3-flake--get-metadata-result))
