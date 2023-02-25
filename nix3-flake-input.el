@@ -20,6 +20,8 @@
     (define-key map (kbd "RET") #'nix3-flake-input-return)
     map))
 
+(defvar nix3-flake-input nil)
+
 (defun nix3-flake-input--local-p ()
   "Return non-nil when the flake is local."
   (not nix3-flake-url))
@@ -29,35 +31,36 @@
   (interactive)
   (if (get-text-property (point) 'button)
       (push-button (point))
+    (setq nix3-flake-input (nix3-flake-input-at-point))
     (call-interactively #'nix3-flake-input-dispatch)))
 
 (defun nix3-flake-input--original-url ()
   (thread-last
-    (cdr (nix3-flake-input-at-point))
+    (cdr nix3-flake-input)
     (alist-get 'original)
     (nix3-flake-ref-alist-to-url)))
 
 (defun nix3-flake-input--locked-url ()
   (thread-last
-    (cdr (nix3-flake-input-at-point))
+    (cdr nix3-flake-input)
     (alist-get 'locked)
     (nix3-flake-ref-alist-to-url)))
 
 (defun nix3-flake-input--last-modified ()
   (thread-last
-    (cdr (nix3-flake-input-at-point))
+    (cdr nix3-flake-input)
     (nix3-lookup-tree '(locked lastModified))))
 
 (defun nix3-flake-input--revision ()
   (thread-last
-    (cdr (nix3-flake-input-at-point))
+    (cdr nix3-flake-input)
     (nix3-lookup-tree '(locked rev))))
 
 (defun nix3-flake-input--html-url ()
-  (nix3-flake-html-url (assq 'original (cdr (nix3-flake-input-at-point)))))
+  (nix3-flake-html-url (assq 'original (cdr nix3-flake-input))))
 
 (defun nix3-flake-input--direct-p ()
-  (rassoc (car (nix3-flake-input-at-point))
+  (rassoc (car nix3-flake-input)
           (thread-last
             (nix3-flake--get-metadata-result)
             (nix3-lookup-tree '(locks nodes root inputs)))))
@@ -90,7 +93,7 @@
    ("uu" "Update to url" nix3-flake-input-update-to-url)
    ("up" "Update to project directory" nix3-flake-input-update-to-project)]
   (interactive)
-  (unless (nix3-flake-input-at-point)
+  (unless nix3-flake-input
     (user-error "No flake input at point"))
   (transient-setup 'nix3-flake-input-dispatch))
 
@@ -123,7 +126,7 @@
 
 (defun nix3-flake-input-update (&optional url-or-alist)
   (interactive)
-  (pcase (nix3-flake-input-at-point)
+  (pcase nix3-flake-input
     (`(,name . ,_)
      ;; TODO This is a quick-and-dirty implementation, so rewrite it
      (apply #'nix3-run-process-background
@@ -142,7 +145,7 @@
 
 (defun nix3-flake-input-update-to-rev (rev)
   (interactive "sRevision: ")
-  (let ((alist (alist-get 'original (cdr (nix3-flake-input-at-point)))))
+  (let ((alist (alist-get 'original (cdr nix3-flake-input))))
     (if-let (cell (assq 'rev alist))
         (setcdr cell rev)
       (setq alist (cons (cons 'rev rev) alist)))
@@ -150,14 +153,14 @@
 
 (defun nix3-flake-input-update-to-ref (ref)
   (interactive "sRef: ")
-  (let ((alist (alist-get 'original (cdr (nix3-flake-input-at-point)))))
+  (let ((alist (alist-get 'original (cdr nix3-flake-input))))
     (if-let (cell (assq 'ref alist))
         (setcdr cell ref)
       (setq alist (cons (cons 'ref ref) alist)))
     (nix3-flake-input-update alist)))
 
 (defun nix3-flake-input-update-to-url (url)
-  (interactive (let* ((input (nix3-flake-input-at-point))
+  (interactive (let* ((input nix3-flake-input)
                       (default (nix3-flake-ref-alist-to-url (cdr (assq 'original input)))))
                  (list (read-from-minibuffer (format-prompt
                                               (format "Update %s to flake url"
