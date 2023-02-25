@@ -191,9 +191,9 @@ This is a function that takes a command line as an argument."
    nix3-transient--show-mode-p
    :description
    nix3-transient--flake-description
-   :class transient-row
-   ("h" "Show metadata and outputs" nix3-transient-show)
-   ("i" "Update input" nix3-transient-input :transient t)]
+   ("h" "Show metadata and outputs" nix3-transient-show)]
+  ["Inputs"
+   ("i" "Update input" nix3-transient-input :transient t)   ]
   ["Nix commands"
    :class transient-row
    ("b" "build" nix3-transient-build)
