@@ -191,15 +191,15 @@ This is a function that takes a command line as an argument."
    nix3-transient--show-mode-p
    :description
    nix3-transient--flake-description
-   ("h" "Show metadata and outputs" nix3-transient-show)]
+   :class transient-row
+   ("h" "Show metadata and outputs" nix3-transient-show)
+   ("i" "Update input" nix3-transient-input :transient t)]
   ["Nix commands"
    :class transient-row
    ("b" "build" nix3-transient-build)
    ("r" "run" nix3-transient-run)
    ("c" "flake check" nix3-transient-flake-check)
-   ("l" "flake lock" nix3-transient-flake-lock)
-   ("u" "Update input" nix3-transient-update-input
-    :transient t)]
+   ("l" "flake lock" nix3-transient-flake-lock)]
   (interactive)
   (unless nix3-transient-flake
     (user-error "Variable nix3-transient-flake must be set in advance"))
@@ -444,7 +444,7 @@ This is a function that takes a command line as an argument."
              nil
              (transient-args 'nix3-transient-flake-lock)))))
 
-(defun nix3-transient-update-input ()
+(defun nix3-transient-input ()
   (interactive)
   (setq nix3-transient-directory (nix3-transient--default-directory))
   (nix3-transient-with-directory
