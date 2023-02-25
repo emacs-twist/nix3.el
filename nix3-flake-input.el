@@ -86,12 +86,13 @@
    ]
   ["Update input"
    :if nix3-flake-input--updatable-p
+   :class transient-row
    ("-c" "" "--accept-flake-config")
-   ("ul" "Update to latest" nix3-flake-input-update)
-   ("ur" "Update to revision" nix3-flake-input-update-to-rev)
-   ("uf" "Update to ref" nix3-flake-input-update-to-ref)
-   ("uu" "Update to url" nix3-flake-input-update-to-url)
-   ("up" "Update to project directory" nix3-flake-input-update-to-project)]
+   ("ul" "Latest" nix3-flake-input-update)
+   ("ur" "Revision" nix3-flake-input-update-to-rev)
+   ("uf" "Ref" nix3-flake-input-update-to-ref)
+   ("uu" "Url" nix3-flake-input-update-to-url)
+   ("up" "Project" nix3-flake-input-update-to-project)]
   (interactive)
   (unless nix3-flake-input
     (user-error "No flake input at point"))
