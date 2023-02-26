@@ -8,6 +8,8 @@
 (declare-function nix3-realise-and-show-store "nix3")
 (declare-function nix3-vterm-shell-command "nix3-utils")
 (declare-function term "term")
+(declare-function nix3-flake-input-dispatch "nix3-flake-input")
+(defvar nix3-flake-input)
 
 (defcustom nix3-terminal-function #'term
   "Function to run a shell command in a terminal.
