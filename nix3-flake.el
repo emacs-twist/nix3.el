@@ -218,13 +218,19 @@ directory-local variables for per-project configuration."
               (nix3-normalize-path (expand-file-name relative default-directory)))))
         (error "Failed to match against a path \"%s\"" path)))))
 
-(defun nix3-flake-location (&optional allow-missing)
+(cl-defun nix3-flake-location (&key allow-missing local dir)
   "Return the URL or path to the current flake.
 
 If the current buffer is not on a remote flake and ALLOW-MISSING
-is nil, the function throws an error if there is no flake.nix."
-  (or nix3-flake-url
-      (if-let (root (locate-dominating-file default-directory "flake.nix"))
+is nil, the function throws an error if there is no flake.nix.
+
+If LOCAL is non-nil, the function only returns a flake on path.
+
+If DIR is non-nil, the function returns a flake at or above the
+directory. It implies LOCAL."
+  (or (unless (or local dir)
+        nix3-flake-url)
+      (if-let (root (locate-dominating-file (or dir default-directory) "flake.nix"))
           (nix3-normalize-path root)
         (unless allow-missing
           (error "No flake.nix is found")))))
