@@ -1071,5 +1071,33 @@ then runs `nix3-flake-init'."
 (defun nix3-flake--handle-repo-error (payload)
   (error "Error in nix3-flake--handle-repo-error: %s" payload))
 
+;;;; Commands on a flake
+
+;;;###autoload
+(defun nix3-flake-update-inputs (dir &optional names)
+  "Update inputs of a flake on filesystem.
+
+You can use this function to build your own commands that is used
+to update inputs of a flake.
+
+DIR is a directory of the flake.
+
+Optionally, you can pass NAMES explicitly to update inputs
+non-interactively."
+  (interactive "DFlake: ")
+  (promise-wait nix3-flake-wait
+    (promise-new (apply-partially
+                  #'nix3-flake--make-metadata-process
+                  (nix3-flake-location :dir dir :local t)
+                  nil)))
+  (let* ((default-directory dir)
+         (names (or names
+                    (completing-read-multiple (format "Select inputs at %s: " dir)
+                                              (nix3-flake--direct-inputs)))))
+    (compile (concat "nix flake lock "
+                     (mapconcat (lambda (name)
+                                  (format "--update-input %s" name))
+                                names " ")))))
+
 (provide 'nix3-flake)
 ;;; nix3-flake.el ends here
