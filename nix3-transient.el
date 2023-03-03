@@ -135,6 +135,39 @@ This is a function that takes a command line as an argument."
                                 (nix3-transient--default-directory))))
      ,@body))
 
+;;;;; --update-input
+
+(defvar nix3-transient-updated-inputs nil)
+
+(defclass nix3-transient-direct-inputs (transient-variable)
+  ((variable :initarg :variable)))
+
+(cl-defmethod transient-init-value ((obj nix3-transient-direct-inputs))
+  (oset obj value (eval (oref obj variable))))
+
+(cl-defmethod transient-infix-read ((obj nix3-transient-direct-inputs))
+  (completing-read-multiple (oref obj prompt)
+                            (nix3-flake--direct-inputs)
+                            nil nil
+                            (string-join (oref obj value) nix3-crm-separator)))
+
+(cl-defmethod transient-infix-set ((obj nix3-transient-direct-inputs) value)
+  (oset obj value value)
+  (set (oref obj variable) value))
+
+(cl-defmethod transient-format-value ((obj nix3-transient-direct-inputs))
+  (let ((value (oref obj value)))
+    (concat
+     (propertize "(" 'face 'transient-inactive-value)
+     (propertize (string-join (oref obj value) ",") 'face 'transient-value)
+     (propertize ")" 'face 'transient-inactive-value))))
+
+(transient-define-infix nix3-transient-set-updated-inputs ()
+  :description "--update-input"
+  :class 'nix3-transient-direct-inputs
+  :prompt "Updated inputs: "
+  :variable 'nix3-transient-updated-inputs)
+
 ;;;;; Flags
 
 (defclass nix3-transient-multi-select (transient-variable)
@@ -431,7 +464,8 @@ This is a function that takes a command line as an argument."
 
 (transient-define-prefix nix3-transient-flake-lock ()
   ["nix flake lock"
-   ("--" nix3-transient-set-flags)]
+   ("--" nix3-transient-set-flags)
+   ("-u" nix3-transient-set-updated-inputs)]
   nix3-transient-common-options
   ["Suffixes"
    ("RET" "Run in compile" nix3-transient--flake-lock-compile)]
@@ -445,7 +479,10 @@ This is a function that takes a command line as an argument."
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command
              nil
-             (transient-args 'nix3-transient-flake-lock)))))
+             (append (transient-args 'nix3-transient-flake-lock)
+                     (mapcar (lambda (input)
+                               (list "--update-input" input))
+                             nix3-transient-updated-inputs))))))
 
 (defun nix3-transient-input ()
   (interactive)

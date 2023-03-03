@@ -23,6 +23,10 @@
   "Name of the Git executable."
   :type 'file)
 
+(defcustom nix3-crm-separator ","
+  "String used as a separator in `completing-read-multiple'."
+  :type 'string)
+
 ;;;; Variables
 
 (defvar nix3-config-cache nil)
