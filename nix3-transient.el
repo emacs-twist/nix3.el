@@ -252,8 +252,7 @@ This is a function that takes a command line as an argument."
       (progn
         (setq nix3-transient-flake (nix3-flake--buffer-url))
         (call-interactively #'nix3-transient--dispatch))
-    (setq nix3-transient-flake (nix3-flake-location))
-    (if nix3-transient-flake
+    (if (setq nix3-transient-flake (nix3-flake-location :allow-missing t))
         (if (and (nix3-flake-metadata--get nix3-transient-flake)
                  (nix3-flake-show--get nix3-transient-flake))
             (call-interactively #'nix3-transient--dispatch)
