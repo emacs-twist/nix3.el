@@ -260,8 +260,8 @@ This is a function that takes a command line as an argument."
             (then (lambda (_)
                     (call-interactively #'nix3-transient--dispatch)))
             (promise-catch #'nix3-flake--handle-process-error)))
-      (when (yes-or-no-p "There is no flake.nix. Run nix flake init?")
-        (nix3-flake-init :no-confirm t)))))
+      (when (yes-or-no-p "There is no flake.nix. Initialize a flake? ")
+        (funcall nix3-flake-init-function)))))
 
 (defun nix3-transient--show-mode-p ()
   (eq major-mode 'nix3-flake-show-mode))

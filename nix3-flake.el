@@ -61,6 +61,15 @@
   ""
   :type '(choice number (const nil)))
 
+(defcustom nix3-flake-init-function
+  (lambda () (nix3-flake-init :no-confirm t))
+  "Function called when the user wants to initialize a Nix project.
+
+The function is called without argument, e.g. from
+`nix3-transient', if the project doesn't contain flake.nix and
+the user wants to initialize a Nix project."
+  :type 'function)
+
 (defcustom nix3-flake-init-reverted-modes
   '(dired-mode
     magit-status-mode)
