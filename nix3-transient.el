@@ -173,6 +173,7 @@ This is a function that takes a command line as an argument."
   ;; TODO: Add more suggestions
   :table '("--impure"
            "--dry-run"
+           "--show-trace"
            "--accept-flake-config"))
 
 ;;;;; Command (nix run)
