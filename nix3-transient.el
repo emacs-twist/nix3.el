@@ -156,11 +156,10 @@ This is a function that takes a command line as an argument."
   (set (oref obj variable) value))
 
 (cl-defmethod transient-format-value ((obj nix3-transient-direct-inputs))
-  (let ((value (oref obj value)))
-    (concat
-     (propertize "(" 'face 'transient-inactive-value)
-     (propertize (string-join (oref obj value) ",") 'face 'transient-value)
-     (propertize ")" 'face 'transient-inactive-value))))
+  (concat
+   (propertize "(" 'face 'transient-inactive-value)
+   (propertize (string-join (oref obj value) ",") 'face 'transient-value)
+   (propertize ")" 'face 'transient-inactive-value)))
 
 (transient-define-infix nix3-transient-set-updated-inputs ()
   :description "--update-input"
