@@ -242,9 +242,12 @@ This is a function that takes a command line as an argument."
   (transient-setup 'nix3-transient--dispatch))
 
 ;;;###autoload
-(defun nix3-transient ()
-  "Dispatch a transient interface to Nix commands."
-  (interactive)
+(defun nix3-transient (&optional refresh)
+  "Dispatch a transient interface to Nix commands.
+
+With a universal prefix argument, nix flake show/metadata cache
+will be refreshed."
+  (interactive "P")
   (if (nix3-transient--show-mode-p)
       ;; If the current buffer is already showing the flake via
       ;; `nix3-flake-show-mode', there will be no need to refetch the data.
