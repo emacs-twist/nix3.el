@@ -487,6 +487,7 @@ will be refreshed."
 
 (defun nix3-transient-input ()
   (interactive)
+  (require 'nix3-flake-input)
   (setq nix3-transient-directory (nix3-transient--default-directory))
   (nix3-transient-with-directory
    (let* ((alist (nix3-flake--direct-inputs))
