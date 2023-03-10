@@ -797,7 +797,7 @@ directory. It implies LOCAL."
 (defun nix3-flake--handle-process-error (payload)
   (pcase payload
     (`(:timeouted)
-     (error "Timeout while fetching the Nix flake"))
+     (message "Timeout while fetching the Nix flake"))
     (`(:rejected ,plist)
      (message "Error from \"nix %s %s\": %s"
               (mapconcat #'shell-quote-argument (plist-get plist :subcommand) " ")
