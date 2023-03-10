@@ -262,8 +262,10 @@ will be refreshed."
             (then (lambda (_)
                     (call-interactively #'nix3-transient--dispatch)))
             (promise-catch #'nix3-flake--handle-process-error)))
-      (when (yes-or-no-p "There is no flake.nix. Initialize a flake? ")
-        (funcall nix3-flake-init-function)))))
+      (if (file-writable-p default-directory)
+          (when (yes-or-no-p "There is no flake.nix. Initialize a flake? ")
+            (funcall nix3-flake-init-function))
+        (message "The directory is not writable")))))
 
 (defun nix3-transient--show-mode-p ()
   (eq major-mode 'nix3-flake-show-mode))
