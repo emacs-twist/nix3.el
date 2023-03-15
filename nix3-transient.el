@@ -231,10 +231,14 @@ This is a function that takes a command line as an argument."
    ("i" "Input" nix3-transient-input :transient t)]
   ["Nix commands"
    :class transient-row
-   ("b" "build" nix3-transient-build)
-   ("r" "run" nix3-transient-run)
-   ("c" "flake check" nix3-transient-flake-check)
-   ("l" "flake lock" nix3-transient-flake-lock)]
+   ("b" "build" nix3-transient-build
+    :transient transient--do-stay)
+   ("r" "run" nix3-transient-run
+    :transient transient--do-stay)
+   ("c" "flake check" nix3-transient-flake-check
+    :transient transient--do-stay)
+   ("l" "flake lock" nix3-transient-flake-lock
+    :transient transient--do-stay)]
   (interactive)
   (unless nix3-transient-flake
     (user-error "Variable nix3-transient-flake must be set in advance"))
