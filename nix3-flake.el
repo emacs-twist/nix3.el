@@ -16,6 +16,7 @@
 (declare-function vc-git-root "vc-git")
 (declare-function bookmark-prop-get "bookmark")
 (declare-function magit-init "ext:magit-status")
+(declare-function nix3-flake-clone-promise "nix3-flake-clone")
 (defvar nix3-transient-flake-output-type)
 (defvar nix3-transient-flake-output)
 (defvar nix3-browse-url-for-repository)

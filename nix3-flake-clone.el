@@ -5,6 +5,9 @@
 (require 'project)
 (require 'nix3-utils)
 
+(declare-function nix3-registry--non-indirect "nix3-registry")
+(declare-function promise-new "ext:promise-core")
+
 (defgroup nix3-flake-clone
   nil
   "Clone Git repositories from flake URLs."
