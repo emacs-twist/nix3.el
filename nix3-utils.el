@@ -21,6 +21,17 @@
         (min limit max)
       max)))
 
+(defun nix3-build-git-clone-url (url-alist)
+  "Return a URL that is supported by git clone."
+  (let-alist url-alist
+    (pcase \.type
+      ("github" (format "https://github.com/%s/%s.git" \.owner \.repo))
+      ("gitlab" (format "https://gitlab.com/%s/%s.git" \.owner \.repo))
+      ("sourcehut" (format "https://git.sr.ht/%s/%s" \.owner \.repo))
+      ("git" \.url)
+      ("indirect" (error "Indirect URL: %s" \.id))
+      (_ (error "Cannot build a remote URL from %s" \.type)))))
+
 (defun nix3-flake-ref-alist-to-url (url-alist)
   "Convert ORIGIN into a plain URL format."
   (let-alist url-alist
