@@ -26,6 +26,7 @@
 ;;;###autoload
 (defun nix3-flake-clone-promise (url-alist)
   "Return a promise that resolves to a local Git working directory."
+  (require 'nix3-registry)
   (promise-new
    `(lambda (resolve _)
       (let* ((url-alist ',url-alist)
@@ -51,6 +52,7 @@
                      (or nix3-flake-clone-root
                          (error "You must set `nix3-flake-clone-root'")))))
         (error "Non-https url is not supported at present"))
+    (require 'nix3-registry)
     (nix3-flake-clone--default-dest
      (nix3-build-git-clone-url
       (nix3-registry--non-indirect url-or-alist)))))
