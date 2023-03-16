@@ -1,9 +1,9 @@
 ;;; nix3-flake-clone.el --- Cloning Git repositories -*- lexical-binding: t -*-
 
 (require 'cl-lib)
-(require 'f)
 (require 'rx)
 (require 'project)
+(require 'nix3-utils)
 
 (defgroup nix3-flake-clone
   nil
