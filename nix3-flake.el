@@ -111,7 +111,7 @@ The command should be run synchronously and should set
 is finished."
   :type 'function)
 
-(defcustom nix3-flake-worktree-promise-fn #'ignore
+(defcustom nix3-flake-worktree-promise-fn #'nix3-flake-clone-promise
   "Function that returns a promise to a worktree.
 
 The function should take a url alist as an argument and return a
