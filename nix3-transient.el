@@ -206,7 +206,8 @@ This is a function that takes a command line as an argument."
   :table '("--impure"
            "--dry-run"
            "--show-trace"
-           "--accept-flake-config"))
+           "--accept-flake-config"
+           "--no-write-lock-file"))
 
 ;;;;; Command (nix run)
 
