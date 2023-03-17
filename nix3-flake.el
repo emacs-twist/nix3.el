@@ -54,9 +54,11 @@
   ""
   :type 'hook)
 
-(defcustom nix3-flake-toplevel-sections-unfolded t
+(defcustom nix3-flake-toplevel-sections-unfolded 'flake-buffers
   "Whether to unfold the top-level section by default."
-  :type 'boolean)
+  :type '(choice (const "Always unfold" t)
+                 (const "Only in nix3-flake-show-mode buffers" flake-buffers)
+                 (const "Never" nil)))
 
 (defcustom nix3-flake-input-name-max-width 20
   ""
@@ -460,8 +462,14 @@ directory. It implies LOCAL."
 
 ;;;; Magit sections
 
+(defun nix3-flake--fold-toplevel-p ()
+  (pcase nix3-flake-toplevel-sections-unfolded
+    (`flake-buffers (not (derived-mode-p 'nix3-flake-show-mode)))
+    (`nil t)
+    (`t nil)))
+
 (defun nix3-flake-insert-metadata ()
-  (magit-insert-section (flake-metadata nil nix3-flake-toplevel-sections-unfolded)
+  (magit-insert-section (flake-metadata nil)
     (when-let (metadata (nix3-flake--get-metadata-result))
       (let-alist metadata
         (nix3-section-dlist 0
@@ -520,7 +528,7 @@ directory. It implies LOCAL."
 
 (defun nix3-flake-insert-outputs ()
   (require 'nix3-transient)
-  (magit-insert-section (flake-outputs nil nix3-flake-toplevel-sections-unfolded)
+  (magit-insert-section (flake-outputs nil (nix3-flake--fold-toplevel-p))
     (magit-insert-heading "Flake outputs")
     (nix3-section-with-keymap nix3-flake-output-map
       (let ((result (nix3-flake--get-show-result))
@@ -609,7 +617,7 @@ directory. It implies LOCAL."
   (require 'nix3-flake-input)
   (when-let (result (nix3-flake--get-metadata-result))
     (nix3-section-with-keymap nix3-flake-input-map
-      (magit-insert-section (flake-inputs nil nix3-flake-toplevel-sections-unfolded)
+      (magit-insert-section (flake-inputs nil (nix3-flake--fold-toplevel-p))
         (magit-insert-heading "Flake inputs")
         (when-let* ((nodes (nix3-lookup-tree '(locks nodes) result))
                     (other-nodes (assq-delete-all 'root (copy-sequence nodes))))
