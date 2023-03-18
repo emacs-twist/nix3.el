@@ -9,6 +9,7 @@
 (declare-function nix3-vterm-shell-command "nix3-utils")
 (declare-function term "term")
 (declare-function nix3-flake-input-dispatch "nix3-flake-input")
+(declare-function nix3-help-parse "nix3-help")
 (defvar nix3-flake-input)
 
 (defcustom nix3-terminal-function #'term
@@ -171,14 +172,14 @@ This is a function that takes a command line as an argument."
 
 (defclass nix3-transient-multi-select (transient-variable)
   ((variable :initarg :variable)
-   (table :initarg :table)))
+   (make-table :initarg :make-table)))
 
 (cl-defmethod transient-init-value ((obj nix3-transient-multi-select))
   (oset obj value (eval (oref obj variable))))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-multi-select))
   (completing-read-multiple (oref obj prompt)
-                            (oref obj table)
+                            (funcall (oref obj make-table))
                             nil nil
                             (string-join (oref obj value) ",")))
 
@@ -203,11 +204,11 @@ This is a function that takes a command line as an argument."
   :variable 'nix3-transient-flags
   :prompt "Flags: "
   ;; TODO: Add more suggestions
-  :table '("--impure"
-           "--dry-run"
-           "--show-trace"
-           "--accept-flake-config"
-           "--no-write-lock-file"))
+  :make-table 'nix3-transient--complete-flags)
+
+(defun nix3-transient--complete-flags ()
+  (apply #'nix3-help-parse 'options
+         (ensure-list nix3-transient-nix-command)))
 
 ;;;;; Command (nix run)
 
