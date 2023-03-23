@@ -207,6 +207,7 @@ This is a function that takes a command line as an argument."
   :make-table 'nix3-transient--complete-flags)
 
 (defun nix3-transient--complete-flags ()
+  (require 'nix3-help)
   (apply #'nix3-help-parse 'options
          (ensure-list nix3-transient-nix-command)))
 
