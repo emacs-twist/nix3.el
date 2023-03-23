@@ -178,10 +178,12 @@ This is a function that takes a command line as an argument."
   (oset obj value (eval (oref obj variable))))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-multi-select))
-  (completing-read-multiple (oref obj prompt)
-                            (funcall (oref obj make-table))
-                            nil nil
-                            (string-join (oref obj value) ",")))
+  (let ((table (oref obj make-table)))
+    (completing-read-multiple (oref obj prompt)
+                              (cl-etypecase table
+                                (function (funcall table)))
+                              nil nil
+                              (string-join (oref obj value) ","))))
 
 (cl-defmethod transient-infix-set ((obj nix3-transient-multi-select) value)
   (oset obj value value)
