@@ -893,7 +893,9 @@ directory. It implies LOCAL."
   (if-let (url (bookmark-prop-get bookmark 'url))
       (nix3-flake-show-url url)
     (if-let (dir (bookmark-prop-get bookmark 'default-directory))
-        (nix3-flake-show dir)
+        (if (file-directory-p dir)
+            (nix3-flake-show dir)
+          (user-error "Trying to open a bookmark on a non-existent directory: %s" bookmark))
       (error "This bookmark handler requires either url or default-directory property"))))
 
 ;;;; nix flake init/new
