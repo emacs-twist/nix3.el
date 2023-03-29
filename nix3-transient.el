@@ -227,12 +227,11 @@ This is a function that takes a command line as an argument."
 
 ;; This command must be invoked after fetching data, so it should be private.
 (transient-define-prefix nix3-transient--dispatch ()
-  [:if-not
-   nix3-transient--show-mode-p
-   :description
+  [:description
    nix3-transient--flake-description
-   ("h" "Show metadata and outputs" nix3-transient-show)]
-  ["Inputs"
+   :class transient-row
+   ("h" "Show metadata and outputs" nix3-transient-show
+    :if-not nix3-transient--show-mode-p)
    ("i" "Input" nix3-transient-input :transient t)]
   ["Nix commands"
    :class transient-row
