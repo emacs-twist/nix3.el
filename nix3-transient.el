@@ -10,6 +10,7 @@
 (declare-function term "term")
 (declare-function nix3-flake-input-dispatch "nix3-flake-input")
 (declare-function nix3-help-parse "nix3-help")
+(declare-function nix3-help--read-command "nix3-help")
 (defvar nix3-flake-input)
 
 (defcustom nix3-terminal-function #'term
@@ -84,7 +85,9 @@ This is a function that takes a command line as an argument."
   (let ((value (oref obj value)))
     (concat
      (propertize "(" 'face 'transient-inactive-value)
-     (propertize value 'face 'transient-value)
+     (if value
+         (propertize value 'face 'transient-value)
+       "")
      (propertize ")" 'face 'transient-inactive-value))))
 
 (transient-define-infix nix3-transient-set-output ()
@@ -92,6 +95,13 @@ This is a function that takes a command line as an argument."
   :description "Flake attribute"
   :prompt "Flake attribute: "
   :required t
+  :variable 'nix3-transient-flake-output)
+
+(transient-define-infix nix3-transient-set-optional-output ()
+  :class 'nix3-transient-output-variable
+  :description "Flake attribute"
+  :prompt "Flake attribute: "
+  :required nil
   :variable 'nix3-transient-flake-output)
 
 ;;;;; Directory
@@ -242,6 +252,8 @@ This is a function that takes a command line as an argument."
    ("c" "flake check" nix3-transient-flake-check
     :transient transient--do-stay)
    ("l" "flake lock" nix3-transient-flake-lock
+    :transient transient--do-stay)
+   ("!" "Other commands" nix3-transient-generic-command
     :transient transient--do-stay)]
   (interactive)
   (unless nix3-transient-flake
@@ -505,6 +517,31 @@ will be refreshed."
           (input (completing-read "Select input: " alist)))
      (setq nix3-flake-input (cons input (cdr (assq (intern input) alist))))
      (nix3-flake-input-dispatch))))
+
+(transient-define-prefix nix3-transient-generic-command ()
+  [:description
+   nix3-transient--command-description
+   ("#" nix3-transient-set-optional-output)
+   ("--" nix3-transient-set-flags)]
+  nix3-transient-common-options
+  ["Suffixes"
+   ("RET" "Build in compile" nix3-transient--generic-compile)]
+  (interactive)
+  (require 'nix3-help)
+  (setq nix3-transient-nix-command (cdr (split-string (nix3-help--read-command
+                                                       "Nix command: ")
+                                                      " ")))
+  (setq nix3-transient-directory (nix3-transient--default-directory))
+  (transient-setup 'nix3-transient-generic-command))
+
+(defun nix3-transient--generic-compile ()
+  (interactive)
+  (nix3-transient-with-directory
+   (compile (nix3-transient--shell-command
+             nix3-transient-flake-output))))
+
+(defun nix3-transient--command-description ()
+  (string-join (cons "nix" nix3-transient-nix-command) " "))
 
 ;;;; Utilities
 
