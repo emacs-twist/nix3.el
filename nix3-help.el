@@ -3,14 +3,19 @@
 (require 'cl-lib)
 (require 'nix3-core)
 
+(defvar nix3-help-command-alist nil)
+
 (defun nix3-help-parse (type &rest subcommands)
   (pcase-exhaustive (cl-ecase type
-                      (outputs (list (rx " commands:" eol)
-                                     (rx "Synopsis")
-                                     (rx "Examples")
-                                     "· nix "
-                                     (rx bol (group (+ anything)) " - "
-                                         (group (+ anychar)))))
+                      (commands (list (rx " commands:" eol)
+                                      (rx "Synopsis")
+                                      (unless subcommands
+                                        (rx "Examples"))
+                                      (format "· %s "
+                                              (string-join (cons "nix" subcommands)
+                                                           " "))
+                                      (rx bol (group (+ anything)) " - "
+                                          (group (+ anychar)))))
                       (options (list (rx " options:" eol)
                                      (rx "Options")
                                      nil
@@ -54,18 +59,33 @@
              (setq last-end end)))
          outputs)))))
 
-(defun nix3-help--read-command (prompt)
-  (let ((alist (nix3-help-parse 'commands)))
+(defun nix3-help--build-command-alist ()
+  (let (alist)
     (cl-labels
-        ((annotator (command)
-           (concat " " (cdr (assoc command alist))))
-         (completions (string pred action)
-           (if (eq action 'metadata)
-               (cons 'metadata
-                     (list (cons 'category 'category)
-                           (cons 'annotation-function #'annotator)))
-             (complete-with-action action alist string pred))))
-      (completing-read prompt #'completions))))
+        ((add-commands (subcommands &optional description)
+           (if-let (subalist (apply #'nix3-help-parse 'commands subcommands))
+               (dolist (x subalist)
+                 (add-commands (append subcommands (list (car x)))
+                               (cdr x)))
+             (push (cons (string-join (cons "nix" subcommands) " ")
+                         description)
+                   alist))))
+      (add-commands nil)
+      (setq nix3-help-command-alist (nreverse alist)))))
+
+(defun nix3-help--read-command (prompt)
+  (unless nix3-help-command-alist
+    (nix3-help--build-command-alist))
+  (cl-labels
+      ((annotator (command)
+         (concat " " (cdr (assoc command nix3-help-command-alist))))
+       (completions (string pred action)
+         (if (eq action 'metadata)
+             (cons 'metadata
+                   (list (cons 'category 'category)
+                         (cons 'annotation-function #'annotator)))
+           (complete-with-action action nix3-help-command-alist string pred))))
+    (completing-read prompt #'completions)))
 
 (provide 'nix3-help)
 ;;; nix3-help.el ends here
