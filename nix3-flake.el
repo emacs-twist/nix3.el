@@ -365,9 +365,9 @@ directory. It implies LOCAL."
 
 ;;;; Processing data
 
-(defun nix3-flake--filter-outputs (command)
+(defun nix3-flake--filter-outputs (command &optional system)
   "Return a list of apps and derivations for the system."
-  (let* ((system (intern (nix3-system)))
+  (let* ((system (intern (or system (nix3-system))))
          extra-derivations
          result)
     (cl-labels
@@ -437,12 +437,13 @@ directory. It implies LOCAL."
 
 ;;;; Interaction
 
-(defun nix3-flake-select-output (prompt-format command &optional default-value)
+(cl-defun nix3-flake-select-output (prompt-format command &optional default-value
+                                                  &key system)
   (promise-wait (if nix3-flake-url
                     nix3-flake-remote-wait
                   nix3-flake-wait)
     (nix3-flake-demand-outputs))
-  (let ((alist (nix3-flake--filter-outputs command)))
+  (let ((alist (nix3-flake--filter-outputs command system)))
     (cl-labels
         ((group (candidate transform)
            (if transform

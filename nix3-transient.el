@@ -58,6 +58,46 @@ This is a function that takes a command line as an argument."
               "")
             (propertize ")" 'face 'transient-inactive-value))))
 
+;;;;; System
+
+(defvar nix3-transient-all-systems nil)
+
+(defvar nix3-transient-system nil
+  "Current target system.")
+
+(defclass nix3-transient-system-variable (transient-variable)
+  ((variable :initarg :variable)))
+
+(cl-defmethod transient-init-value ((obj nix3-transient-system-variable))
+  (oset obj value (eval (oref obj variable))))
+
+(cl-defmethod transient-infix-set ((obj nix3-transient-system-variable) value)
+  (oset obj value value)
+  (set (oref obj variable) value))
+
+(cl-defmethod transient-infix-read ((obj nix3-transient-system-variable))
+  (unless nix3-transient-all-systems
+    (setq nix3-transient-all-systems (nix3--all-systems)))
+  (let ((value (oref obj value)))
+    (unless value
+      (completing-read (oref obj prompt) nix3-transient-all-systems
+                       nil nil nil nil value))))
+
+(cl-defmethod transient-format-value ((obj nix3-transient-system-variable))
+  (let ((value (oref obj value)))
+    (concat
+     (propertize "(" 'face 'transient-inactive-value)
+     (if value
+         (propertize value 'face 'transient-value)
+       "")
+     (propertize ")" 'face 'transient-inactive-value))))
+
+(transient-define-infix nix3-transient-target-system ()
+  :description "Target system"
+  :prompt "Target system: "
+  :class 'nix3-transient-system-variable
+  :variable 'nix3-transient-system)
+
 ;;;;; Output
 
 (defclass nix3-transient-output-variable (transient-variable)
@@ -75,7 +115,8 @@ This is a function that takes a command line as an argument."
 (cl-defmethod transient-infix-read ((obj nix3-transient-output-variable))
   (nix3-flake-select-output (oref obj prompt)
                             nix3-transient-nix-command
-                            (oref obj value)))
+                            (oref obj value)
+                            :system nix3-transient-system))
 
 (cl-defmethod transient-infix-set ((obj nix3-transient-output-variable) value)
   (oset obj value value)
@@ -242,7 +283,8 @@ This is a function that takes a command line as an argument."
    :class transient-row
    ("h" "Show metadata and outputs" nix3-transient-show
     :if-not nix3-transient--show-mode-p)
-   ("i" "Input" nix3-transient-input :transient t)]
+   ("i" "Input" nix3-transient-input :transient t)
+   ("-t" nix3-transient-target-system)]
   ["Nix commands"
    :class transient-row
    ("b" "build" nix3-transient-build

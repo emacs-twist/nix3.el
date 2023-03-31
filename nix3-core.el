@@ -116,5 +116,8 @@ This command discard the exit code or output of the command."
            (`local "--local")
            (`global "--global"))))
 
+(defun nix3--all-systems ()
+  (nix3-read-nix-json-command "eval" "nixpkgs#lib.systems.doubles.all" "--json"))
+
 (provide 'nix3-core)
 ;;; nix3-core.el ends here
