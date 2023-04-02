@@ -96,6 +96,14 @@ Each function in this hook is called without arguments in the
 created directory."
   :type 'hook)
 
+(defcustom nix3-flake-init-hook
+  nix3-flake-new-hook
+  "Hook to run after `nix3-flake-init' scaffolds a new project.
+
+Each function in this hook is called without arguments in the
+directory containing flake.nix."
+  :type 'hook)
+
 (defcustom nix3-flake-edit-find-file-fn #'find-file
   "Function used to open flake.nix for editing.
 
@@ -977,11 +985,12 @@ If NO-CONFIRM is non-nil, "
 (defun nix3-flake-init-with-template (template)
   (nix3-flake--record-template template)
   (nix3-flake--run-template (lambda ()
-                               (when (and nix3-flake-init-reverted-modes
-                                          (apply #'derived-mode-p
-                                                 nix3-flake-init-reverted-modes))
-                                 (revert-buffer)))
-                             "init" "-t" template))
+                              (run-hooks 'nix3-flake-init-hook)
+                              (when (and nix3-flake-init-reverted-modes
+                                         (apply #'derived-mode-p
+                                                nix3-flake-init-reverted-modes))
+                                (revert-buffer)))
+                            "init" "-t" template))
 
 (defun nix3-flake--record-template (template)
   (delq template nix3-flake-template-history)
@@ -992,7 +1001,7 @@ If NO-CONFIRM is non-nil, "
   (with-current-buffer (get-buffer-create nix3-flake-init-buffer)
     (erase-buffer))
   (message "nix3[%s]: %s" default-directory (mapconcat #'shell-quote-argument
-                                                        args " "))
+                                                       args " "))
   (let ((proc (apply #'start-process
                      "nix3-flake-init" nix3-flake-init-buffer
                      nix3-nix-executable "flake" args)))
