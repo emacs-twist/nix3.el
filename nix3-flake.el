@@ -747,7 +747,13 @@ directory. It implies LOCAL."
   "Nix Flake"
   (setq-local revert-buffer-function #'nix3-flake-show-revert)
   (setq-local bookmark-make-record-function #'nix3-flake-show-bookmark-record)
+  (add-hook 'eldoc-documentation-functions #'nix3-flake-show-eldoc nil t)
   (read-only-mode 1))
+
+(defun nix3-flake-show-eldoc (callback)
+  (when-let (help (get-char-property (point) 'help-echo))
+    (when (stringp help)
+      (funcall callback help))))
 
 ;;;###autoload
 (defun nix3-flake-show (dir)
