@@ -510,7 +510,10 @@ will be refreshed."
               (line (string-to-number (match-string 2 spec))))
           ;; TODO: Make this function customizable
           (find-file-read-only-other-window file)
-          (goto-line line))
+          (save-restriction
+            (widen)
+            (goto-char (point-min))
+            (forward-line line)))
       (error "Failed to match against source position %s" spec))))
 
 ;;;; Generate items programmatically
