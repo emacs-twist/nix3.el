@@ -354,7 +354,8 @@ will be refreshed."
     :if nix3-transient--output-runnable-p)
    ("d" "View the template path" nix3-transient-browse-template
     :if nix3-transient--output-template-p)
-   ("e" "Explore or eval" nix3-transient-explore-output)]
+   ("e" "Explore or eval" nix3-transient-explore-output)
+   ("m" "Browse metadata of the derivation" nix3-transient-meta)]
   (interactive)
   (unless nix3-transient-flake-output
     (user-error "You need to set `nix3-transient-flake-output'"))
@@ -431,6 +432,86 @@ will be refreshed."
                                  (string-chop-newline (nix3-flake-eval-nix new-path))))))
            (message "%s is an empty attribute set" path))))
     (go nix3-transient-flake-output)))
+
+(defvar nix3-transient-meta nil)
+
+(transient-define-prefix nix3-transient-meta ()
+  [:description
+   nix3-transient-output-description
+   ("h" nix3-transient-package-homepage)
+   ("l" nix3-transient-package-license)
+   ("m" nix3-transient-package-maintainers)
+   ("p" nix3-transient-package-position)
+   ;; TODO: Display details in a help buffer
+   ;; ("d" "Details")
+   ]
+  (interactive)
+  (setq nix3-transient-meta (nix3-flake-eval-json
+                             (concat nix3-transient-flake-output ".meta")))
+  (transient-setup 'nix3-transient-meta))
+
+(defmacro nix3-transient--package-homepage ()
+  '(cdr (assq 'homepage nix3-transient-meta)))
+
+(transient-define-suffix nix3-transient-package-homepage ()
+  :if (lambda () (nix3-transient--package-homepage))
+  :description (lambda () (format "Homepage: %s" (nix3-transient--package-homepage)))
+  (interactive)
+  (funcall nix3-browse-url-for-repository (nix3-transient--package-homepage)))
+
+(defmacro nix3-transient--package-license ()
+  '(cdr (assq 'license nix3-transient-meta)))
+
+(transient-define-suffix nix3-transient-package-license ()
+  :if (lambda () (nix3-transient--package-license))
+  :description (lambda ()
+                 (let ((val (nix3-transient--package-license)))
+                   (concat "Describe license "
+                           (propertize "(" 'face 'transient-inactive-value)
+                           (if (assq 'fullName val)
+                               (cdr (assq 'shortName val))
+                             ;; Multiple licenses
+                             (mapconcat (lambda (a)
+                                          (alist-get 'shortName a))
+                                        val
+                                        ","))
+                           (propertize ")" 'face 'transient-inactive-value))))
+  (interactive)
+  ;; TODO: Describe licenses in a help buffer
+  (message "The license of %s is %s"
+           (cdr (assq 'name nix3-transient-meta))
+           (let ((val (nix3-transient--package-license)))
+             (if-let (fullName (cdr (assq 'fullName val)))
+                 (format "\"%s\"" fullName)
+               (mapconcat (lambda (a)
+                            (format "\"%s\"" (alist-get 'fullName a)))
+                          val
+                          ", ")))))
+
+(defmacro nix3-transient--package-maintainers ()
+  '(cdr (assq 'maintainers nix3-transient-meta)))
+
+(transient-define-suffix nix3-transient-package-maintainers ()
+  :if (lambda () (nix3-transient--package-maintainers))
+  :description "Display maintainers"
+  (interactive)
+  (funcall nix3-browse-url-for-repository (nix3-transient--package-maintainers)))
+
+(defmacro nix3-transient--package-position ()
+  '(cdr (assq 'position nix3-transient-meta)))
+
+(transient-define-suffix nix3-transient-package-position ()
+  :if (lambda () (nix3-transient--package-position))
+  :description "Find the position"
+  (interactive)
+  (let ((spec (nix3-transient--package-position)))
+    (if (string-match (rx bos (group (+ anything)) ":" (group (+ digit)) eos) spec)
+        (let ((file (match-string 1 spec))
+              (line (string-to-number (match-string 2 spec))))
+          ;; TODO: Make this function customizable
+          (find-file-read-only-other-window file)
+          (goto-line line))
+      (error "Failed to match against source position %s" spec))))
 
 ;;;; Generate items programmatically
 
