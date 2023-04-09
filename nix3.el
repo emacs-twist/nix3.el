@@ -1,6 +1,6 @@
 ;;; nix3.el --- Frontend to experimental commands of Nix -*- lexical-binding: t -*-
 
-;; Copyright (C) 2022 Akira Komamura
+;; Copyright (C) 2022,2023 Akira Komamura
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.1
