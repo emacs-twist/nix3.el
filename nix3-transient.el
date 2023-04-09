@@ -4,6 +4,7 @@
 (require 'nix3-flake)
 (require 'nix3-core)
 (require 'nix3-utils)
+(require 'nix3-browse-url)
 
 (declare-function nix3-realise-and-show-store "nix3")
 (declare-function nix3-vterm-shell-command "nix3-utils")
