@@ -118,5 +118,5 @@ The value should be either nil or one of the existing members of
     (remove-hook 'magit-diff-sections-hook #'magit-nix3-diff-section)
     (remove-hook 'magit-revision-sections-hook #'magit-nix3-diff-section))))
 
-(provide 'magit-nix3-flake)
-;;; magit-nix3-flake.el ends here
+(provide 'magit-nix3)
+;;; magit-nix3.el ends here
