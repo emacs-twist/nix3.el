@@ -496,7 +496,7 @@ will be refreshed."
   :if (lambda () (nix3-transient--package-license))
   :description (lambda ()
                  (let ((val (nix3-transient--package-license)))
-                   (concat "Describe license "
+                   (concat "Browse license details "
                            (propertize "(" 'face 'transient-inactive-value)
                            (if (assq 'fullName val)
                                (cdr (assq 'shortName val))
@@ -507,16 +507,45 @@ will be refreshed."
                                         ","))
                            (propertize ")" 'face 'transient-inactive-value))))
   (interactive)
-  ;; TODO: Describe licenses in a help buffer
-  (message "The license of %s is %s"
-           (cdr (assq 'name nix3-transient-meta))
-           (let ((val (nix3-transient--package-license)))
-             (if-let (fullName (cdr (assq 'fullName val)))
-                 (format "\"%s\"" fullName)
-               (mapconcat (lambda (a)
-                            (format "\"%s\"" (alist-get 'fullName a)))
-                          val
-                          ", ")))))
+  (if-let (licenses (nix3-transient--package-license))
+      (nix3-transient--browse-license-url
+       (if (assq 'fullName licenses)
+           licenses
+         ;; Multiple licenses
+         (nix3-transient--complete-license
+          (format "License(s) of %s: "
+                  (cdr (assq 'name nix3-transient-meta)))
+          licenses)))
+    (user-error "No license")))
+
+(defun nix3-transient--browse-license-url (license)
+  (if-let (url (alist-get 'url license))
+      (browse-url url)
+    (user-error "License %s has no URL"
+                (or (alist-get 'spdxId license)
+                    (alist-get 'fullName license)))))
+
+(defun nix3-transient--complete-license (prompt licenses)
+  (let ((alist (mapcar (lambda (a)
+                         (cons (alist-get 'fullName a)
+                               a))
+                       licenses)))
+    (cl-labels
+        ((annotator (candidate)
+           (when-let (license (cdr (assoc candidate alist)))
+             (format " (%s)"
+                     (mapconcat (lambda (x)
+                                  (symbol-name (car x)))
+                                (seq-filter (lambda (x) (eq t (cdr x)))
+                                            license)
+                                ", "))))
+         (completions (string pred action)
+           (if (eq action 'metadata)
+               (cons 'metadata
+                     (list (cons 'category 'nix3-license-name)
+                           (cons 'annotation-function #'annotator)))
+             (complete-with-action action alist string pred))))
+      (completing-read prompt #'completions nil t))))
 
 (defmacro nix3-transient--package-maintainers ()
   '(cdr (assq 'maintainers nix3-transient-meta)))
@@ -525,7 +554,14 @@ will be refreshed."
   :if (lambda () (nix3-transient--package-maintainers))
   :description "Display maintainers"
   (interactive)
-  (funcall nix3-browse-url-for-repository (nix3-transient--package-maintainers)))
+  (let* ((alist (mapcar (lambda (x)
+                          (cons (alist-get 'name x)
+                                x))
+                        (nix3-transient--package-maintainers)))
+         (name (completing-read "Maintainer: " alist nil t)))
+    ;; TODO: Display in help buffer
+    (pp-display-expression (cdr (assoc name alist))
+                           "*maintainer*")))
 
 (defmacro nix3-transient--package-position ()
   '(cdr (assq 'position nix3-transient-meta)))
