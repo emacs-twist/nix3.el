@@ -68,7 +68,7 @@
 
 ;;;; Custom variables
 
-(defcustom nix3-flake-wait 2
+(defcustom nix3-flake-wait 5
   "Number of seconds to wait for nix flake show/metadata to return."
   :type 'number)
 
