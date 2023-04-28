@@ -90,7 +90,7 @@ This is a function that takes a command line as an argument."
 
 ;;;;; System
 
-(defvar nix3-transient-all-systems nil)
+(defvar nix3-transient-systems nil)
 
 (defvar nix3-transient-system nil
   "Current target system.")
@@ -106,12 +106,12 @@ This is a function that takes a command line as an argument."
   (set (oref obj variable) value))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-system-variable))
-  (unless nix3-transient-all-systems
+  (unless nix3-transient-systems
     (message "Reading the list of systems...")
-    (setq nix3-transient-all-systems (nix3--all-systems)))
+    (setq nix3-transient-systems (nix3--default-systems)))
   (let ((value (oref obj value)))
     (unless value
-      (completing-read (oref obj prompt) nix3-transient-all-systems
+      (completing-read (oref obj prompt) nix3-transient-systems
                        nil nil nil nil value))))
 
 (cl-defmethod transient-format-value ((obj nix3-transient-system-variable))
