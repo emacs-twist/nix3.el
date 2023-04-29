@@ -108,6 +108,7 @@ This is a function that takes a command line as an argument."
 (cl-defmethod transient-infix-read ((obj nix3-transient-system-variable))
   (unless nix3-transient-systems
     (message "Reading the list of systems...")
+    ;; TODO: Allow using systems input from the current flake
     (setq nix3-transient-systems (nix3--default-systems)))
   (let ((value (oref obj value)))
     (unless value
