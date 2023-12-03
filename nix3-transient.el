@@ -325,7 +325,7 @@ This is a function that takes a command line as an argument."
     :transient transient--do-stay)
    ("c" "flake check" nix3-transient-flake-check
     :transient transient--do-stay)
-   ("l" "flake lock" nix3-transient-flake-lock
+   ("l" "flake lock/update" nix3-transient-flake-lock
     :transient transient--do-stay)
    ("!" "Other commands" nix3-transient-generic-command
     :transient transient--do-stay)]
@@ -681,7 +681,7 @@ will be refreshed."
              (transient-args 'nix3-transient-flake-check)))))
 
 (transient-define-prefix nix3-transient-flake-lock ()
-  ["nix flake lock"
+  ["nix flake lock/update"
    ("--" nix3-transient-set-flags)
    ("-u" nix3-transient-set-updated-inputs)]
   nix3-transient-common-options
@@ -697,10 +697,19 @@ will be refreshed."
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command
              nil
-             (append (transient-args 'nix3-transient-flake-lock)
-                     (mapcar (lambda (input)
-                               (list "--update-input" input))
-                             nix3-transient-updated-inputs))))))
+             (cond
+              ((null nix3-transient-updated-inputs)
+               (transient-args 'nix3-transient-flake-lock))
+              ((nix3-nix-2-19-p)
+               (setq nix3-transient-nix-command '("flake" "update"))
+               (append (transient-args 'nix3-transient-flake-lock)
+                       nix3-transient-updated-inputs))
+              ((null nix3-transient-updated-inputs)
+               (setq nix3-transient-nix-command '("flake" "lock"))
+               (append (transient-args 'nix3-transient-flake-lock)
+                       (mapcar (lambda (input)
+                                 (list "--update-input" input))
+                               nix3-transient-updated-inputs))))))))
 
 (defun nix3-transient-input ()
   (interactive)
