@@ -109,6 +109,10 @@ This command discard the exit code or output of the command."
         (match-string 0 str)
       (error "Didn't match against the version number"))))
 
+(defun nix3-nix-2-19-p ()
+  "Return t if the Nix version is 2.19 or later."
+  (version<= "2.19" (nix3-nix-version)))
+
 (defun nix3-normalize-path (dir)
   (string-remove-suffix "/" (file-truename dir)))
 

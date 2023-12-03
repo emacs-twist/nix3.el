@@ -161,8 +161,10 @@
      ;; TODO This is a quick-and-dirty implementation, so rewrite it
      (apply #'nix3-run-process-background
             nix3-nix-executable
-            "flake" "lock" "--update-input" name
-            (append (transient-args 'nix3-flake-input-dispatch)
+            (append (if (version<= "2.19" (nix3-nix-version))
+                        (list "flake" "update" name)
+                      (list "flake" "lock" "--update-input" name))
+                    (transient-args 'nix3-flake-input-dispatch)
                     (pcase-exhaustive url-or-alist
                       (`nil)
                       ((pred stringp)

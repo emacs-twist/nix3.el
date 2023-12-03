@@ -1162,10 +1162,12 @@ non-interactively."
          (names (or names
                     (completing-read-multiple (format "Select inputs at %s: " dir)
                                               (nix3-flake--direct-inputs)))))
-    (compile (concat "nix flake lock "
-                     (mapconcat (lambda (name)
-                                  (format "--update-input %s" name))
-                                names " ")))))
+    (compile (if (version<= "2.19" (nix3-nix-version))
+                 (concat "nix flake update " (mapconcat #'shell-quote-argument names " "))
+               (concat "nix flake lock "
+                       (mapconcat (lambda (name)
+                                    (format "--update-input %s" name))
+                                  names " "))))))
 
 (provide 'nix3-flake)
 ;;; nix3-flake.el ends here
