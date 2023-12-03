@@ -99,7 +99,15 @@ This command discard the exit code or output of the command."
 (defun nix3-system ()
   "Return the system name of Nix."
   (nix3-read-nix-command "eval" "--expr" "builtins.currentSystem" "--impure"
-                          "--raw"))
+                         "--raw"))
+
+(defun nix3-nix-version ()
+  "Return the version string of Nix."
+  (let ((str (string-chop-newline (nix3-read-nix-command "--version"))))
+    (if (string-match (rx (+ digit) (+ (and "." (group (+ digit)))))
+                      str)
+        (match-string 0 str)
+      (error "Didn't match against the version number"))))
 
 (defun nix3-normalize-path (dir)
   (string-remove-suffix "/" (file-truename dir)))
