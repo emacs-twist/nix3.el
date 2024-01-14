@@ -67,6 +67,15 @@
 This should be a function that takes a name in a registry as an argument."
   :type 'function)
 
+(defcustom nix3-registry-list-completion-options
+  (list :add-to-registry t
+        :require-match nil
+        :no-exact t)
+  "Plist of options for completion in `nix3-registry-list' command.
+
+These options are passed as arguments to `nix3-registry-complete'."
+  :type 'plist)
+
 (defface nix3-registry-type-face
   '((t :inherit font-lock-type-face))
   ""
@@ -246,10 +255,8 @@ registry type and the \"to\" value of the entry."
 (defun nix3-registry-list ()
   "Display a list of entries in the flake registries."
   (interactive)
-  (let ((name (nix3-registry-complete "Flake: "
-                                      :add-to-registry t
-                                      :require-match nil
-                                      :no-exact t)))
+  (let ((name (apply #'nix3-registry-complete "Flake: "
+                     nix3-registry-list-completion-options)))
     (message "Selected a registry entry %s" name)
     (funcall nix3-registry-list-action name)))
 
