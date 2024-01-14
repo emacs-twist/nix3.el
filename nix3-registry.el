@@ -36,7 +36,7 @@
 (declare-function xdg-config-home "xdg")
 (declare-function nix3-flake-show-url "nix3-flake")
 
-;; Silent byte-compile
+;; Silence the byte compiler
 (defvar url-http-end-of-headers)
 
 (defgroup nix3-registry nil
