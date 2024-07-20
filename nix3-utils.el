@@ -86,6 +86,9 @@
                         "")
                       (if \.rev
                           (format "rev=%s" \.rev)
+                        "")
+                      (if \.dir
+                          (format "dir=%s" \.dir)
                         ""))))))
 
 (defun nix3-git-url-to-flake-alist (git-url)
