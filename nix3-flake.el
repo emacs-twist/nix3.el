@@ -86,9 +86,10 @@
 
 (defcustom nix3-flake-toplevel-sections-unfolded 'flake-buffers
   "Whether to unfold the top-level section by default."
-  :type '(choice (const "Always unfold" t)
-                 (const "Only in nix3-flake-show-mode buffers" flake-buffers)
-                 (const "Never" nil)))
+  :type 'symbol
+  :options '(choice (const "Always unfold" t)
+                    (const "Only in nix3-flake-show-mode buffers" flake-buffers)
+                    (const "Never" nil)))
 
 (defcustom nix3-flake-input-name-max-width 20
   ""
