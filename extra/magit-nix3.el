@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "27.1") (nix3 "0.1") (promise "1.1"))
+;; Package-Requires: ((emacs "28.1") (nix3 "0.1") (promise "1.1"))
 ;; Keywords: processes
 ;; URL: https://github.com/emacs-twist/nix3.el
 
