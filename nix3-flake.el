@@ -81,7 +81,7 @@
   '(nix3-flake-insert-metadata
     nix3-flake-insert-outputs
     nix3-flake-insert-inputs)
-  ""
+  "Hook to insert contents into `nix3-flake-show' buffers."
   :type 'hook)
 
 (defcustom nix3-flake-toplevel-sections-unfolded 'flake-buffers
