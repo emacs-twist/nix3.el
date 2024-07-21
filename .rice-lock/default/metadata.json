@@ -1,0 +1,90 @@
+{
+  "compat": {
+    "author": "Philip Kaludercic <philipk@posteo.net>, Daniel Mendler <mail@daniel-mendler.de>",
+    "meta": {
+      "description": "Emacs Lisp Compatibility Library",
+      "homepage": "https://github.com/emacs-compat/compat",
+      "maintainers": [
+        "Compat Development <~pkal/compat-devel@lists.sr.ht>"
+      ]
+    },
+    "narHash": "sha256-IrShpeA17hFAzZsOjGk92OifWucL0XrNPFD5qBiShGc=",
+    "packageRequires": {
+      "emacs": "24.4",
+      "seq": "2.23"
+    },
+    "version": "30.0.0.0"
+  },
+  "dash": {
+    "author": "Magnar Sveen <magnars@gmail.com>",
+    "meta": {
+      "description": "A modern list library for Emacs"
+    },
+    "narHash": "sha256-at42NCcdF9g7a55asnOCSqsvG+XhWuvVsHFT6kU9f9o=",
+    "packageRequires": {
+      "emacs": "24"
+    },
+    "version": "2.19.1"
+  },
+  "magit-section": {
+    "author": "Jonas Bernoulli <emacs.magit@jonas.bernoulli.dev>",
+    "meta": {
+      "description": "Sections for read-only buffers",
+      "license": {
+        "deprecated": false,
+        "free": true,
+        "fullName": "GNU General Public License v3.0 or later",
+        "redistributable": true,
+        "shortName": "gpl3Plus",
+        "spdxId": "GPL-3.0-or-later",
+        "url": "https://spdx.org/licenses/GPL-3.0-or-later.html"
+      },
+      "maintainers": [
+        "Jonas Bernoulli <emacs.magit@jonas.bernoulli.dev>"
+      ]
+    },
+    "narHash": "sha256-7ogxgB/hqEVEe8V7T3wfm+CbyCxExjWQmICjqATy+O8=",
+    "packageRequires": {
+      "compat": "30.0.0.0",
+      "dash": "20240510",
+      "emacs": "26.1"
+    },
+    "version": "3.3.0.50-git"
+  },
+  "promise": {
+    "author": "chuntaro <chuntaro@sakura-games.jp>",
+    "meta": {
+      "description": "Promises/A+",
+      "homepage": "https://github.com/chuntaro/emacs-promise"
+    },
+    "narHash": "sha256-p6HAx+uAQTWfUlPfJu0tk6x6EBxsSuRa+4n7Vd5rus8=",
+    "packageRequires": {
+      "emacs": "25.1"
+    },
+    "version": "1.1"
+  },
+  "s": {
+    "author": "Magnar Sveen <magnars@gmail.com>",
+    "meta": {
+      "description": "The long lost Emacs string manipulation library.",
+      "maintainers": [
+        "Jason Milkins <jasonm23@gmail.com>"
+      ]
+    },
+    "narHash": "sha256-fbF/SyPwEiJICaPBq0xWj2yLWjdNwkaLF2iYvZ2EO1k=",
+    "packageRequires": {},
+    "version": "1.13.1"
+  },
+  "seq": {
+    "author": "Nicolas Petton <nicolas@petton.fr>",
+    "meta": {
+      "description": "Sequence manipulation functions",
+      "maintainers": [
+        "emacs-devel@gnu.org"
+      ]
+    },
+    "narHash": "sha256-FH/LPoVKuTY89HciZ7pWs/haqfNeZSAHWaYuy3Qw8mA=",
+    "packageRequires": {},
+    "version": "2.24"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "seq": {
+    "archive": {
+      "narHash": "sha256-FH/LPoVKuTY89HciZ7pWs/haqfNeZSAHWaYuy3Qw8mA=",
+      "type": "tarball",
+      "url": "https://elpa.gnu.org/packages/seq-2.24.tar"
+    },
+    "inventory": {
+      "type": "archive",
+      "url": "https://elpa.gnu.org/packages/"
+    },
+    "packageRequires": {},
+    "version": "2.24"
+  }
+}
