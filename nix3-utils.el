@@ -32,6 +32,8 @@
 (require 'cl-lib)
 (require 'subr-x)
 (require 'nix3-core)
+(eval-when-compile
+  (require 'rx))
 
 (declare-function vterm "ext:vterm")
 (declare-function vterm-send-string "ext:vterm")

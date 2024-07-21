@@ -61,14 +61,14 @@
          (error "Failed to parse nix --help"))
        (goto-char (point-min))
        (re-search-forward start-heading)
-       (delete-region (point-min) (pos-eol))
+       (delete-region (point-min) (line-end-position))
        (when end-heading
          (re-search-forward end-heading)
-         (delete-region (pos-bol) (point-max)))
+         (delete-region (line-beginning-position) (point-max)))
        (goto-char (point-min))
        ;; Parse outputs
        (while (re-search-forward regexp nil t)
-         (delete-region (pos-bol) (pos-eol)))
+         (delete-region (line-beginning-position) (line-end-position)))
        (goto-char (point-min))
        (let (last-end
              outputs)

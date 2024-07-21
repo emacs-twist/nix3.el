@@ -29,14 +29,19 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'rx))
+(require 'subr-x)
 (require 'map)
-
-(declare-function string-remove-suffix "subr-x")
 
 (defgroup nix3 nil
   "Interface to experimental commands of Nix."
   :prefix "nix3-"
   :group 'nix)
+
+(defgroup nix3-face nil
+  "Faces for nix3."
+  :group 'nix3)
 
 ;;;; Custom variables
 

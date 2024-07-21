@@ -50,11 +50,13 @@
 
 (defface nix3-flake-lock-file-heading
   '((t (:inherit magit-diff-file-heading)))
-  "Face for flake.lock file paths.")
+  "Face for flake.lock file paths."
+  :group 'nix3-face)
 
 (defface nix3-flake-lock-node-heading
   '((t (:inherit magit-section-heading)))
-  "Face for flake.lock nodes.")
+  "Face for flake.lock nodes."
+  :group 'nix3-face)
 
 ;;;;
 
