@@ -612,7 +612,8 @@ will be refreshed."
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command
              nix3-transient-flake-output
-             (transient-args 'nix3-transient-build)))))
+             (transient-args 'nix3-transient-build))
+            nix3-compile-in-comint-mode)))
 
 (transient-define-prefix nix3-transient-run ()
   ["nix run"
@@ -639,7 +640,8 @@ will be refreshed."
                      (transient-args 'nix3-transient-run))
                     (if nix3-transient-command-args
                         (concat " -- " nix3-transient-command-args)
-                      "")))))
+                      ""))
+            nix3-compile-in-comint-mode)))
 
 (defun nix3-transient--run-term ()
   (interactive)
@@ -679,7 +681,8 @@ will be refreshed."
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command
              nil
-             (transient-args 'nix3-transient-flake-check)))))
+             (transient-args 'nix3-transient-flake-check))
+            nix3-compile-in-comint-mode)))
 
 (transient-define-prefix nix3-transient-flake-lock ()
   ["nix flake lock/update"
@@ -710,7 +713,8 @@ will be refreshed."
                (append (transient-args 'nix3-transient-flake-lock)
                        (mapcar (lambda (input)
                                  (list "--update-input" input))
-                               nix3-transient-updated-inputs))))))))
+                               nix3-transient-updated-inputs)))))
+            nix3-compile-in-comint-mode)))
 
 (defun nix3-transient-input ()
   (interactive)
@@ -742,7 +746,8 @@ will be refreshed."
   (interactive)
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command
-             nix3-transient-flake-output))))
+             nix3-transient-flake-output)
+            nix3-compile-in-comint-mode)))
 
 (defun nix3-transient--command-description ()
   (string-join (cons "nix" nix3-transient-nix-command) " "))

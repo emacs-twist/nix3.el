@@ -61,6 +61,13 @@
   "String used as a separator in `completing-read-multiple'."
   :type 'string)
 
+(defcustom nix3-compile-in-comint-mode t
+  "Whether to run `compile' in `comint-mode'.
+
+If this option is t, background nix processes will be run in
+`comint-mode' with `compilation-shell-minor-mode'. See `compile' for details."
+  :type 'boolean)
+
 ;;;; Variables
 
 (defvar nix3-config-cache nil)
@@ -99,7 +106,8 @@ This command discard the exit code or output of the command."
   ;; Use compile for now, but it may be a better way
   (compile (mapconcat #'shell-quote-argument
                       (cons cmd args)
-                      " ")))
+                      " ")
+           nix3-compile-in-comint-mode))
 
 (defun nix3-system ()
   "Return the system name of Nix."

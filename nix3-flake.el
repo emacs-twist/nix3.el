@@ -1168,7 +1168,8 @@ non-interactively."
                (concat "nix flake lock "
                        (mapconcat (lambda (name)
                                     (format "--update-input %s" name))
-                                  names " "))))))
+                                  names " ")))
+             nix3-compile-in-comint-mode)))
 
 (provide 'nix3-flake)
 ;;; nix3-flake.el ends here
