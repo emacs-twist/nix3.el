@@ -205,7 +205,7 @@
   (interactive (list (progn
                        (require 'project)
                        (project-prompt-project-dir))))
-  (nix3-flake-input-update (concat "path:" (expand-file-name dir))))
+  (nix3-flake-input-update (concat "path:" (file-truename dir))))
 
 (provide 'nix3-flake-input)
 ;;; nix3-flake-input.el ends here
