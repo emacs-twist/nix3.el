@@ -146,7 +146,7 @@
 
 ;;;###autoload
 (defun nix3-flake-lock-diff-section ()
-  (when-let (files (nix3-flake-lock-magit-sections))
+  (when-let* ((files (nix3-flake-lock-magit-sections)))
     (cl-flet*
         ((format-mtime (locked)
            (format-time-string "%Y-%m-%d" (alist-get 'lastModified locked)))
@@ -194,7 +194,7 @@
 (defun nix3-flake-lock-source-at-point ()
   "Display the source at point."
   (interactive)
-  (when-let (section (magit-current-section))
+  (when-let* ((section (magit-current-section)))
     (pcase (oref section value)
       (`(,_id ,old ,new)
        (cond

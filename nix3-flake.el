@@ -281,7 +281,7 @@ If DIR is non-nil, the function returns a flake at or above the
 directory. It implies LOCAL."
   (or (unless (or local dir)
         nix3-flake-url)
-      (if-let (root (locate-dominating-file (or dir default-directory) "flake.nix"))
+      (if-let* ((root (locate-dominating-file (or dir default-directory) "flake.nix")))
           (nix3-normalize-path root)
         (unless allow-missing
           (error "No flake.nix is found")))))
@@ -324,12 +324,12 @@ directory. It implies LOCAL."
            (pcase \.type
              ("indirect"
               (require 'nix3-registry)
-              (if-let (entry (thread-last
+              (if-let* ((entry (thread-last
                                (nix3-registry--collect-entries)
                                (cl-remove-if (lambda (x)
                                                (equal (cdr (assq 'type (cddr x)))
                                                       "path")))
-                               (assoc \.id)))
+                               (assoc \.id))))
                   (to-url (cddr entry))
                 (error "Failed to find a registry entry for %s" \.id)))
              ("github"
@@ -445,7 +445,7 @@ directory. It implies LOCAL."
                           type)
                     result))
              ("unknown"
-              (when-let (match (seq-find (apply-partially #'prefixp path) extra-derivations))
+              (when-let* ((match (seq-find (apply-partially #'prefixp path) extra-derivations)))
                 (let ((rest (seq-drop match (length path))))
                   (go2 path rest))))))
          (go2 (path rest)
@@ -510,7 +510,7 @@ directory. It implies LOCAL."
 
 (defun nix3-flake-insert-metadata ()
   (magit-insert-section (flake-metadata nil)
-    (when-let (metadata (nix3-flake--get-metadata-result))
+    (when-let* ((metadata (nix3-flake--get-metadata-result)))
       (let-alist metadata
         (nix3-section-dlist 0
           nil
@@ -539,14 +539,14 @@ directory. It implies LOCAL."
 
 (defun nix3-flake-output-return ()
   (interactive)
-  (when-let (output (nix3-flake-output-path-at-point))
+  (when-let* ((output (nix3-flake-output-path-at-point)))
     (setq nix3-transient-flake (nix3-flake--buffer-url))
     (setq nix3-transient-flake-output output)
     (setq nix3-transient-flake-output-type (nix3-flake-output-type))
     (nix3-transient-on-output)))
 
 (defun nix3-flake-output-path-at-point ()
-  (when-let (section (magit-current-section))
+  (when-let* ((section (magit-current-section)))
     (when (eq (oref section type) 'flake-output)
       (oref section value))))
 
@@ -558,7 +558,7 @@ directory. It implies LOCAL."
         (while (setq section (magit-current-section))
           (when (eq (oref section type) 'flake-output-type)
             (throw 'output-type (oref section value)))
-          (if-let (parent (oref section parent))
+          (if-let* ((parent (oref section parent)))
               (let ((pos (point)))
                 (magit-section-goto parent)
                 ;; If there is no heading for the parent branch, the position
@@ -618,7 +618,7 @@ directory. It implies LOCAL."
 
 (defun nix3-flake-insert-header (url)
   (insert (propertize "Flake: " 'face 'magit-section-heading))
-  (if-let (metadata (nix3-flake-metadata--get url))
+  (if-let* ((metadata (nix3-flake-metadata--get url)))
       (if (member (nix3-lookup-tree '(original type) metadata)
                   '("indirect" "path" "git"))
           (insert (cdr (assq 'originalUrl metadata)))
@@ -632,7 +632,7 @@ directory. It implies LOCAL."
   (let (result)
     (cl-labels
         ((go (rev-path node)
-           (if-let (type (cdr (assq 'type node)))
+           (if-let* ((type (cdr (assq 'type node))))
                (push (cons type rev-path) result)
              (pcase-dolist (`(,name . ,child) node)
                (go (cons name rev-path) child)))))
@@ -645,7 +645,7 @@ directory. It implies LOCAL."
                  (seq-sort-by #'car #'string<))))
 
 (defun nix3-flake--direct-inputs ()
-  (if-let (result (nix3-flake--get-metadata-result))
+  (if-let* ((result (nix3-flake--get-metadata-result)))
       (let* ((nodes (nix3-lookup-tree '(locks nodes) result))
              (names (mapcar #'car (nix3-lookup-tree '(root inputs) nodes))))
         (mapcar (lambda (name)
@@ -656,7 +656,7 @@ directory. It implies LOCAL."
 
 (defun nix3-flake-insert-inputs ()
   (require 'nix3-flake-input)
-  (when-let (result (nix3-flake--get-metadata-result))
+  (when-let* ((result (nix3-flake--get-metadata-result)))
     (nix3-section-with-keymap nix3-flake-input-map
       (magit-insert-section (flake-inputs nil (nix3-flake--fold-toplevel-p))
         (magit-insert-heading "Flake inputs")
@@ -783,7 +783,7 @@ directory. It implies LOCAL."
   (read-only-mode 1))
 
 (defun nix3-flake-show-eldoc (callback)
-  (when-let (help (get-char-property (point) 'help-echo))
+  (when-let* ((help (get-char-property (point) 'help-echo)))
     (when (stringp help)
       (funcall callback help))))
 
@@ -921,7 +921,7 @@ directory. It implies LOCAL."
   "Go to the flake buffer."
   (interactive)
   (when (eq major-mode 'nix3-flake-show-mode)
-    (when-let (buffer (pop nix3-flake-show-history))
+    (when-let* ((buffer (pop nix3-flake-show-history)))
       (switch-to-buffer buffer))))
 
 ;;;; Bookmark integration
@@ -937,9 +937,9 @@ directory. It implies LOCAL."
 
 ;;;###autoload
 (defun nix3-flake-show-bookmark-handler (bookmark)
-  (if-let (url (bookmark-prop-get bookmark 'url))
+  (if-let* ((url (bookmark-prop-get bookmark 'url)))
       (nix3-flake-show-url url)
-    (if-let (dir (bookmark-prop-get bookmark 'default-directory))
+    (if-let* ((dir (bookmark-prop-get bookmark 'default-directory)))
         (if (file-directory-p dir)
             (nix3-flake-show dir)
           (user-error "Trying to open a bookmark on a non-existent directory: %s" bookmark))
@@ -1005,11 +1005,11 @@ If NO-CONFIRM is non-nil, "
           (then `(lambda (_)
                    (let (message-log-max)
                      (message nil))
-                   (if-let (templates (thread-last
-                                        (nix3-flake-show--get ,url)
-                                        ;; Since Nix 2.7, the default template is templates.default, so we
-                                        ;; won't consider defaultTemplate.
-                                        (alist-get 'templates)))
+                   (if-let* ((templates (thread-last
+                                          (nix3-flake-show--get ,url)
+                                          ;; Since Nix 2.7, the default template is templates.default, so we
+                                          ;; won't consider defaultTemplate.
+                                          (alist-get 'templates))))
                        (concat ,name-or-url
                                "#" (nix3-flake--complete-template ,prompt templates))
                      (error "No template"))))
@@ -1065,7 +1065,7 @@ If NO-CONFIRM is non-nil, "
                                 templates)))
     (cl-labels
         ((annotator (candidate)
-           (if-let (description (cdr (assoc candidate template-alist)))
+           (if-let* ((description (cdr (assoc candidate template-alist))))
                (concat " " description)
              ""))
          (group (candidate transform)
@@ -1098,7 +1098,7 @@ then runs `nix3-flake-init'."
   (interactive)
   (when nix3-flake-url
     (user-error "You must run this command inside a local flake"))
-  (if-let (dir (locate-dominating-file default-directory "flake.nix"))
+  (if-let* ((dir (locate-dominating-file default-directory "flake.nix")))
       (funcall nix3-flake-edit-find-file-fn (expand-file-name "flake.nix" dir))
     (let ((default-directory (or (vc-git-root default-directory)
                                  (progn
@@ -1122,7 +1122,7 @@ then runs `nix3-flake-init'."
 
 (defun nix3-flake-remember-this-project ()
   "Remember the current project."
-  (when-let (pr (project-current))
+  (when-let* ((pr (project-current)))
     (project-remember-project pr)))
 
 ;;;; Manage relationships between remote repositories and local copies

@@ -138,7 +138,7 @@ This is a function that takes a command line as an argument."
    (required :initarg :required :initform t)))
 
 (cl-defmethod transient-init-value ((obj nix3-transient-output-variable))
-  (if-let (value (eval (oref obj variable)))
+  (if-let* ((value (eval (oref obj variable))))
       (oset obj value value)
     (when (oref obj required)
       (let ((value (transient-infix-read obj)))
@@ -442,7 +442,7 @@ will be refreshed."
                                   (format "*nix eval<%s>*" path)))
            (message "%s: %s" path string)))
        (go (path)
-         (if-let (names (get-attr-names path))
+         (if-let* ((names (get-attr-names path)))
              (let ((new-path (completing-read (format "Attribute (%s): " path)
                                               ;; Build candidates that are full
                                               ;; attribute paths. This will make
@@ -509,7 +509,7 @@ will be refreshed."
                                         ","))
                            (propertize ")" 'face 'transient-inactive-value))))
   (interactive)
-  (if-let (licenses (nix3-transient--package-license))
+  (if-let* ((licenses (nix3-transient--package-license)))
       (nix3-transient--browse-license-url
        (if (assq 'fullName licenses)
            licenses
@@ -521,7 +521,7 @@ will be refreshed."
     (user-error "No license")))
 
 (defun nix3-transient--browse-license-url (license)
-  (if-let (url (alist-get 'url license))
+  (if-let* ((url (alist-get 'url license)))
       (browse-url url)
     (user-error "License %s has no URL"
                 (or (alist-get 'spdxId license)
@@ -534,7 +534,7 @@ will be refreshed."
                        licenses)))
     (cl-labels
         ((annotator (candidate)
-           (when-let (license (cdr (assoc candidate alist)))
+           (when-let* ((license (cdr (assoc candidate alist))))
              (format " (%s)"
                      (mapconcat (lambda (x)
                                   (symbol-name (car x)))

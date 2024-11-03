@@ -129,7 +129,7 @@
 
 (defun nix3-flake-input-at-point ()
   "Return a cons cell of (NAME . DATA) of the input."
-  (when-let (section (magit-current-section))
+  (when-let* ((section (magit-current-section)))
     (when (eq (slot-value section 'type) 'flake-input)
       (oref section value))))
 
@@ -178,7 +178,7 @@
 (defun nix3-flake-input-update-to-rev (rev)
   (interactive "sRevision: ")
   (let ((alist (alist-get 'original (cdr nix3-flake-input))))
-    (if-let (cell (assq 'rev alist))
+    (if-let* ((cell (assq 'rev alist)))
         (setcdr cell rev)
       (setq alist (cons (cons 'rev rev) alist)))
     (nix3-flake-input-update alist)))
@@ -186,7 +186,7 @@
 (defun nix3-flake-input-update-to-ref (ref)
   (interactive "sRef: ")
   (let ((alist (alist-get 'original (cdr nix3-flake-input))))
-    (if-let (cell (assq 'ref alist))
+    (if-let* ((cell (assq 'ref alist)))
         (setcdr cell ref)
       (setq alist (cons (cons 'ref ref) alist)))
     (nix3-flake-input-update alist)))

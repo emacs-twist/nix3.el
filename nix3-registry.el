@@ -175,7 +175,7 @@ registry type and the \"to\" value of the entry."
          (group (id transform)
            (if transform
                id
-             (if-let (cell (gethash id table))
+             (if-let* ((cell (gethash id table)))
                  (format "%s registry"
                          (capitalize (symbol-name (car cell))))
                "")))
@@ -187,7 +187,7 @@ registry type and the \"to\" value of the entry."
                            (cons 'annotation-function #'annotator)))
              (complete-with-action action items string pred))))
       (let ((input (completing-read prompt #'completions)))
-        (if-let (entry (gethash input table))
+        (if-let* ((entry (gethash input table)))
             (cons input (cdr entry))
           (when (and add-to-registry
                      (nix3-registry--flake-url-p input)
@@ -243,7 +243,7 @@ registry type and the \"to\" value of the entry."
                 name flake))
 
 (defun nix3-registry--maybe-origin-flake-url ()
-  (when-let (git-url (cdr (assoc "origin" (nix3-git-remotes))))
+  (when-let* ((git-url (cdr (assoc "origin" (nix3-git-remotes)))))
     (nix3-flake-ref-alist-to-url
      (nix3-git-url-to-flake-alist git-url))))
 

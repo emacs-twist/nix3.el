@@ -160,7 +160,7 @@ This command discard the exit code or output of the command."
 
 (defun nix3-config-lookup (key)
   "Look up the configuration of Nix."
-  (if-let (h (map-elt (nix3--config-memoized) key))
+  (if-let* ((h (map-elt (nix3--config-memoized) key)))
       (map-elt h "value")
     (error "Key %s is not found in the nix conf" key)))
 
