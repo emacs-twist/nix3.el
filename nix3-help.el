@@ -80,7 +80,7 @@
                                                  last-end start))))
                  (when (string-match capture string)
                    (push (cons (match-string 1 string)
-                               (when-let (desc (match-string 2 string))
+                               (when-let* ((desc (match-string 2 string)))
                                  (replace-regexp-in-string
                                   (rx (+ space)) " "
                                   desc)))
@@ -92,7 +92,7 @@
   (let (alist)
     (cl-labels
         ((add-commands (subcommands &optional description)
-           (if-let (subalist (apply #'nix3-help-parse 'commands subcommands))
+           (if-let* ((subalist (apply #'nix3-help-parse 'commands subcommands)))
                (dolist (x subalist)
                  (add-commands (append subcommands (list (car x)))
                                (cdr x)))
