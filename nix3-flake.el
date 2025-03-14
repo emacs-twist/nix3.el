@@ -96,7 +96,8 @@
   :type '(choice number (const nil)))
 
 (defcustom nix3-flake-init-function
-  (lambda () (nix3-flake-init :no-confirm t))
+  (lambda () (nix3-flake-init (nix3-flake-select-init-directory)
+                              :no-confirm t))
   "Function called when the user wants to initialize a Nix project.
 
 The function is called without argument, e.g. from
@@ -948,19 +949,26 @@ directory. It implies LOCAL."
 ;;;; nix flake init/new
 
 ;;;###autoload
-(cl-defun nix3-flake-init (&key no-confirm)
+(cl-defun nix3-flake-init (dir &key no-confirm)
   "Initialize the current project from a flake template.
 
-If NO-CONFIRM is non-nil, "
-  (interactive)
-  (when (and (or (file-exists-p "flake.nix")
-                 (project-current))
+The template will be initialized into DIR. If NO-CONFIRM is non-nil, the
+template will be run if the directory already contains flake.nix."
+  (interactive (list (nix3-flake-select-init-directory)))
+  (when (and (file-exists-p (expand-file-name "flake.nix" dir))
              (not (or no-confirm
-                      (yes-or-no-p (format "Are you sure you want to run the template in \"%s\"?"
-                                           default-directory)))))
+                      (yes-or-no-p "Are you sure you want to run the template in the directory? "))))
     (user-error "Aborted"))
   (nix3-flake--prompt-template "nix flake init: "
-                               #'nix3-flake-init-with-template))
+                               (apply-partially #'nix3-flake-init-with-template dir)))
+
+(defun nix3-flake-select-init-directory (&optional force)
+  (let ((git-root (vc-git-root default-directory)))
+    (if (and (not force)
+             (file-equal-p default-directory git-root))
+        default-directory
+      (read-directory-name "Run a flake template in the directory: "
+                           nil nil 'mustmatch))))
 
 ;;;###autoload
 (defun nix3-flake-new ()
@@ -1020,15 +1028,17 @@ If NO-CONFIRM is non-nil, "
   (and (stringp url)
        (string-match-p "#" url)))
 
-(defun nix3-flake-init-with-template (template)
-  (nix3-flake--record-template template)
-  (nix3-flake--run-template (lambda ()
-                              (run-hooks 'nix3-flake-init-hook)
-                              (when (and nix3-flake-init-reverted-modes
-                                         (apply #'derived-mode-p
-                                                nix3-flake-init-reverted-modes))
-                                (revert-buffer)))
-                            "init" "-t" template))
+(defun nix3-flake-init-with-template (dir template)
+  (let ((default-directory dir))
+    (nix3-flake--record-template template)
+    (nix3-flake--run-template `(lambda ()
+                                 (let ((default-directory ,dir))
+                                   (run-hooks 'nix3-flake-init-hook)
+                                   (when (and nix3-flake-init-reverted-modes
+                                              (apply #'derived-mode-p
+                                                     nix3-flake-init-reverted-modes))
+                                     (revert-buffer))))
+                              "init" "-t" template)))
 
 (defun nix3-flake--record-template (template)
   (delq template nix3-flake-template-history)
