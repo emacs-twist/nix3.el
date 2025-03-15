@@ -959,12 +959,19 @@ template will be run if the directory already contains flake.nix."
              (not (or no-confirm
                       (yes-or-no-p "Are you sure you want to run the template in the directory? "))))
     (user-error "Aborted"))
-  (nix3-flake--prompt-template "nix flake init: "
-                               (apply-partially #'nix3-flake-init-with-template dir)))
+  (if (or (vc-git-root dir)
+          (when (yes-or-no-p (format "Run git init in \"%s\"? "
+                                     (abbreviate-file-name dir)))
+            (let ((default-directory dir))
+              (nix3-flake-git-init))))
+      (nix3-flake--prompt-template "nix flake init: "
+                                   (apply-partially #'nix3-flake-init-with-template dir))
+    (user-error "Not inside a Git repository. Aborted")))
 
 (defun nix3-flake-select-init-directory (&optional force)
   (let ((git-root (vc-git-root default-directory)))
     (if (and (not force)
+             git-root
              (file-equal-p default-directory git-root))
         default-directory
       (read-directory-name "Run a flake template in the directory: "
