@@ -580,7 +580,7 @@ directory. It implies LOCAL."
           (magit-insert-section (flake-output-type type-name)
             (magit-insert-heading
               (make-string 2 ?\s)
-              (propertize type-name 'face 'nix3-flake-output-type-face))
+              (propertize type-name 'font-lock-face 'nix3-flake-output-type-face))
             (pcase-dolist (`(,branch-reverse . ,leaves)
                            (seq-group-by #'cdr outputs))
               (let* ((branch (reverse branch-reverse))
@@ -595,7 +595,7 @@ directory. It implies LOCAL."
                     (magit-insert-heading
                       (make-string 4 ?\s)
                       (propertize (mapconcat #'symbol-name branch ".")
-                                  'face 'nix3-flake-output-parent-face)))
+                                  'font-lock-face 'nix3-flake-output-parent-face)))
                   (dolist (output-reverse leaves)
                     (let* ((path (reverse output-reverse))
                            (node (nix3-lookup-tree path result))
@@ -610,7 +610,7 @@ directory. It implies LOCAL."
                                  'nix-flake-output (mapconcat #'symbol-name
                                                               path ".")
                                  'nix-flake-show node
-                                 'face 'nix3-flake-output-name-face
+                                 'font-lock-face 'nix3-flake-output-name-face
                                  (when description
                                    (list 'help-echo description))))))))))))))
     (insert ?\n)))
@@ -618,7 +618,7 @@ directory. It implies LOCAL."
 (put 'nix3-flake-insert-outputs 'nix3-loader #'nix3-flake--make-show-process)
 
 (defun nix3-flake-insert-header (url)
-  (insert (propertize "Flake: " 'face 'magit-section-heading))
+  (insert (propertize "Flake: " 'font-lock-face 'magit-section-heading))
   (if-let* ((metadata (nix3-flake-metadata--get url)))
       (if (member (nix3-lookup-tree '(original type) metadata)
                   '("indirect" "path" "git"))
@@ -700,7 +700,7 @@ directory. It implies LOCAL."
                           (insert (make-string 3 ?\s)
                                   (propertize (pad-column name-width name-string)
                                               'help-echo name-string
-                                              'face 'nix3-flake-input-name-face)
+                                              'font-lock-face 'nix3-flake-input-name-face)
                                   " ")
                           (if is-flake
                               (insert-text-button url
@@ -714,9 +714,9 @@ directory. It implies LOCAL."
                           (insert "  "
                                   (if is-flake
                                       (propertize "(flake)"
-                                                  'face 'nix3-flake-flake-state-face)
+                                                  'font-lock-face 'nix3-flake-flake-state-face)
                                     (propertize "(non-flake)"
-                                                'face 'nix3-flake-non-flake-state-face))
+                                                'font-lock-face 'nix3-flake-non-flake-state-face))
                                   "\n"))))))))
           (insert "The flake has no inputs."))
         (insert ?\n)))))
