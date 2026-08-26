@@ -202,12 +202,12 @@ directory-local variables for per-project configuration."
   :group 'nix3-flake-face)
 
 (defface nix3-flake-flake-state-face
-  '((t (:inherit font-lock-comment-face :weight bold)))
+  '((t (:inherit font-lock-function-name-face)))
   "Face for indicating the input is a flake."
   :group 'nix3-flake-face)
 
 (defface nix3-flake-non-flake-state-face
-  '((t (:inherit font-lock-comment-face)))
+  '((t (:inherit font-lock-constant-face)))
   "Face for indicating the input is not a flake."
   :group 'nix3-flake-face)
 
