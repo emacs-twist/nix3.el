@@ -1,6 +1,5 @@
 {
-  description =
-    "THIS IS AN AUTO-GENERATED FILE. PLEASE DON'T EDIT IT MANUALLY.";
+  description = "THIS IS AN AUTO-GENERATED FILE. PLEASE DON'T EDIT IT MANUALLY.";
   inputs = {
     compat = {
       flake = false;
@@ -8,10 +7,16 @@
       repo = "compat";
       type = "github";
     };
-    dash = {
+    cond-let = {
       flake = false;
-      owner = "magnars";
-      repo = "dash.el";
+      owner = "tarsius";
+      repo = "cond-let";
+      type = "github";
+    };
+    llama = {
+      flake = false;
+      owner = "tarsius";
+      repo = "llama";
       type = "github";
     };
     magit-section = {
@@ -33,5 +38,5 @@
       type = "github";
     };
   };
-  outputs = { ... }: { };
+  outputs = _: { };
 }

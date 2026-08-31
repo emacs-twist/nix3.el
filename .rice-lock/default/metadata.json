@@ -5,26 +5,57 @@
       "description": "Emacs Lisp Compatibility Library",
       "homepage": "https://github.com/emacs-compat/compat",
       "maintainers": [
-        "Compat Development <~pkal/compat-devel@lists.sr.ht>"
+        "Philip Kaludercic <philipk@posteo.net>, Daniel Mendler <mail@daniel-mendler.de>"
       ]
     },
-    "narHash": "sha256-IrShpeA17hFAzZsOjGk92OifWucL0XrNPFD5qBiShGc=",
+    "narHash": "sha256-PTXi22JGF6pSaNC5skwYmpMNiPeapao18bSJt8UyFRY=",
     "packageRequires": {
-      "emacs": "24.4",
-      "seq": "2.23"
+      "emacs": "25.1"
     },
-    "version": "30.0.0.0"
+    "version": "31.0.0.2"
   },
-  "dash": {
-    "author": "Magnar Sveen <magnars@gmail.com>",
+  "cond-let": {
+    "author": "Jonas Bernoulli <emacs.cond-let@jonas.bernoulli.dev>",
     "meta": {
-      "description": "A modern list library for Emacs"
+      "description": "Additional and improved binding conditionals",
+      "license": {
+        "deprecated": false,
+        "free": true,
+        "fullName": "GNU General Public License v3.0 or later",
+        "licenseType": "simple",
+        "redistributable": true,
+        "shortName": "gpl3Plus",
+        "spdxId": "GPL-3.0-or-later",
+        "url": "https://spdx.org/licenses/GPL-3.0-or-later.html"
+      }
     },
-    "narHash": "sha256-at42NCcdF9g7a55asnOCSqsvG+XhWuvVsHFT6kU9f9o=",
+    "narHash": "sha256-9CIx1lsvScLuveMjOV/KBoMQ5lBZQUMz5rdQk8tXkhw=",
     "packageRequires": {
-      "emacs": "24"
+      "emacs": "28.1"
     },
-    "version": "2.19.1"
+    "version": "1.1.3"
+  },
+  "llama": {
+    "author": "Jonas Bernoulli <emacs.llama@jonas.bernoulli.dev>",
+    "meta": {
+      "description": "Compact syntax for short lambda",
+      "license": {
+        "deprecated": false,
+        "free": true,
+        "fullName": "GNU General Public License v3.0 or later",
+        "licenseType": "simple",
+        "redistributable": true,
+        "shortName": "gpl3Plus",
+        "spdxId": "GPL-3.0-or-later",
+        "url": "https://spdx.org/licenses/GPL-3.0-or-later.html"
+      }
+    },
+    "narHash": "sha256-c1sk4iVTeDoSGBq6h7VPemdKhYi/P3UfLSJbd3MjyuM=",
+    "packageRequires": {
+      "compat": "31.0",
+      "emacs": "26.1"
+    },
+    "version": "1.0.5"
   },
   "magit-section": {
     "author": "Jonas Bernoulli <emacs.magit@jonas.bernoulli.dev>",
@@ -34,6 +65,7 @@
         "deprecated": false,
         "free": true,
         "fullName": "GNU General Public License v3.0 or later",
+        "licenseType": "simple",
         "redistributable": true,
         "shortName": "gpl3Plus",
         "spdxId": "GPL-3.0-or-later",
@@ -43,13 +75,15 @@
         "Jonas Bernoulli <emacs.magit@jonas.bernoulli.dev>"
       ]
     },
-    "narHash": "sha256-7ogxgB/hqEVEe8V7T3wfm+CbyCxExjWQmICjqATy+O8=",
+    "narHash": "sha256-PPX9Gt8Uv0A5o//FS81PaegZLOOBzLlVfopQ3SBX4cE=",
     "packageRequires": {
-      "compat": "30.0.0.0",
-      "dash": "20240510",
-      "emacs": "26.1"
+      "compat": "31.0",
+      "cond-let": "1.1",
+      "emacs": "28.1",
+      "llama": "1.0",
+      "seq": "2.24"
     },
-    "version": "3.3.0.50-git"
+    "version": "4.7.0"
   },
   "promise": {
     "author": "chuntaro <chuntaro@sakura-games.jp>",
@@ -71,20 +105,8 @@
         "Jason Milkins <jasonm23@gmail.com>"
       ]
     },
-    "narHash": "sha256-fbF/SyPwEiJICaPBq0xWj2yLWjdNwkaLF2iYvZ2EO1k=",
+    "narHash": "sha256-C6T1Fh0t0YvcoMbTQpa3iRIMM0MV0f5HaZDhvmi/YaA=",
     "packageRequires": {},
     "version": "1.13.1"
-  },
-  "seq": {
-    "author": "Nicolas Petton <nicolas@petton.fr>",
-    "meta": {
-      "description": "Sequence manipulation functions",
-      "maintainers": [
-        "emacs-devel@gnu.org"
-      ]
-    },
-    "narHash": "sha256-FH/LPoVKuTY89HciZ7pWs/haqfNeZSAHWaYuy3Qw8mA=",
-    "packageRequires": {},
-    "version": "2.24"
   }
 }
