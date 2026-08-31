@@ -364,7 +364,7 @@ will be refreshed."
         (message "The directory is not writable")))))
 
 (defun nix3-transient--show-mode-p ()
-  (eq major-mode 'nix3-flake-show-mode))
+  (derived-mode-p 'nix3-flake-show-mode))
 
 (defun nix3-transient--flake-description ()
   (format "Flake: %s" nix3-transient-flake))

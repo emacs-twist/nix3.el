@@ -915,14 +915,14 @@ directory. It implies LOCAL."
   :put-result nix3-flake-metadata--put)
 
 (defun nix3-flake-switch-to-buffer (buffer)
-  (when (eq major-mode 'nix3-flake-show-mode)
+  (when (derived-mode-p 'nix3-flake-show-mode)
     (push (current-buffer) nix3-flake-show-history))
   (switch-to-buffer buffer))
 
 (defun nix3-flake-show-back ()
   "Go to the flake buffer."
   (interactive)
-  (when (eq major-mode 'nix3-flake-show-mode)
+  (when (derived-mode-p 'nix3-flake-show-mode)
     (when-let* ((buffer (pop nix3-flake-show-history)))
       (switch-to-buffer buffer))))
 
