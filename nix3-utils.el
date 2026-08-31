@@ -42,7 +42,7 @@
 (declare-function vterm-send-return "ext:vterm")
 
 (defun nix3-put-overlay-on-region (beg end &rest properties)
-  "A shorthand for putting overlay properties on a region."
+  "Put PROPERTIES on an overlay spanning BEG through END."
   (declare (indent 2))
   (let ((ov (make-overlay beg end)))
     (cl-loop for (prop value) on properties by #'cddr
@@ -55,7 +55,7 @@
       max)))
 
 (defun nix3-build-git-clone-url (url-alist)
-  "Return a URL that is supported by git clone."
+  "Return a Git clone URL for URL-ALIST."
   (let-alist url-alist
     (pcase \.type
       ("github" (format "https://github.com/%s/%s.git" \.owner \.repo))
@@ -66,7 +66,7 @@
       (_ (error "Cannot build a remote URL from %s" \.type)))))
 
 (defun nix3-flake-ref-alist-to-url (url-alist)
-  "Convert ORIGIN into a plain URL format."
+  "Convert URL-ALIST into a plain flake URL."
   (let-alist url-alist
     (concat (pcase \.type
               ("github" (format "github:%s/%s" \.owner \.repo))
@@ -97,7 +97,7 @@
 
 (defun nix3-git-url-to-flake-alist (git-url)
   ;; TODO: Add tests
-  "Return a flake reference alist corresponding to a git remote url."
+  "Return the flake reference alist corresponding to GIT-URL."
   ;; git+https://example.org/my/repo
   ;; git+https://example.org/my/repo?dir=flake1
   ;; git+ssh://git@github.com/NixOS/nix?ref=v1.2.3

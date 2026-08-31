@@ -65,7 +65,7 @@
   "Whether to run `compile' in `comint-mode'.
 
 If this option is t, background nix processes will be run in
-`comint-mode' with `compilation-shell-minor-mode'. See `compile' for details."
+`comint-mode' with `compilation-shell-minor-mode'.  See `compile' for details."
   :type 'boolean)
 
 ;;;; Variables
@@ -75,7 +75,7 @@ If this option is t, background nix processes will be run in
 ;;;; Functions
 
 (defun nix3-read-nix-command (&rest args)
-  "Run nix and return its output string."
+  "Run nix with ARGS and return its output string."
   (with-temp-buffer
     (let ((err-file (make-temp-file "nix3"))
           (coding-system-for-read 'utf-8))
@@ -93,16 +93,16 @@ If this option is t, background nix processes will be run in
     (buffer-string)))
 
 (defun nix3-read-nix-json-command (&rest args)
-  "Run nix and return its output string."
+  "Run nix with ARGS and parse its JSON output."
   (json-parse-string (apply #'nix3-read-nix-command args)
                      :false-object nil
                      :object-type 'alist
                      :array-type 'list))
 
 (defun nix3-run-process-background (cmd &rest args)
-  "Run a system command in the background.
+  "Run CMD with ARGS in the background.
 
-This command discard the exit code or output of the command."
+This command discards the exit code and output of the command."
   ;; Use compile for now, but it may be a better way
   (compile (mapconcat #'shell-quote-argument
                       (cons cmd args)
@@ -159,7 +159,7 @@ This command discard the exit code or output of the command."
       value)))
 
 (defun nix3-config-lookup (key)
-  "Look up the configuration of Nix."
+  "Look up KEY in the Nix configuration."
   (if-let* ((h (map-elt (nix3--config-memoized) key)))
       (map-elt h "value")
     (error "Key %s is not found in the nix conf" key)))

@@ -54,7 +54,7 @@
 
 ;;;###autoload
 (defun nix3-flake-clone-promise (url-alist)
-  "Return a promise that resolves to a local Git working directory."
+  "Return a promise that clones URL-ALIST into a local Git worktree."
   (require 'nix3-registry)
   (promise-new
    `(lambda (resolve _)
@@ -87,7 +87,9 @@
       (nix3-registry--non-indirect url-or-alist)))))
 
 (cl-defun nix3-flake-clone-async (origin dest &key callback)
-  "Clone a Git repository."
+  "Clone the Git repository at ORIGIN into DEST.
+
+Call CALLBACK with the destination when cloning succeeds."
   (let ((parent (file-name-directory (string-remove-suffix "/" dest))))
     (unless (file-directory-p parent)
       (make-directory parent t)))

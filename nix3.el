@@ -58,7 +58,7 @@ This is EXPERIMENTAL.")
 
 ;;;###autoload
 (defun nix3-build (output)
-  "Build a derivation in the current flake."
+  "Build an OUTPUT in the current flake."
   (interactive (list (nix3-flake-select-output
                       (format "nix build (%s): " (nix3-flake-location))
                       "build")))
@@ -68,7 +68,7 @@ This is EXPERIMENTAL.")
 
 ;;;###autoload
 (defun nix3-run (output)
-  "Run an app in the current flake."
+  "Run an app OUTPUT in the current flake."
   (interactive (list (nix3-flake-select-output
                       (format "nix run (%s): " (nix3-flake-location))
                       "run")))

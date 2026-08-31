@@ -90,7 +90,7 @@
                     (blob (nix3-flake-lock--blob root rev filename)))
               (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
                                            "cat-file" "blob" blob))
-                (error "git-cat-file failed on %s" blob))
+                (error "The command git cat-file failed on %s" blob))
             (throw 'no-lock-file t))
         (insert-file-contents (expand-file-name filename root)))
       (goto-char (point-min))
@@ -103,7 +103,7 @@
        (with-temp-buffer
          (unless (zerop (call-process nix3-git-executable nil (list t nil) nil
                                       "ls-files" "--stage" "--" filename))
-           (error "git-ls-files failed"))
+           (error "The command git ls-files failed"))
          (nth 1 (split-string (buffer-string) " "))))
       ((pred stringp)
        (with-temp-buffer

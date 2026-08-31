@@ -37,7 +37,6 @@
 (require 'pp)
 
 (declare-function term "term")
-(declare-function nix3-flake-input-dispatch "nix3-flake-input")
 (declare-function nix3-help-parse "nix3-help")
 (declare-function nix3-help--read-command "nix3-help")
 (defvar nix3-flake-input)
@@ -58,7 +57,7 @@ This is a function that takes a command line as an argument."
 (defvar nix3-transient-flake-output nil)
 
 (defvar nix3-transient-flake-output-type nil
-  "Type of the attribute at point. Set temporarily.")
+  "Type of the attribute at point.  Set temporarily.")
 
 (defvar nix3-transient-nix-command nil)
 
@@ -338,8 +337,7 @@ This is a function that takes a command line as an argument."
 (defun nix3-transient (&optional refresh)
   "Dispatch a transient interface to Nix commands.
 
-With a universal prefix argument, nix flake show/metadata cache
-will be refreshed."
+When REFRESH is non-nil, refresh the nix flake show/metadata cache."
   (interactive "P")
   (if (nix3-transient--show-mode-p)
       ;; If the current buffer is already showing the flake via
@@ -357,7 +355,7 @@ will be refreshed."
                     (call-interactively #'nix3-transient--dispatch)))
             (promise-catch #'nix3-flake--handle-process-error)))
       (if (file-writable-p default-directory)
-          (when (yes-or-no-p "There is no flake.nix. Initialize a flake? ")
+          (when (yes-or-no-p "Initialize a flake because there is no flake.nix? ")
             (funcall nix3-flake-init-function))
         (message "The directory is not writable")))))
 
@@ -368,6 +366,7 @@ will be refreshed."
   (format "Flake: %s" nix3-transient-flake))
 
 (defun nix3-transient-show ()
+  "Show the current flake."
   (interactive)
   (nix3-flake-switch-to-buffer (nix3-flake-show-buffer nix3-transient-flake
                                                        nix3-flake-url)))
@@ -401,6 +400,7 @@ will be refreshed."
   (equal nix3-transient-flake-output-type "template"))
 
 (defun nix3-transient-browse-template ()
+  "Browse the template output at point."
   (interactive)
   (dired (nix3-flake-eval-json (concat (nix3-flake-output-path-at-point)
                                        ".path"))))
@@ -454,7 +454,7 @@ will be refreshed."
                  ("string" (let ((value (get-value new-path)))
                              (if (and (string-prefix-p "/nix/store/" value)
                                       (require 'nix-store nil t)
-                                      (yes-or-no-p "Looks like a store path. Realise it?"))
+                                      (yes-or-no-p "Realise this apparent store path?"))
                                  (nix3-realise-and-show-store value)
                                (print-value new-path (get-value new-path)))))
                  (_ (print-value new-path
@@ -605,6 +605,7 @@ will be refreshed."
   (transient-setup 'nix3-transient-build))
 
 (defun nix3-transient--build-compile ()
+  "Build the selected output using `compile'."
   (interactive)
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command
@@ -630,6 +631,7 @@ will be refreshed."
   (transient-setup 'nix3-transient-run))
 
 (defun nix3-transient--run-compile ()
+  "Run the selected output using `compile'."
   (interactive)
   (nix3-transient-with-directory
    (compile (concat (nix3-transient--shell-command
@@ -641,6 +643,7 @@ will be refreshed."
             nix3-compile-in-comint-mode)))
 
 (defun nix3-transient--run-term ()
+  "Run the selected output in a terminal."
   (interactive)
   (nix3-transient-with-directory
    (funcall nix3-terminal-function
@@ -652,6 +655,7 @@ will be refreshed."
                       "")))))
 
 (defun nix3-transient--run-async ()
+  "Run the selected output asynchronously."
   (interactive)
   (nix3-transient-with-directory
    (shell-command (concat (nix3-transient--shell-command
@@ -674,6 +678,7 @@ will be refreshed."
   (transient-setup 'nix3-transient-flake-check))
 
 (defun nix3-transient--flake-check-compile ()
+  "Run `nix flake check' using `compile'."
   (interactive)
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command
@@ -694,6 +699,7 @@ will be refreshed."
   (transient-setup 'nix3-transient-flake-lock))
 
 (defun nix3-transient--flake-lock-compile ()
+  "Update the flake lock using `compile'."
   (interactive)
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command
@@ -714,6 +720,7 @@ will be refreshed."
             nix3-compile-in-comint-mode)))
 
 (defun nix3-transient-input ()
+  "Select an input and open its transient."
   (interactive)
   (require 'nix3-flake-input)
   (setq nix3-transient-directory (nix3-transient--default-directory))
@@ -721,7 +728,7 @@ will be refreshed."
    (let* ((alist (nix3-flake--direct-inputs))
           (input (completing-read "Select input: " alist)))
      (setq nix3-flake-input (cons input (cdr (assq (intern input) alist))))
-     (nix3-flake-input-dispatch))))
+     (call-interactively 'nix3-flake-input-dispatch))))
 
 (transient-define-prefix nix3-transient-generic-command ()
   [:description
@@ -740,6 +747,7 @@ will be refreshed."
   (transient-setup 'nix3-transient-generic-command))
 
 (defun nix3-transient--generic-compile ()
+  "Run the selected generic Nix command using `compile'."
   (interactive)
   (nix3-transient-with-directory
    (compile (nix3-transient--shell-command

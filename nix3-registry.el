@@ -78,12 +78,12 @@ These options are passed as arguments to `nix3-registry-complete'."
 
 (defface nix3-registry-type-face
   '((t :inherit font-lock-type-face))
-  ""
+  "Face used for Nix registry types."
   :group 'nix3-registry)
 
 (defface nix3-registry-url-face
   '((t :inherit font-lock-comment-face))
-  ""
+  "Face used for Nix registry URLs."
   :group 'nix3-registry)
 
 (defvar nix3-registry-global-cache nil)
@@ -128,6 +128,9 @@ These options are passed as arguments to `nix3-registry-complete'."
                                                (user t))
   "Return a hash table of registry entries.
 
+If NO-EXACT is non-nil, exclude exact registry entries.  GLOBAL,
+SYSTEM, and USER control whether to include entries from the
+corresponding registries.
 Each value in the resulting hash table will be a cons cell of the
 registry type and the \"to\" value of the entry."
   (let ((table (make-hash-table :test #'equal)))
@@ -226,7 +229,7 @@ registry type and the \"to\" value of the entry."
 
 ;;;###autoload
 (defun nix3-registry-add (name flake)
-  "Add a new entry to the user registry."
+  "Add NAME for FLAKE to the user registry."
   (interactive (let* ((url (read-from-minibuffer "Url: "
                                                  ;; TODO: flake url at point
                                                  (or (bound-and-true-p nix3-flake-url)

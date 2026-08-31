@@ -42,7 +42,6 @@
 (require 'help-mode)
 
 (declare-function nix3-transient "nix3-transient")
-(declare-function nix3-transient-on-output "nix3-transient")
 (declare-function vc-git-root "vc-git")
 (declare-function bookmark-prop-get "bookmark")
 (declare-function magit-init "ext:magit-status")
@@ -160,8 +159,8 @@ is finished."
 (defcustom nix3-flake-worktree-promise-fn #'nix3-flake-clone-promise
   "Function that returns a promise to a worktree.
 
-The function should take a url alist as an argument and return a
-promise or nil. The promise should resolve to a directory when
+The function should take a URL alist as an argument and return a
+promise or nil.  The promise should resolve to a directory when
 the worktree becomes available."
   :type 'function)
 
@@ -172,7 +171,7 @@ This is a list of attribute paths to outputs.
 The following substitutes are made:
 
  * \"*\": Substituted with the name of an attribute in the
-   parent. The parent should be an attribute set, and each
+   parent.  The parent should be an attribute set, and each
    attribute should be a derivation.
 
  * \"%s\": Substituted with the name of the system like
@@ -282,7 +281,7 @@ is nil, the function throws an error if there is no flake.nix.
 If LOCAL is non-nil, the function only returns a flake on path.
 
 If DIR is non-nil, the function returns a flake at or above the
-directory. It implies LOCAL."
+directory.  It implies LOCAL."
   (or (unless (or local dir)
         nix3-flake-url)
       (if-let* ((root (locate-dominating-file (or dir default-directory) "flake.nix")))
@@ -409,7 +408,9 @@ directory. It implies LOCAL."
 ;;;; Processing data
 
 (defun nix3-flake--filter-outputs (command &optional system)
-  "Return a list of apps and derivations for the system."
+  "Return outputs of COMMAND for SYSTEM.
+
+The result includes apps and derivations for the selected system."
   (let* ((system (intern (or system (nix3-system))))
          extra-derivations
          result)
@@ -542,12 +543,13 @@ directory. It implies LOCAL."
     map))
 
 (defun nix3-flake-output-return ()
+  "Open a transient for the flake output at point."
   (interactive)
   (when-let* ((output (nix3-flake-output-path-at-point)))
     (setq nix3-transient-flake (nix3-flake--buffer-url))
     (setq nix3-transient-flake-output output)
     (setq nix3-transient-flake-output-type (nix3-flake-output-type))
-    (call-interactively #'nix3-transient-on-output)))
+    (call-interactively 'nix3-transient-on-output)))
 
 (defun nix3-flake-output-path-at-point ()
   (when-let* ((section (magit-current-section)))
@@ -954,7 +956,7 @@ directory. It implies LOCAL."
 (cl-defun nix3-flake-init (dir &key no-confirm)
   "Initialize the current project from a flake template.
 
-The template will be initialized into DIR. If NO-CONFIRM is non-nil, the
+The template will be initialized into DIR.  If NO-CONFIRM is non-nil, the
 template will be run if the directory already contains flake.nix."
   (interactive (list (nix3-flake-select-init-directory)))
   (when (and (file-exists-p (expand-file-name "flake.nix" dir))
@@ -968,7 +970,7 @@ template will be run if the directory already contains flake.nix."
               (nix3-flake-git-init))))
       (nix3-flake--prompt-template "nix flake init: "
                                    (apply-partially #'nix3-flake-init-with-template dir))
-    (user-error "Not inside a Git repository. Aborted")))
+    (user-error "Not inside a Git repository; aborted")))
 
 (defun nix3-flake-select-init-directory (&optional force)
   (let ((git-root (vc-git-root default-directory)))
@@ -992,7 +994,7 @@ template will be run if the directory already contains flake.nix."
     (when (file-exists-p dir)
       (user-error "Directory already exists"))
     (unless (file-directory-p parent)
-      (if (yes-or-no-p (format "Directory %s does not exist. Create it?" parent))
+      (if (yes-or-no-p (format "Create missing directory %s?" parent))
           (make-directory parent t)
         (user-error "Parent directory does not exist")))
     (nix3-flake--record-template template)
@@ -1103,7 +1105,7 @@ template will be run if the directory already contains flake.nix."
   "Edit flake.nix in the current repository.
 
 This command discovers a flake.nix file closest to the current
-buffer and edit it. To open the buffer in a different window,
+buffer and edit it.  To open the buffer in a different window,
 customize `nix3-flake-edit-find-file-fn'.
 
 If there is no flake.nix found, this command initializes a new

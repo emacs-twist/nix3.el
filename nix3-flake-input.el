@@ -98,6 +98,7 @@
   (and (nix3-flake-input--local-p)
        (nix3-flake-input--direct-p)))
 
+;;;###autoload
 (transient-define-prefix nix3-flake-input-dispatch ()
   [:description
    (lambda () (format "Original: %s" (nix3-flake-input--original-url)))
@@ -134,19 +135,23 @@
       (oref section value))))
 
 (defun nix3-flake-show-original-input ()
+  "Show the original URL of the flake input at point."
   (interactive)
   (nix3-flake-show-url (nix3-flake-input--original-url)))
 
 (defun nix3-flake-show-locked-input ()
+  "Show the locked URL of the flake input at point."
   (interactive)
   (nix3-flake-show-url (nix3-flake-input--locked-url)))
 
 (defun nix3-flake-input-copy-revision ()
+  "Copy the locked revision of the flake input at point."
   (interactive)
   (kill-new (nix3-flake-input--revision))
   (message "Saved the revision into kill ring"))
 
 (defun nix3-flake-input-browse-remote ()
+  "Browse the remote repository of the flake input at point."
   (interactive)
   (require 'nix3-browse-url)
   (funcall nix3-browse-url-for-repository
@@ -155,6 +160,9 @@
 ;;;; Commands
 
 (defun nix3-flake-input-update (&optional url-or-alist)
+  "Update the flake input at point.
+
+When URL-OR-ALIST is non-nil, override the input with that flake reference."
   (interactive)
   (pcase nix3-flake-input
     (`(,name . ,_)
@@ -176,6 +184,7 @@
      (user-error "No input at point"))))
 
 (defun nix3-flake-input-update-to-rev (rev)
+  "Update the flake input at point to REV."
   (interactive "sRevision: ")
   (let ((alist (alist-get 'original (cdr nix3-flake-input))))
     (if-let* ((cell (assq 'rev alist)))
@@ -184,6 +193,7 @@
     (nix3-flake-input-update alist)))
 
 (defun nix3-flake-input-update-to-ref (ref)
+  "Update the flake input at point to REF."
   (interactive "sRef: ")
   (let ((alist (alist-get 'original (cdr nix3-flake-input))))
     (if-let* ((cell (assq 'ref alist)))
@@ -192,6 +202,7 @@
     (nix3-flake-input-update alist)))
 
 (defun nix3-flake-input-update-to-url (url)
+  "Update the flake input at point to URL."
   (interactive (let* ((input nix3-flake-input)
                       (default (nix3-flake-ref-alist-to-url (cdr (assq 'original input)))))
                  (list (read-from-minibuffer (format-prompt
@@ -202,6 +213,7 @@
   (nix3-flake-input-update url))
 
 (defun nix3-flake-input-update-to-project (dir)
+  "Override the flake input at point with the project in DIR."
   (interactive (list (progn
                        (require 'project)
                        (project-prompt-project-dir))))
