@@ -37,6 +37,7 @@
 (require 'pp)
 
 (declare-function term "term")
+(declare-function nix3-flake-input-dispatch "nix3-flake-input")
 (declare-function nix3-help-parse "nix3-help")
 (declare-function nix3-help--read-command "nix3-help")
 (defvar nix3-flake-input)
