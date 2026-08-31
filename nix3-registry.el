@@ -48,7 +48,7 @@
   (nix3-config-lookup "flake-registry"))
 
 (defcustom nix3-registry-system-file "/etc/nix/registry.json"
-  ""
+  "File containing the system-wide Nix registry."
   :type 'file)
 
 (defcustom nix3-registry-user-file
@@ -58,7 +58,7 @@
                     (if (require 'xdg nil t)
                         (xdg-config-home)
                       "~/.config/"))
-  ""
+  "File containing the current user's Nix registry."
   :type 'file)
 
 (defcustom nix3-registry-list-action #'nix3-flake-show-url

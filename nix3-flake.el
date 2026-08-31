@@ -93,7 +93,9 @@
                     (const "Never" nil)))
 
 (defcustom nix3-flake-input-name-max-width 20
-  ""
+  "Maximum width of input names in flake input listings.
+
+When nil, use the width of the longest input name without truncation."
   :type '(choice number (const nil)))
 
 (defcustom nix3-flake-init-function
