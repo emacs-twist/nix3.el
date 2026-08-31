@@ -106,7 +106,7 @@
   (and (nix3-flake-input--local-p)
        (nix3-flake-input--direct-p)))
 
-;;;###autoload
+;;;###autoload (autoload 'nix3-flake-input-dispatch "nix3-flake-input" nil t)
 (transient-define-prefix nix3-flake-input-dispatch ()
   "Dispatch commands for the flake input at point."
   [:description
