@@ -46,9 +46,6 @@
 (declare-function nix-store-show-path "ext:nix-store")
 (declare-function nix-store-realise "ext:nix-store")
 (declare-function compilation-read-command "compile")
-(declare-function nix3-transient-run "nix3-transient")
-(declare-function nix3-transient-build "nix3-transient")
-(declare-function nix3-flake-select-output "nix3-flake")
 
 (defvar nix3-prefix-map
   (let ((map (make-sparse-keymap)))

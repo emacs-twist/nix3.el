@@ -37,7 +37,6 @@
 (require 'pp)
 
 (declare-function nix3-realise-and-show-store "nix3")
-(declare-function nix3-vterm-shell-command "nix3-utils")
 (declare-function term "term")
 (declare-function nix3-flake-input-dispatch "nix3-flake-input")
 (declare-function nix3-help-parse "nix3-help")
