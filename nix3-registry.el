@@ -92,6 +92,7 @@ These options are passed as arguments to `nix3-registry-complete'."
   "Hash table that stores registry entries during completion.")
 
 (defun nix3-registry--parse-buffer ()
+  "Parse registry JSON in the current buffer and return its entries."
   (goto-char (point-min))
   (thread-last
     (json-parse-buffer :object-type 'alist :array-type 'list)
@@ -99,6 +100,7 @@ These options are passed as arguments to `nix3-registry-complete'."
     (cdr)))
 
 (defun nix3-registry--global-entries ()
+  "Return entries from the global registry, using the cache when valid."
   (if (and nix3-registry-global-cache
            (< (car nix3-registry-global-cache)
               (+ (float-time) (nix3-config-lookup "tarball-ttl"))))
@@ -117,6 +119,7 @@ These options are passed as arguments to `nix3-registry-complete'."
         (kill-buffer buffer)))))
 
 (defun nix3-registry--from-file (file)
+  "Read registry entries from FILE, or return nil when unavailable."
   (when (and file (file-readable-p file))
     (with-temp-buffer
       (insert-file-contents file)
@@ -161,6 +164,10 @@ registry type and the \"to\" value of the entry."
                                          (global t)
                                          (system t)
                                          (user t))
+  "Read a registry entry with completion using PROMPT.
+
+EXTRA-ENTRIES are additional candidates.  REQUIRE-MATCH, ADD-TO-REGISTRY,
+NO-EXACT, GLOBAL, SYSTEM, and USER control completion and registry sources."
   (let* ((table (nix3-registry--collect-entries :no-exact no-exact
                                                 :global global
                                                 :system system
@@ -213,6 +220,7 @@ registry type and the \"to\" value of the entry."
   (cdr (gethash name nix3-registry-table)))
 
 (defun nix3-registry--non-indirect (url-alist)
+  "Resolve indirect references in URL-ALIST to a concrete flake URL."
   (let (hash)
     (cl-labels
         ((go (x)
@@ -246,11 +254,13 @@ registry type and the \"to\" value of the entry."
                 name flake))
 
 (defun nix3-registry--maybe-origin-flake-url ()
+  "Return the current repository's origin as a flake URL, if available."
   (when-let* ((git-url (cdr (assoc "origin" (nix3-git-remotes)))))
     (nix3-flake-ref-alist-to-url
      (nix3-git-url-to-flake-alist git-url))))
 
 (defun nix3-registry--flake-url-p (url)
+  "Return non-nil when URL looks like a flake reference."
   (and (not (string-match-p "#" url))
        (string-match-p ":" url)))
 

@@ -64,42 +64,50 @@
     (call-interactively #'nix3-flake-input-dispatch)))
 
 (defun nix3-flake-input--original-url ()
+  "Return the original flake URL for the input at point."
   (thread-last
     (cdr nix3-flake-input)
     (alist-get 'original)
     (nix3-flake-ref-alist-to-url)))
 
 (defun nix3-flake-input--locked-url ()
+  "Return the locked flake URL for the input at point."
   (thread-last
     (cdr nix3-flake-input)
     (alist-get 'locked)
     (nix3-flake-ref-alist-to-url)))
 
 (defun nix3-flake-input--last-modified ()
+  "Return the last-modified timestamp for the input at point."
   (thread-last
     (cdr nix3-flake-input)
     (nix3-lookup-tree '(locked lastModified))))
 
 (defun nix3-flake-input--revision ()
+  "Return the locked revision for the input at point."
   (thread-last
     (cdr nix3-flake-input)
     (nix3-lookup-tree '(locked rev))))
 
 (defun nix3-flake-input--html-url ()
+  "Return the browsable repository URL for the input at point."
   (nix3-flake-html-url (assq 'original (cdr nix3-flake-input))))
 
 (defun nix3-flake-input--direct-p ()
+  "Return non-nil when the input at point is a direct input."
   (rassoc (car nix3-flake-input)
           (thread-last
             (nix3-flake--get-metadata-result)
             (nix3-lookup-tree '(locks nodes root inputs)))))
 
 (defun nix3-flake-input--updatable-p ()
+  "Return non-nil when the input at point can be updated."
   (and (nix3-flake-input--local-p)
        (nix3-flake-input--direct-p)))
 
 ;;;###autoload
 (transient-define-prefix nix3-flake-input-dispatch ()
+  "Dispatch commands for the flake input at point."
   [:description
    (lambda () (format "Original: %s" (nix3-flake-input--original-url)))
    ("d" "Show the flake" nix3-flake-show-original-input)

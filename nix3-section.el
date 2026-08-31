@@ -32,6 +32,7 @@
 (require 'magit-section)
 
 (defmacro nix3-section-with-keymap (map &rest body)
+  "Evaluate BODY and put MAP on an overlay over the inserted text."
   (declare (indent 1))
   `(let ((start (point)))
      (prog1 (progn
@@ -40,9 +41,13 @@
          (overlay-put ov 'keymap ,map)))))
 
 (defmacro nix3-section--heading (body)
+  "Return BODY propertized as a Magit section heading."
   `(propertize ,body 'face 'magit-section-heading))
 
 (defmacro nix3-section-dlist (indent-level &rest rows)
+  "Insert ROWS at INDENT-LEVEL as an aligned list of Magit sections.
+
+Each row is a list of HEADER, visibility condition, and body form."
   (declare (indent 1))
   (let* ((width (1+ (cl-loop for header in (mapcar #'car rows)
                              maximize (length header))))

@@ -66,6 +66,7 @@ The value should be either nil or one of the existing members of
   :type 'boolean)
 
 (defun magit-nix3-flake-sections ()
+  "Insert Nix flake sections into the current Magit status buffer."
   (require 'promise)
   ;; Load the library without adding autoloads
   (require 'nix3-flake)
@@ -90,6 +91,7 @@ The value should be either nil or one of the existing members of
 ;;;; magit-diff-mode integration
 
 (defun magit-nix3-diff-section ()
+  "Insert flake.lock changes into the current Magit diff buffer."
   (require 'nix3-flake-lock)
   ;; When the user edits a commit message, magit displays diffs via
   ;; `magit-revision-sections-hook', so this section will be called as well.

@@ -69,16 +69,20 @@ This is a function that takes a command line as an argument."
   ((variable :initarg :variable)))
 
 (cl-defmethod transient-init-value ((obj nix3-transient-string-variable))
+  "Initialize OBJ from its backing variable."
   (oset obj value (eval (oref obj variable))))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-string-variable))
+  "Read a string value for OBJ from the minibuffer."
   (read-from-minibuffer (oref obj prompt) (oref obj value)))
 
 (cl-defmethod transient-infix-set ((obj nix3-transient-string-variable) value)
+  "Set OBJ and its backing variable to VALUE."
   (oset obj value value)
   (set (oref obj variable) value))
 
 (cl-defmethod transient-format-value ((obj nix3-transient-string-variable))
+  "Format OBJ's string value for display in a transient."
   (let ((value (oref obj value)))
     (concat (propertize "(" 'face 'transient-inactive-value)
             (if value
@@ -97,13 +101,16 @@ This is a function that takes a command line as an argument."
   ((variable :initarg :variable)))
 
 (cl-defmethod transient-init-value ((obj nix3-transient-system-variable))
+  "Initialize OBJ from its backing variable."
   (oset obj value (eval (oref obj variable))))
 
 (cl-defmethod transient-infix-set ((obj nix3-transient-system-variable) value)
+  "Set OBJ and its backing variable to VALUE."
   (oset obj value value)
   (set (oref obj variable) value))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-system-variable))
+  "Read a target system for OBJ."
   (unless nix3-transient-systems
     (message "Reading the list of systems...")
     ;; TODO: Allow using systems input from the current flake
@@ -114,6 +121,7 @@ This is a function that takes a command line as an argument."
                        nil nil nil nil value))))
 
 (cl-defmethod transient-format-value ((obj nix3-transient-system-variable))
+  "Format OBJ's system value for display in a transient."
   (let ((value (oref obj value)))
     (concat
      (propertize "(" 'face 'transient-inactive-value)
@@ -123,6 +131,7 @@ This is a function that takes a command line as an argument."
      (propertize ")" 'face 'transient-inactive-value))))
 
 (transient-define-infix nix3-transient-target-system ()
+  "Select the target system for a Nix command."
   :description "Target system"
   :prompt "Target system: "
   :class 'nix3-transient-system-variable
@@ -135,6 +144,7 @@ This is a function that takes a command line as an argument."
    (required :initarg :required :initform t)))
 
 (cl-defmethod transient-init-value ((obj nix3-transient-output-variable))
+  "Initialize OBJ from its backing variable or prompt for a value."
   (if-let* ((value (eval (oref obj variable))))
       (oset obj value value)
     (when (oref obj required)
@@ -143,16 +153,19 @@ This is a function that takes a command line as an argument."
         (transient-infix-set obj value)))))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-output-variable))
+  "Read a flake output for OBJ."
   (nix3-flake-select-output (oref obj prompt)
                             nix3-transient-nix-command
                             (oref obj value)
                             :system nix3-transient-system))
 
 (cl-defmethod transient-infix-set ((obj nix3-transient-output-variable) value)
+  "Set OBJ and its backing variable to VALUE."
   (oset obj value value)
   (set (oref obj variable) value))
 
 (cl-defmethod transient-format-value ((obj nix3-transient-output-variable))
+  "Format OBJ's output value for display in a transient."
   (let ((value (oref obj value)))
     (concat
      (propertize "(" 'face 'transient-inactive-value)
@@ -162,6 +175,7 @@ This is a function that takes a command line as an argument."
      (propertize ")" 'face 'transient-inactive-value))))
 
 (transient-define-infix nix3-transient-set-output ()
+  "Select a required flake output attribute."
   :class 'nix3-transient-output-variable
   :description "Flake attribute"
   :prompt "Flake attribute: "
@@ -169,6 +183,7 @@ This is a function that takes a command line as an argument."
   :variable 'nix3-transient-flake-output)
 
 (transient-define-infix nix3-transient-set-optional-output ()
+  "Select an optional flake output attribute."
   :class 'nix3-transient-output-variable
   :description "Flake attribute"
   :prompt "Flake attribute: "
@@ -192,12 +207,14 @@ This is a function that takes a command line as an argument."
   ((variable :initarg :variable)))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-directory-variable))
+  "Read a directory value for OBJ."
   (read-directory-name (oref obj prompt)
                        (oref obj value)
                        nil
                        t))
 
 (cl-defmethod transient-format-value ((obj nix3-transient-directory-variable))
+  "Format OBJ's directory value for display in a transient."
   (let ((value (oref obj value)))
     (concat
      (propertize "(" 'face 'transient-inactive-value)
@@ -205,6 +222,7 @@ This is a function that takes a command line as an argument."
      (propertize ")" 'face 'transient-inactive-value))))
 
 (transient-define-infix nix3-transient-set-directory ()
+  "Select the working directory for a Nix command."
   :class 'nix3-transient-directory-variable
   :description "Working directory"
   :prompt "Directory: "
@@ -225,25 +243,30 @@ This is a function that takes a command line as an argument."
   ((variable :initarg :variable)))
 
 (cl-defmethod transient-init-value ((obj nix3-transient-direct-inputs))
+  "Initialize OBJ from its backing variable."
   (oset obj value (eval (oref obj variable))))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-direct-inputs))
+  "Read direct input names for OBJ."
   (completing-read-multiple (oref obj prompt)
                             (nix3-flake--direct-inputs)
                             nil nil
                             (string-join (oref obj value) nix3-crm-separator)))
 
 (cl-defmethod transient-infix-set ((obj nix3-transient-direct-inputs) value)
+  "Set OBJ and its backing variable to VALUE."
   (oset obj value value)
   (set (oref obj variable) value))
 
 (cl-defmethod transient-format-value ((obj nix3-transient-direct-inputs))
+  "Format OBJ's input list for display in a transient."
   (concat
    (propertize "(" 'face 'transient-inactive-value)
    (propertize (string-join (oref obj value) ",") 'face 'transient-value)
    (propertize ")" 'face 'transient-inactive-value)))
 
 (transient-define-infix nix3-transient-set-updated-inputs ()
+  "Select the inputs to update."
   :description "--update-input"
   :class 'nix3-transient-direct-inputs
   :prompt "Updated inputs: "
@@ -256,9 +279,11 @@ This is a function that takes a command line as an argument."
    (make-table :initarg :make-table)))
 
 (cl-defmethod transient-init-value ((obj nix3-transient-multi-select))
+  "Initialize OBJ from its backing variable."
   (oset obj value (eval (oref obj variable))))
 
 (cl-defmethod transient-infix-read ((obj nix3-transient-multi-select))
+  "Read multiple values for OBJ."
   (let ((table (oref obj make-table)))
     (completing-read-multiple (oref obj prompt)
                               (cl-etypecase table
@@ -267,10 +292,12 @@ This is a function that takes a command line as an argument."
                               (string-join (oref obj value) ","))))
 
 (cl-defmethod transient-infix-set ((obj nix3-transient-multi-select) value)
+  "Set OBJ and its backing variable to VALUE."
   (oset obj value value)
   (set (oref obj variable) value))
 
 (cl-defmethod transient-format-value ((obj nix3-transient-multi-select))
+  "Format OBJ's values for display in a transient."
   (let ((value (oref obj value)))
     (concat
      (propertize "(" 'face 'transient-inactive-value)
@@ -282,6 +309,7 @@ This is a function that takes a command line as an argument."
 ;; TODO: Add a completion table function for flags (with annotations and groups)
 
 (transient-define-infix nix3-transient-set-flags ()
+  "Select additional Nix command-line flags."
   :description "Other flags"
   :class 'nix3-transient-multi-select
   :variable 'nix3-transient-flags
@@ -290,6 +318,7 @@ This is a function that takes a command line as an argument."
   :make-table 'nix3-transient--complete-flags)
 
 (defun nix3-transient--complete-flags ()
+  "Return completion candidates for Nix command-line flags."
   (require 'nix3-help)
   (apply #'nix3-help-parse 'options
          (ensure-list nix3-transient-nix-command)))
@@ -299,6 +328,7 @@ This is a function that takes a command line as an argument."
 (defvar nix3-transient-command-args nil)
 
 (transient-define-infix nix3-transient-set-command-args ()
+  "Set arguments passed after a Nix run command."
   :class 'nix3-transient-string-variable
   :description "Arguments"
   :prompt "Arguments: "
@@ -308,6 +338,7 @@ This is a function that takes a command line as an argument."
 
 ;; This command must be invoked after fetching data, so it should be private.
 (transient-define-prefix nix3-transient--dispatch ()
+  "Dispatch commands for the current flake."
   [:description
    nix3-transient--flake-description
    :class transient-row
@@ -360,9 +391,11 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
         (message "The directory is not writable")))))
 
 (defun nix3-transient--show-mode-p ()
+  "Return non-nil when the current buffer shows a flake."
   (derived-mode-p 'nix3-flake-show-mode))
 
 (defun nix3-transient--flake-description ()
+  "Return the transient heading for the current flake."
   (format "Flake: %s" nix3-transient-flake))
 
 (defun nix3-transient-show ()
@@ -375,6 +408,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
 
 ;;;###autoload (autoload 'nix3-transient-on-output "nix3-transient" nil t)
 (transient-define-prefix nix3-transient-on-output ()
+  "Dispatch commands for the selected flake output."
   [:description
    nix3-transient-output-description
    :class transient-row
@@ -394,9 +428,11 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
   (transient-setup 'nix3-transient-on-output))
 
 (defun nix3-transient-output-description ()
+  "Return the transient heading for the selected output."
   (format "%s (%s)" nix3-transient-flake-output nix3-transient-flake-output-type))
 
 (defun nix3-transient--output-template-p ()
+  "Return non-nil when the selected output is a template."
   (equal nix3-transient-flake-output-type "template"))
 
 (defun nix3-transient-browse-template ()
@@ -406,9 +442,11 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
                                        ".path"))))
 
 (defun nix3-transient--output-buildable-p ()
+  "Return non-nil when the selected output can be built."
   (member nix3-transient-flake-output-type '("derivation")))
 
 (defun nix3-transient--output-runnable-p ()
+  "Return non-nil when the selected output can be run."
   (member nix3-transient-flake-output-type '("derivation"
                                              "app"
                                              "nixos-configuration")))
@@ -465,6 +503,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
 (defvar nix3-transient-meta nil)
 
 (transient-define-prefix nix3-transient-meta ()
+  "Show metadata for the selected flake output."
   [:description
    nix3-transient-output-description
    ("h" nix3-transient-package-homepage)
@@ -480,18 +519,22 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
   (transient-setup 'nix3-transient-meta))
 
 (defmacro nix3-transient--package-homepage ()
+  "Expand to the homepage metadata for the selected package."
   '(cdr (assq 'homepage nix3-transient-meta)))
 
 (transient-define-suffix nix3-transient-package-homepage ()
+  "Browse the selected package's homepage."
   :if (lambda () (nix3-transient--package-homepage))
   :description (lambda () (format "Homepage: %s" (nix3-transient--package-homepage)))
   (interactive)
   (funcall nix3-browse-url-for-repository (nix3-transient--package-homepage)))
 
 (defmacro nix3-transient--package-license ()
+  "Expand to the license metadata for the selected package."
   '(cdr (assq 'license nix3-transient-meta)))
 
 (transient-define-suffix nix3-transient-package-license ()
+  "Browse the selected package's license."
   :if (lambda () (nix3-transient--package-license))
   :description (lambda ()
                  (let ((val (nix3-transient--package-license)))
@@ -518,6 +561,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
     (user-error "No license")))
 
 (defun nix3-transient--browse-license-url (license)
+  "Browse the URL in LICENSE, or signal an error when it has none."
   (if-let* ((url (alist-get 'url license)))
       (browse-url url)
     (user-error "License %s has no URL"
@@ -525,6 +569,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
                     (alist-get 'fullName license)))))
 
 (defun nix3-transient--complete-license (prompt licenses)
+  "Read a license from LICENSES using PROMPT."
   (let ((alist (mapcar (lambda (a)
                          (cons (alist-get 'fullName a)
                                a))
@@ -547,9 +592,11 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
       (completing-read prompt #'completions nil t))))
 
 (defmacro nix3-transient--package-maintainers ()
+  "Expand to the maintainer metadata for the selected package."
   '(cdr (assq 'maintainers nix3-transient-meta)))
 
 (transient-define-suffix nix3-transient-package-maintainers ()
+  "Display maintainers for the selected package."
   :if (lambda () (nix3-transient--package-maintainers))
   :description "Display maintainers"
   (interactive)
@@ -563,9 +610,11 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
                            "*maintainer*")))
 
 (defmacro nix3-transient--package-position ()
+  "Expand to the source position metadata for the selected package."
   '(cdr (assq 'position nix3-transient-meta)))
 
 (transient-define-suffix nix3-transient-package-position ()
+  "Visit the source position of the selected package."
   :if (lambda () (nix3-transient--package-position))
   :description "Find the position"
   (interactive)
@@ -593,6 +642,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
 ;;;; Nix commmands
 
 (transient-define-prefix nix3-transient-build ()
+  "Build a selected flake output."
   ["nix build"
    ("#" nix3-transient-set-output)
    ("--" nix3-transient-set-flags)]
@@ -614,6 +664,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
             nix3-compile-in-comint-mode)))
 
 (transient-define-prefix nix3-transient-run ()
+  "Run a selected flake output."
   ["nix run"
    ("#" nix3-transient-set-output)
    ("--" nix3-transient-set-flags)
@@ -667,6 +718,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
                           "&"))))
 
 (transient-define-prefix nix3-transient-flake-check ()
+  "Run `nix flake check' for the current flake."
   ["nix flake check"
    ("--" nix3-transient-set-flags)]
   nix3-transient-common-options
@@ -687,6 +739,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
             nix3-compile-in-comint-mode)))
 
 (transient-define-prefix nix3-transient-flake-lock ()
+  "Update the current flake's lock file."
   ["nix flake lock/update"
    ("--" nix3-transient-set-flags)
    ("-u" nix3-transient-set-updated-inputs)]
@@ -731,6 +784,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
      (call-interactively #'nix3-flake-input-dispatch))))
 
 (transient-define-prefix nix3-transient-generic-command ()
+  "Run a user-selected Nix command."
   [:description
    nix3-transient--command-description
    ("#" nix3-transient-set-optional-output)
@@ -755,11 +809,13 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
             nix3-compile-in-comint-mode)))
 
 (defun nix3-transient--command-description ()
+  "Return the current Nix command as a transient heading."
   (string-join (cons "nix" nix3-transient-nix-command) " "))
 
 ;;;; Utilities
 
 (defun nix3-transient--shell-command (attr-or-nil &rest args)
+  "Build a shell command for ATTR-OR-NIL and ARGS."
   (let ((nix-command nix3-transient-nix-command)
         (args (append nix3-transient-flags args)))
     (concat (shell-quote-argument nix3-nix-executable)

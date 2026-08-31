@@ -49,6 +49,9 @@
              do (overlay-put ov prop value))))
 
 (defun nix3-format--column-width (limit items)
+  "Return the display width for ITEMS, constrained by LIMIT.
+
+When LIMIT is nil, return the width of the longest item."
   (let ((max (apply #'max (mapcar #'length items))))
     (if limit
         (min limit max)
@@ -129,6 +132,7 @@
              (cons 'url git-url))))))
 
 (defun nix3-format-duration (seconds)
+  "Format SECONDS as a human-readable relative duration."
   (cond
    ((< seconds 60)
     "just now")
@@ -148,6 +152,7 @@
     (format "%.f years ago" (/ seconds (* 86400 365))))))
 
 (defun nix3-format-timestamp (time)
+  "Format TIME with the local date and a relative duration."
   (cl-etypecase time
     (number
      (let ((offset (car (current-time-zone))))

@@ -71,6 +71,7 @@
           (nix3-flake-clone-async origin dir :callback resolve))))))
 
 (defun nix3-flake-clone--default-dest (url-or-alist)
+  "Return the local destination for URL-OR-ALIST."
   (if (stringp url-or-alist)
       (if (string-match (rx bol "https://") url-or-alist)
           (thread-last

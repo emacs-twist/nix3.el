@@ -127,6 +127,7 @@ This command discards the exit code and output of the command."
   (version<= "2.19" (nix3-nix-version)))
 
 (defun nix3-normalize-path (dir)
+  "Return DIR with symlinks resolved and its trailing slash removed."
   (string-remove-suffix "/" (file-truename dir)))
 
 (defun nix3--config ()
@@ -165,12 +166,16 @@ This command discards the exit code and output of the command."
     (error "Key %s is not found in the nix conf" key)))
 
 (defun nix3--git-config-list (&optional scope)
+  "Return Git configuration entries for SCOPE.
+
+SCOPE may be `local' or `global'; when nil, return the default scope."
   (apply #'process-lines nix3-git-executable "config" "--list"
          (pcase scope
            (`local "--local")
            (`global "--global"))))
 
 (defun nix3--default-systems ()
+  "Return the systems supported by the Nix `systems' flake."
   (nix3-read-nix-json-command "eval"
                               "--expr" "import (builtins.getFlake \"systems\")"
                               "--impure" "--json"))

@@ -35,6 +35,10 @@
 (defvar nix3-help-command-alist nil)
 
 (defun nix3-help-parse (type &rest subcommands)
+  "Parse help output for TYPE and SUBCOMMANDS.
+
+TYPE must be either `commands' or `options'.  Return an alist of
+names and their descriptions."
   (pcase-exhaustive (cl-ecase type
                       (commands (list (rx " commands:" eol)
                                       (rx "Synopsis")
@@ -89,6 +93,7 @@
          outputs)))))
 
 (defun nix3-help--build-command-alist ()
+  "Build and cache the alist of available Nix commands."
   (let (alist)
     (cl-labels
         ((add-commands (subcommands &optional description)
@@ -103,6 +108,7 @@
       (setq nix3-help-command-alist (nreverse alist)))))
 
 (defun nix3-help--read-command (prompt)
+  "Read a Nix command with completion using PROMPT."
   (unless nix3-help-command-alist
     (nix3-help--build-command-alist))
   (cl-labels

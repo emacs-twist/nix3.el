@@ -61,6 +61,9 @@
 ;;;;
 
 (defun nix3-flake-lock--diff-entries (root filename base rev)
+  "Return lock entries changed between BASE and REV in ROOT/FILENAME.
+
+The result is a plist containing `:added', `:removed', and `:changed' entries."
   (pcase-exhaustive (mapcar (apply-partially #'nix3-flake-lock--entries-at
                                              root
                                              filename)
@@ -83,6 +86,9 @@
              :changed changed)))))
 
 (defun nix3-flake-lock--entries-at (root filename &optional rev)
+  "Return lock entries in ROOT/FILENAME at REV.
+
+When REV is nil, read FILENAME from the working tree."
   (catch 'no-lock-file
     (with-temp-buffer
       (if rev
@@ -97,6 +103,7 @@
       (nix3-flake-lock--parse-buffer))))
 
 (defun nix3-flake-lock--blob (root rev filename)
+  "Return the Git blob ID for FILENAME at REV in ROOT."
   (let ((default-directory root))
     (pcase-exhaustive rev
       (`stage
@@ -119,9 +126,11 @@
     (seq-filter #'nix3-flake-lock--locked-p)))
 
 (defun nix3-flake-lock--locked-p (alist)
+  "Return non-nil when ALIST describes a locked flake node."
   (assq 'locked alist))
 
 (defun nix3-flake-lock--range ()
+  "Return the pair of revisions represented by the current Magit buffer."
   (cond
    (magit-buffer-range-hashed
     (when magit-buffer-range-hashed
@@ -146,6 +155,7 @@
 
 ;;;###autoload
 (defun nix3-flake-lock-diff-section ()
+  "Insert Magit sections describing changes to flake.lock files."
   (when-let* ((files (nix3-flake-lock-magit-sections)))
     (cl-flet*
         ((format-mtime (locked)
