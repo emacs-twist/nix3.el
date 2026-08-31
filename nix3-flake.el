@@ -3,7 +3,6 @@
 ;; Copyright (C) 2022,2023 Akira Komamura
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
-;; Assisted-by: Codex:gpt-5.6-sol
 ;; URL: https://github.com/emacs-twist/nix3.el
 
 ;; This file is not part of GNU Emacs.
