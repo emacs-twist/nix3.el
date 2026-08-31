@@ -12,7 +12,7 @@ lock-dir := ".rice-lock/default"
 # This is only to avoid repetition, and you usually don't edit this.
 common-options-without-lock := "--override-input rice-src \"path:$(readlink -f $PWD)\" --override-input melpa " + quote(melpa)
 
-common-options-with-lock := common-options-without-lock + " --override-input rice-lock \"path:$PWD/" + lock-dir + "\""
+common-options-with-lock := common-options-without-lock + " --override-input rice-lock \"path:$(readlink -f $PWD)/" + lock-dir + "\""
 
 # The name of an Emacs package from nix-emacs-ci
 emacs := "emacs-release-snapshot"
