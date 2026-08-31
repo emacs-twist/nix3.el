@@ -15,3 +15,7 @@ jobs:
     with:
       melpa: github:emacs-twist/melpa/nix3-all
       systems: github:nix-systems/x86_64-linux
+  melpazoid:
+    uses: emacs-twist/elisp-workflows/.github/workflows/melpazoid.yml@master
+    with:
+      melpa: github:emacs-twist/melpa/nix3-all
