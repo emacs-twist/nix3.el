@@ -29,7 +29,8 @@
 
 ;;; Code:
 
-(require 'transient)
+(eval-and-compile
+  (require 'transient))
 (require 'nix3-core)
 (require 'nix3-utils)
 (require 'nix3-browse-url)
