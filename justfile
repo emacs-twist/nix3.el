@@ -10,7 +10,7 @@ melpa := "github:emacs-twist/melpa/nix3-all"
 lock-dir := ".rice-lock/default"
 
 # This is only to avoid repetition, and you usually don't edit this.
-common-options-without-lock := "--override-input rice-src \"path:$PWD\" --override-input melpa " + quote(melpa)
+common-options-without-lock := "--override-input rice-src \"path:$(readlink -f $PWD)\" --override-input melpa " + quote(melpa)
 
 common-options-with-lock := common-options-without-lock + " --override-input rice-lock \"path:$PWD/" + lock-dir + "\""
 
