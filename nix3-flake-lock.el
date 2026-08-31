@@ -149,7 +149,7 @@
   (when-let* ((files (nix3-flake-lock-magit-sections)))
     (cl-flet*
         ((format-mtime (locked)
-           (format-time-string "%Y-%m-%d" (alist-get 'lastModified locked)))
+           (format-time-string "%F" (alist-get 'lastModified locked)))
          (insert-node (old-or-new node)
            (insert (format "  %s: %s\n"
                            old-or-new

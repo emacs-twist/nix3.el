@@ -728,7 +728,7 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
    (let* ((alist (nix3-flake--direct-inputs))
           (input (completing-read "Select input: " alist)))
      (setq nix3-flake-input (cons input (cdr (assq (intern input) alist))))
-     (call-interactively 'nix3-flake-input-dispatch))))
+     (call-interactively #'nix3-flake-input-dispatch))))
 
 (transient-define-prefix nix3-transient-generic-command ()
   [:description

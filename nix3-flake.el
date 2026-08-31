@@ -549,7 +549,7 @@ The result includes apps and derivations for the selected system."
     (setq nix3-transient-flake (nix3-flake--buffer-url))
     (setq nix3-transient-flake-output output)
     (setq nix3-transient-flake-output-type (nix3-flake-output-type))
-    (call-interactively 'nix3-transient-on-output)))
+    (call-interactively #'nix3-transient-on-output)))
 
 (defun nix3-flake-output-path-at-point ()
   (when-let* ((section (magit-current-section)))
