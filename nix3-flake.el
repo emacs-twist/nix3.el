@@ -572,7 +572,6 @@ directory. It implies LOCAL."
             (throw 'output-type nil)))))))
 
 (defun nix3-flake-insert-outputs ()
-  (require 'nix3-transient)
   (magit-insert-section (flake-outputs nil (nix3-flake--fold-toplevel-p))
     (magit-insert-heading "Flake outputs")
     (nix3-section-with-keymap nix3-flake-output-map

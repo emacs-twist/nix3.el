@@ -35,6 +35,8 @@
 (eval-when-compile
   (require 'rx))
 
+(declare-function nix-store-realise "ext:nix-store")
+
 (declare-function vterm "ext:vterm")
 (declare-function vterm-send-string "ext:vterm")
 (declare-function vterm-send-return "ext:vterm")
@@ -187,6 +189,23 @@ It always creates a new buffer."
     (vterm-send-string shell-command)
     (vterm-send-return)
     (pop-to-buffer (current-buffer))))
+
+(defun nix3-realise-and-show-store (path)
+  "Show PATH using nix-store.el.  Realise it if necessary."
+  (cond
+   ((file-directory-p path)
+    (dired path))
+   ((file-readable-p path)
+    (dired-jump nil path))
+   (t
+    (cl-flet ((sentinel (process _event)
+                (when (eq 'exit (process-status process))
+                  (if (= 0 (process-exit-status process))
+                      (nix3-realise-and-show-store path)
+                    (error "Failed to realise the store path %s" path)))))
+      (message "Realising %s..." path)
+      (let ((proc (nix-store-realise path)))
+        (set-process-sentinel proc #'sentinel))))))
 
 (provide 'nix3-utils)
 ;;; nix3-utils.el ends here

@@ -36,7 +36,6 @@
 (require 'nix3-browse-url)
 (require 'pp)
 
-(declare-function nix3-realise-and-show-store "nix3")
 (declare-function term "term")
 (declare-function nix3-flake-input-dispatch "nix3-flake-input")
 (declare-function nix3-help-parse "nix3-help")
@@ -375,6 +374,7 @@ will be refreshed."
 
 ;;;; An alternative entry point on a flake output attribute
 
+;;;###autoload (autoload 'nix3-transient-on-output "nix3-transient" nil t)
 (transient-define-prefix nix3-transient-on-output ()
   [:description
    nix3-transient-output-description
@@ -416,8 +416,6 @@ will be refreshed."
 (defun nix3-transient-explore-output ()
   "Explore the attribute at point."
   (interactive)
-  ;; For nix3-realise-and-show-store
-  (require 'nix3)
   (cl-labels
       ((get-attr-names (path)
          (nix3-flake-eval-json path :apply "builtins.attrNames"))

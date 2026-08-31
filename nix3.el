@@ -36,6 +36,7 @@
 ;;; Code:
 
 (require 'nix3-core)
+(require 'nix3-utils)
 (require 'promise)
 (require 'nix3-flake)
 (require 'nix3-transient)
@@ -43,8 +44,6 @@
 (defvar nix3-transient-flake)
 (defvar nix3-transient-flake-output)
 
-(declare-function nix-store-show-path "ext:nix-store")
-(declare-function nix-store-realise "ext:nix-store")
 (declare-function compilation-read-command "compile")
 
 (defvar nix3-prefix-map
@@ -76,23 +75,6 @@ This is EXPERIMENTAL.")
   (setq nix3-transient-flake (nix3-flake-location))
   (setq nix3-transient-flake-output output)
   (call-interactively #'nix3-transient-run))
-
-(defun nix3-realise-and-show-store (path)
-  "Show PATH using nix-store.el. Realise it if necessary."
-  (cond
-   ((file-directory-p path)
-    (dired path))
-   ((file-readable-p path)
-    (dired-jump nil path))
-   (t
-    (cl-flet ((sentinel (process _event)
-                (when (eq 'exit (process-status process))
-                  (if (= 0 (process-exit-status process))
-                      (nix3-realise-and-show-store path)
-                    (error "Failed to realise the store path %s" path)))))
-      (message "Realising %s..." path)
-      (let ((proc (nix-store-realise path)))
-        (set-process-sentinel proc #'sentinel))))))
 
 (provide 'nix3)
 ;;; nix3.el ends here
