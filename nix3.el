@@ -5,7 +5,7 @@
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Assisted-by: Codex:gpt-5.6-sol
 ;; Version: 0.1
-;; Package-Requires: ((emacs "29.1") (promise "1.1") (compat "29.1") (magit-section "3.3") (s "1.12"))
+;; Package-Requires: ((emacs "29.1") (promise "1.1") (compat "29.1") (magit-section "4.5") (s "1.12"))
 ;; Keywords: processes
 ;; URL: https://github.com/emacs-twist/nix3.el
 
