@@ -41,7 +41,7 @@
 (require 'help-mode)
 
 (declare-function nix3-transient "nix3-transient")
-(declare-function nix3-transient-on-output "nix3-transient")
+(declare-function nix3-transient-on-output "nix3-transient" nil t)
 (declare-function vc-git-root "vc-git")
 (declare-function bookmark-prop-get "bookmark")
 (declare-function magit-init "ext:magit-status")
