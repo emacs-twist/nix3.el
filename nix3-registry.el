@@ -238,15 +238,18 @@ NO-EXACT, GLOBAL, SYSTEM, and USER control completion and registry sources."
 ;;;###autoload
 (defun nix3-registry-add (name flake)
   "Add NAME for FLAKE to the user registry."
-  (interactive (let* ((url (read-from-minibuffer "Url: "
-                                                 ;; TODO: flake url at point
-                                                 (or (bound-and-true-p nix3-flake-url)
-                                                     (nix3-registry--maybe-origin-flake-url))))
-                      (name (read-from-minibuffer (format "Registry name for %s: " url)
-                                                  (when (string-match (rx (+ (not (any "/"))) eol)
-                                                                      url)
-                                                    (match-string 0 url)))))
-                 (list name url)))
+  (interactive
+   (let* ((url (read-from-minibuffer
+                "Url: "
+                ;; TODO: flake url at point
+                (or (bound-and-true-p nix3-flake-url)
+                    (nix3-registry--maybe-origin-flake-url))))
+          (name (read-from-minibuffer
+                 (format "Registry name for %s: " url)
+                 (when (string-match (rx (+ (not (any "/"))) eol)
+                                     url)
+                   (match-string 0 url)))))
+     (list name url)))
   (unless (nix3-registry--flake-url-p flake)
     (user-error "Invalid flake URL: %s" flake))
   (call-process nix3-nix-executable nil nil nil
