@@ -25,7 +25,8 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library asynchronously clones Git repositories referenced by remote
+;; flake URLs into local directories.
 
 ;;; Code:
 

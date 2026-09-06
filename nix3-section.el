@@ -25,7 +25,8 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library provides macros for inserting and styling Magit sections
+;; used by nix3.el.
 
 ;;; Code:
 

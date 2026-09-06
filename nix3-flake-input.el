@@ -25,7 +25,8 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library provides commands for inspecting and updating flake inputs
+;; from nix3-flake-show buffers.
 
 ;;; Code:
 

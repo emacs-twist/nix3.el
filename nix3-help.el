@@ -25,7 +25,8 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library parses Nix command help output and uses it to provide command
+;; completion for nix3.el.
 
 ;;; Code:
 

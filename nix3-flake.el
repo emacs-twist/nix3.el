@@ -25,7 +25,9 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library provides an interactive interface for inspecting and working
+;; with Nix flakes.  It displays flake metadata, outputs, and inputs, and
+;; provides commands for initializing, editing, and updating flakes.
 
 ;;; Code:
 

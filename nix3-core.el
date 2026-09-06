@@ -25,7 +25,9 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library provides the common foundation for nix3.el.  It runs Nix and
+;; Git commands, reads Nix configuration, and provides shared customization
+;; variables and utility functions.
 
 ;;; Code:
 

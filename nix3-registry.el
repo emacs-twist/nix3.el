@@ -25,7 +25,8 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library provides completion and commands for managing Nix flake
+;; registry entries from the global, system, and user registries.
 
 ;;; Code:
 

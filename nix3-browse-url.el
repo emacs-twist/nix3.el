@@ -25,7 +25,8 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library provides the customizable browser function used to visit
+;; source repositories referenced by flakes.
 
 ;;; Code:
 

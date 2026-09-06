@@ -25,7 +25,9 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library integrates flake.lock changes into Magit.  It displays added,
+;; removed, and changed locked nodes and lets users inspect their source
+;; history.
 
 ;;; Code:
 

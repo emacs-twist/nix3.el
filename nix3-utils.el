@@ -25,7 +25,9 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; This library provides utility functions for nix3.el, including flake URL
+;; conversion, Git remote handling, display formatting, and store-path and
+;; terminal integration.
 
 ;;; Code:
 
