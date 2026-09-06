@@ -50,8 +50,10 @@
 
 (defvar nix3-flake-input nil)
 
-(defvar nix3-flake-input-show-function nil
-  "Function used to display a flake input URL.")
+(defcustom nix3-flake-input-show-function 'nix3-flake-show-url
+  "Function used to display a flake input URL."
+  :type 'function
+  :group 'nix3)
 
 (defun nix3-flake-input--local-p ()
   "Return non-nil when the flake is local."

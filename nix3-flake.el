@@ -744,8 +744,6 @@ IS-URL specifies whether DIR-OR-URL is a remote URL or a local directory."
               (message "Fetched the flake"))))
     (promise-catch #'nix3-flake--handle-process-error)))
 
-(setq nix3-flake-input-show-function #'nix3-flake-show-url)
-
 (cl-defun nix3-flake--get-promise (dir-or-url is-url &key sections wait)
   "Return a promise that loads sections for DIR-OR-URL.
 
