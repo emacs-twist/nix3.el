@@ -34,13 +34,11 @@
 (require 'nix3-core)
 (require 'nix3-utils)
 (require 'nix3-browse-url)
+(require 'nix3-flake-input)
+(require 'nix3-help)
 (require 'pp)
 
 (declare-function term "term")
-(declare-function nix3-flake-input-dispatch "nix3-flake-input" nil t)
-(declare-function nix3-help-parse "nix3-help")
-(declare-function nix3-help--read-command "nix3-help")
-(defvar nix3-flake-input)
 
 (defcustom nix3-terminal-function #'term
   "Function to run a shell command in a terminal.
@@ -320,7 +318,6 @@ This is a function that takes a command line as an argument."
 
 (defun nix3-transient--complete-flags ()
   "Return completion candidates for Nix command-line flags."
-  (require 'nix3-help)
   (apply #'nix3-help-parse 'options
          (ensure-list nix3-transient-nix-command)))
 
@@ -776,7 +773,6 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
 (defun nix3-transient-input ()
   "Select an input and open its transient."
   (interactive)
-  (require 'nix3-flake-input)
   (setq nix3-transient-directory (nix3-transient--default-directory))
   (nix3-transient-with-directory
    (let* ((alist (nix3-flake--direct-inputs))
@@ -794,7 +790,6 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
   ["Suffixes"
    ("RET" "Build in compile" nix3-transient--generic-compile)]
   (interactive)
-  (require 'nix3-help)
   (setq nix3-transient-nix-command (cdr (split-string (nix3-help--read-command
                                                        "Nix command: ")
                                                       " ")))
@@ -831,6 +826,16 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
             (if args
                 (concat " " (mapconcat #'shell-quote-argument (flatten-list args) " "))
               ""))))
+
+;;;; Flake display integration
+
+;;;###autoload
+(defun nix3-transient-on-flake-output (flake output type)
+  "Open a transient for OUTPUT of TYPE from FLAKE."
+  (setq nix3-transient-flake flake)
+  (setq nix3-transient-flake-output output)
+  (setq nix3-transient-flake-output-type type)
+  (call-interactively #'nix3-transient-on-output))
 
 (provide 'nix3-transient)
 ;;; nix3-transient.el ends here

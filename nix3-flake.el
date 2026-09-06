@@ -32,9 +32,15 @@
 ;;; Code:
 
 (require 'nix3-core)
+(require 'nix3-flake-context)
+(require 'nix3-flake-data)
+(require 'nix3-flake-ref)
 (require 'nix3-utils)
-(require 'nix3-registry)
+(require 'nix3-registry-core)
 (require 'nix3-section)
+(require 'nix3-browse-url)
+(require 'nix3-flake-clone)
+(require 'nix3-flake-input)
 
 (require 's)
 (require 'magit-section)
@@ -42,17 +48,9 @@
 (require 'promise)
 (require 'help-mode)
 
-(declare-function nix3-transient "nix3-transient")
-(declare-function nix3-transient-on-output "nix3-transient" nil t)
 (declare-function vc-git-root "vc-git")
 (declare-function bookmark-prop-get "bookmark")
 (declare-function magit-init "ext:magit-status")
-(declare-function nix3-flake-clone-promise "nix3-flake-clone")
-(defvar nix3-transient-flake)
-(defvar nix3-transient-flake-output-type)
-(defvar nix3-transient-flake-output)
-(defvar nix3-browse-url-for-repository)
-(defvar nix3-flake-input-map)
 
 (defgroup nix3-flake nil
   "Interactive interface to Nix flakes."
@@ -166,6 +164,16 @@ promise or nil.  The promise should resolve to a directory when
 the worktree becomes available."
   :type 'function)
 
+(defcustom nix3-flake-output-action 'nix3-transient-on-flake-output
+  "Function called when an output is activated.
+
+The function receives the flake location, output attribute, and output type."
+  :type 'function)
+
+(defcustom nix3-flake-dispatch-action 'nix3-transient
+  "Function called to dispatch commands for the current flake."
+  :type 'function)
+
 (defcustom nix3-flake-extra-derivations nil
   "List of non-standard installables in the flake.
 
@@ -229,9 +237,6 @@ directory-local variables for per-project configuration."
 
 ;;;; Variables
 
-(defvar nix3-flake-url nil
-  "Set to the URL of a flake when the flake is not local.")
-
 (defvar nix3-flake-show-history nil)
 
 (defvar nix3-flake-template-history nil)
@@ -253,46 +258,6 @@ directory-local variables for per-project configuration."
 (defun nix3-flake--path-p (url-alist)
   "Return non-nil if URL-ALIST points to a path."
   (equal "path" (assq 'type url-alist)))
-
-(defun nix3-flake--resolve-path (path)
-  "Resolve a relative flake input PATH against the current flake."
-  (if (string-prefix-p "/" path)
-      path
-    (save-match-data
-      (if (string-match (rx bol "./" (group (+ anything))) path)
-          (let ((relative (match-string 1 path)))
-            (cond
-             ((and nix3-flake-url
-                   (string-match-p (rx (any "=&") "dir=") nix3-flake-url))
-              (error "The parent flake \"%s\" already has dir parameter, so it cannot be resolved"
-                     nix3-flake-url))
-             (nix3-flake-url
-              (concat nix3-flake-url
-                      (if (string-match-p (rx "?") nix3-flake-url)
-                          "&"
-                        "?")
-                      "dir="
-                      relative))
-             (t
-              (nix3-normalize-path (expand-file-name relative default-directory)))))
-        (error "Failed to match against a path \"%s\"" path)))))
-
-(cl-defun nix3-flake-location (&key allow-missing local dir)
-  "Return the URL or path to the current flake.
-
-If the current buffer is not on a remote flake and ALLOW-MISSING
-is nil, the function throws an error if there is no flake.nix.
-
-If LOCAL is non-nil, the function only returns a flake on path.
-
-If DIR is non-nil, the function returns a flake at or above the
-directory.  It implies LOCAL."
-  (or (unless (or local dir)
-        nix3-flake-url)
-      (if-let* ((root (locate-dominating-file (or dir default-directory) "flake.nix")))
-          (nix3-normalize-path root)
-        (unless allow-missing
-          (error "No flake.nix is found")))))
 
 ;;;; nix eval
 
@@ -328,76 +293,6 @@ When APPLY is non-nil, pass it as the expression supplied to `--apply'."
          (when apply
            (list "--apply" apply))))
 
-;;;; Browse remote
-
-(defun nix3-flake-html-url (alist)
-  "Return a browsable HTTPS URL for the flake reference ALIST."
-  (cl-labels
-      ((check-url (url)
-         (if (string-prefix-p "https://" url)
-             url
-           (error "Not an https url, so cannot retrieve an HTML url: %s" url)))
-       (to-url (alist)
-         (let-alist alist
-           (pcase \.type
-             ("indirect"
-              (require 'nix3-registry)
-              (if-let* ((entry (thread-last
-                               (nix3-registry--collect-entries)
-                               (cl-remove-if (lambda (x)
-                                               (equal (cdr (assq 'type (cddr x)))
-                                                      "path")))
-                               (assoc \.id))))
-                  (to-url (cddr entry))
-                (error "Failed to find a registry entry for %s" \.id)))
-             ("github"
-              (format "https://github.com/%s/%s/%s" \.owner \.repo
-                      (if \.ref
-                          (concat "tree/" \.ref)
-                        "")))
-             ("gitlab"
-              (format "https://gitlab.com/%s/%s/%s" \.owner \.repo
-                      (if \.ref
-                          (concat "tree/" \.ref)
-                        "")))
-             ("sourcehut"
-              (format "https://git.sr.ht/%s/%s/%s" \.owner \.repo
-                      (if \.ref
-                          (concat "log/" \.ref)
-                        "")))
-             ("url"
-              (check-url (thread-last
-                           \.url
-                           (string-remove-prefix "git+")
-                           (string-remove-suffix ".git"))))
-             ("git"
-              (check-url \.url))
-             ("path"
-              (error "Path entry, so cannot be accessed using URL"))
-             (_
-              (error "Unsupported scheme for HTML URL: %s" \.type))))))
-    (to-url alist)))
-
-;;;; nix flake show data
-
-(defvar nix3-flake-show-results nil)
-
-(defun nix3-flake--ensure-show-cache ()
-  "Initialize the flake-show result cache when necessary."
-  (unless nix3-flake-show-results
-    (setq nix3-flake-show-results (make-hash-table :test #'equal))))
-
-(defun nix3-flake-show--put (directory-or-url result)
-  "Cache RESULT for DIRECTORY-OR-URL as flake-show data."
-  (nix3-flake--ensure-show-cache)
-  (puthash directory-or-url result nix3-flake-show-results))
-
-(defun nix3-flake-show--get (directory)
-  "Return cached flake-show data for DIRECTORY, if available."
-  (nix3-flake--ensure-show-cache)
-  (gethash (string-remove-suffix "/" directory)
-           nix3-flake-show-results))
-
 (defun nix3-flake-demand-outputs ()
   "Return a promise that fetches outputs for the current local flake."
   (promise-new (apply-partially
@@ -406,26 +301,6 @@ When APPLY is non-nil, pass it as the expression supplied to `--apply'."
                  "/"
                  (file-truename (locate-dominating-file default-directory "flake.nix")))
                 nil)))
-
-;;;; nix flake metadata data
-
-(defvar nix3-flake-metadata-results nil)
-
-(defun nix3-flake--ensure-metadata-cache ()
-  "Initialize the flake-metadata result cache when necessary."
-  (unless nix3-flake-metadata-results
-    (setq nix3-flake-metadata-results (make-hash-table :test #'equal))))
-
-(defun nix3-flake-metadata--put (directory-or-url result)
-  "Cache RESULT for DIRECTORY-OR-URL as flake metadata."
-  (nix3-flake--ensure-metadata-cache)
-  (puthash directory-or-url result nix3-flake-metadata-results))
-
-(defun nix3-flake-metadata--get (directory)
-  "Return cached flake metadata for DIRECTORY, if available."
-  (nix3-flake--ensure-metadata-cache)
-  (gethash (string-remove-suffix "/" directory)
-           nix3-flake-metadata-results))
 
 ;;;; Processing data
 
@@ -565,19 +440,17 @@ selection, and SYSTEM to select a target system."
 (defvar nix3-flake-output-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") #'nix3-flake-output-return)
-    ;; (define-key map "a" #'nix3-transient-explore-output)
-    ;; (define-key map "b" #'nix3-flake-output-build)
-    ;; (define-key map "r" #'nix3-flake-output-run)
-    map))
+    map)
+  "Keymap active on flake output sections.")
 
 (defun nix3-flake-output-return ()
-  "Open a transient for the flake output at point."
+  "Run `nix3-flake-output-action' for the output at point."
   (interactive)
   (when-let* ((output (nix3-flake-output-path-at-point)))
-    (setq nix3-transient-flake (nix3-flake--buffer-url))
-    (setq nix3-transient-flake-output output)
-    (setq nix3-transient-flake-output-type (nix3-flake-output-type))
-    (call-interactively #'nix3-transient-on-output)))
+    (funcall nix3-flake-output-action
+             (nix3-flake--buffer-url)
+             output
+             (nix3-flake-output-type))))
 
 (defun nix3-flake-output-path-at-point ()
   "Return the output attribute path at point, or nil."
@@ -695,7 +568,6 @@ selection, and SYSTEM to select a target system."
 
 (defun nix3-flake-insert-inputs ()
   "Insert inputs of the current flake as Magit sections."
-  (require 'nix3-flake-input)
   (when-let* ((result (nix3-flake--get-metadata-result)))
     (nix3-section-with-keymap nix3-flake-input-map
       (magit-insert-section (flake-inputs nil (nix3-flake--fold-toplevel-p))
@@ -766,7 +638,6 @@ selection, and SYSTEM to select a target system."
 
 (defun nix3-flake-browse-remote (alist)
   "Browse the repository represented by flake reference ALIST."
-  (require 'nix3-browse-url)
   (funcall nix3-browse-url-for-repository (nix3-flake-html-url alist)))
 
 ;;;; nix3-flake-show-mode
@@ -806,20 +677,17 @@ IS-URL specifies whether DIR-OR-URL is a remote URL or a local directory."
   (or nix3-flake-url
       (nix3-normalize-path default-directory)))
 
-(defun nix3-flake--get-show-result ()
-  "Return the cached show result for the current flake."
-  (nix3-flake-show--get (nix3-flake-location)))
-
-(defun nix3-flake--get-metadata-result ()
-  "Return the cached metadata result for the current flake."
-  (nix3-flake-metadata--get (nix3-flake-location)))
-
 (defvar nix3-flake-show-mode-map
   (let ((m (make-composed-keymap nil magit-section-mode-map)))
     (define-key m "l" #'nix3-flake-show-back)
     (define-key m "g" #'nix3-flake-show-revert)
-    (define-key m "?" #'nix3-transient)
+    (define-key m "?" #'nix3-flake-dispatch)
     m))
+
+(defun nix3-flake-dispatch ()
+  "Run `nix3-flake-dispatch-action' for the current flake."
+  (interactive)
+  (funcall nix3-flake-dispatch-action))
 
 (define-derived-mode nix3-flake-show-mode magit-section-mode
   "Nix Flake"
@@ -875,6 +743,8 @@ IS-URL specifies whether DIR-OR-URL is a remote URL or a local directory."
             (let (message-log-max)
               (message "Fetched the flake"))))
     (promise-catch #'nix3-flake--handle-process-error)))
+
+(setq nix3-flake-input-show-function #'nix3-flake-show-url)
 
 (cl-defun nix3-flake--get-promise (dir-or-url is-url &key sections wait)
   "Return a promise that loads sections for DIR-OR-URL.

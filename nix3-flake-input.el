@@ -32,25 +32,26 @@
 
 (require 'transient)
 (require 'nix3-core)
+(require 'nix3-flake-context)
+(require 'nix3-flake-data)
+(require 'nix3-flake-ref)
 (require 'nix3-utils)
 (require 'nix3-browse-url)
 (require 'subr-x)
 (require 'magit-section)
 
-;; Set to non-nil when the flake is not local.
-(defvar nix3-flake-url)
-
-(declare-function nix3-flake-show-url "nix3-flake")
-(declare-function nix3-flake--get-metadata-result "nix3-flake")
-(declare-function nix3-flake-html-url "nix3-flake")
 (declare-function project-prompt-project-dir "project")
 
 (defvar nix3-flake-input-map
   (let ((map (make-keymap)))
     (define-key map (kbd "RET") #'nix3-flake-input-return)
-    map))
+    map)
+  "Keymap active on flake input sections.")
 
 (defvar nix3-flake-input nil)
+
+(defvar nix3-flake-input-show-function nil
+  "Function used to display a flake input URL.")
 
 (defun nix3-flake-input--local-p ()
   "Return non-nil when the flake is local."
@@ -146,12 +147,18 @@
 (defun nix3-flake-show-original-input ()
   "Show the original URL of the flake input at point."
   (interactive)
-  (nix3-flake-show-url (nix3-flake-input--original-url)))
+  (if nix3-flake-input-show-function
+      (funcall nix3-flake-input-show-function
+               (nix3-flake-input--original-url))
+    (user-error "No function is configured to show flake inputs")))
 
 (defun nix3-flake-show-locked-input ()
   "Show the locked URL of the flake input at point."
   (interactive)
-  (nix3-flake-show-url (nix3-flake-input--locked-url)))
+  (if nix3-flake-input-show-function
+      (funcall nix3-flake-input-show-function
+               (nix3-flake-input--locked-url))
+    (user-error "No function is configured to show flake inputs")))
 
 (defun nix3-flake-input-copy-revision ()
   "Copy the locked revision of the flake input at point."
@@ -162,7 +169,6 @@
 (defun nix3-flake-input-browse-remote ()
   "Browse the remote repository of the flake input at point."
   (interactive)
-  (require 'nix3-browse-url)
   (funcall nix3-browse-url-for-repository
            (nix3-flake-input--html-url)))
 
