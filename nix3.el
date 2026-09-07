@@ -40,6 +40,7 @@
 (require 'promise)
 (require 'nix3-flake)
 (require 'nix3-transient)
+(require 'nix3-registry)
 
 (defvar nix3-transient-flake)
 (defvar nix3-transient-flake-output)

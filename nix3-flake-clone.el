@@ -34,9 +34,8 @@
 (require 'rx)
 (require 'project)
 (require 'nix3-utils)
-
-(declare-function nix3-registry--non-indirect "nix3-registry")
-(declare-function promise-new "ext:promise-core")
+(require 'nix3-registry-core)
+(require 'promise)
 
 (defgroup nix3-flake-clone
   nil
@@ -56,7 +55,6 @@
 ;;;###autoload
 (defun nix3-flake-clone-promise (url-alist)
   "Return a promise that clones URL-ALIST into a local Git worktree."
-  (require 'nix3-registry)
   (promise-new
    `(lambda (resolve _)
       (let* ((url-alist ',url-alist)
@@ -83,7 +81,6 @@
                      (or nix3-flake-clone-root
                          (error "You must set `nix3-flake-clone-root'")))))
         (error "Non-https url is not supported at present"))
-    (require 'nix3-registry)
     (nix3-flake-clone--default-dest
      (nix3-build-git-clone-url
       (nix3-registry--non-indirect url-or-alist)))))
