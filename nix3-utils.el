@@ -33,6 +33,7 @@
 
 (require 'cl-lib)
 (require 'subr-x)
+(require 'project)
 (require 'nix3-core)
 (eval-when-compile
   (require 'rx))
@@ -213,6 +214,11 @@ It always creates a new buffer."
       (message "Realising %s..." path)
       (let ((proc (nix-store-realise path)))
         (set-process-sentinel proc #'sentinel))))))
+
+;;;###autoload
+(defun nix3-default-compilation-buffer (_command)
+  "Returns the name of a compilation buffer."
+  (project-prefixed-buffer-name "nix3-compilation"))
 
 (provide 'nix3-utils)
 ;;; nix3-utils.el ends here
