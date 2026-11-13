@@ -50,6 +50,15 @@ This is a function that takes a command line as an argument."
                         nix3-vterm-shell-command)
                  (function :tag "Any function")))
 
+(defcustom nix3-compilation-buffer-name
+  #'nix3-default-compilation-buffer
+  "Function that determines the name of the compilation buffer.
+
+The function takes the command to run in compilation and is called at
+the flake root."
+  :group 'nix3
+  :type 'function)
+
 (defvar-local nix3-transient-flake nil
   "Location of the flake.")
 
@@ -656,10 +665,14 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
   "Build the selected output using `compile'."
   (interactive)
   (nix3-transient-with-directory
-   (compile (nix3-transient--shell-command
-             nix3-transient-flake-output
-             (transient-args 'nix3-transient-build))
-            nix3-compile-in-comint-mode)))
+   (let* ((command (nix3-transient--shell-command
+                    nix3-transient-flake-output
+                    (transient-args 'nix3-transient-build)))
+          (buffer-name (funcall nix3-compilation-buffer-name command))
+          (compilation-buffer-name-function (lambda (_mode-name) buffer-name)))
+     (compile command nix3-compile-in-comint-mode)
+     (with-current-buffer buffer-name
+       (setq-local compile-command command)))))
 
 (transient-define-prefix nix3-transient-run ()
   "Run a selected flake output."
