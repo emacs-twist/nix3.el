@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "29.1") (nix3 "0.1") (promise "1.1"))
+;; Package-Requires: ((emacs "29.1") (nix3 "0.1"))
 ;; Keywords: processes
 ;; URL: https://github.com/emacs-twist/nix3.el
 
@@ -66,7 +66,6 @@ The value should be either nil or one of the existing members of
 
 (defun magit-nix3-flake-sections ()
   "Insert Nix flake sections into the current Magit status buffer."
-  (require 'promise)
   ;; Load the library without adding autoloads
   (require 'nix3-flake)
   (when (file-exists-p "flake.nix")

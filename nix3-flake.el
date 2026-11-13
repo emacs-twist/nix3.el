@@ -45,7 +45,7 @@
 (require 's)
 (require 'magit-section)
 (require 'project)
-(require 'promise)
+(require 'async)
 (require 'help-mode)
 
 (declare-function vc-git-root "vc-git")
@@ -156,12 +156,13 @@ The command should be run synchronously and should set
 is finished."
   :type 'function)
 
-(defcustom nix3-flake-worktree-promise-fn #'nix3-flake-clone-promise
-  "Function that returns a promise to a worktree.
+(defcustom nix3-flake-worktree-async-fn #'nix3-flake-clone-worktree
+  "Function that starts retrieving a worktree asynchronously.
 
-The function should take a URL alist as an argument and return a
-promise or nil.  The promise should resolve to a directory when
-the worktree becomes available."
+The function should take a URL alist, a success callback, and an optional
+error callback.  It should call the success callback with a directory when
+the worktree becomes available.  It should return non-nil when an
+asynchronous operation has been started."
   :type 'function)
 
 (defcustom nix3-flake-output-action 'nix3-transient-on-flake-output
@@ -293,14 +294,78 @@ When APPLY is non-nil, pass it as the expression supplied to `--apply'."
          (when apply
            (list "--apply" apply))))
 
-(defun nix3-flake-demand-outputs ()
-  "Return a promise that fetches outputs for the current local flake."
-  (promise-new (apply-partially
-                #'nix3-flake--make-show-process
-                (string-remove-suffix
-                 "/"
-                 (file-truename (locate-dominating-file default-directory "flake.nix")))
-                nil)))
+;;;; Asynchronous loading
+
+(defun nix3-flake--section-loaders (sections)
+  "Return the unique loader functions for SECTIONS."
+  (cl-remove-duplicates
+   (delq nil
+         (mapcar (lambda (func)
+                   (when (symbolp func)
+                     (get func 'nix3-loader)))
+                 sections))
+   :test #'eq))
+
+(cl-defun nix3-flake--load-sections (dir-or-url is-url success error
+                                                 &key sections timeout)
+  "Load SECTIONS for DIR-OR-URL asynchronously.
+
+IS-URL specifies whether DIR-OR-URL is remote.  Call SUCCESS without
+arguments when all loaders finish.  Call ERROR with an error description
+if a loader fails or TIMEOUT elapses before they finish."
+  (let* ((loaders (nix3-flake--section-loaders
+                   (or sections nix3-flake-show-sections)))
+         (remaining (length loaders))
+         (finished nil)
+         timer)
+    (cl-labels ((finish (function &rest args)
+                  (unless finished
+                    (setq finished t)
+                    (when timer
+                      (cancel-timer timer))
+                    (apply function args)))
+                (on-timeout ()
+                  (finish error :timeouted)))
+      (when timeout
+        (setq timer (run-at-time timeout nil #'on-timeout)))
+      (if (null loaders)
+          (finish success)
+        (dolist (loader loaders)
+          (funcall loader
+                   dir-or-url is-url
+                   (lambda (_result)
+                     (unless finished
+                       (when (zerop (cl-decf remaining))
+                         (finish success))))
+                   (lambda (payload)
+                     (finish error payload))))))))
+
+(cl-defun nix3-flake--wait-for-sections (dir-or-url is-url
+                                                    &key sections timeout)
+  "Load SECTIONS for DIR-OR-URL and wait until they finish.
+
+IS-URL specifies whether DIR-OR-URL is remote.  Stop waiting and return
+when TIMEOUT elapses."
+  (let ((finished nil))
+    (nix3-flake--load-sections dir-or-url is-url
+                               (lambda () (setq finished t))
+                               (lambda (_payload) (setq finished t))
+                               :sections sections
+                               :timeout timeout)
+    (while (not finished)
+      (accept-process-output nil 0.05))))
+
+(defun nix3-flake-demand-outputs (success &optional error)
+  "Start fetching outputs for the current local flake asynchronously.
+
+Call SUCCESS without arguments when the outputs have been loaded.  Call
+ERROR with an error description if loading fails."
+  (nix3-flake--load-sections
+   (string-remove-suffix
+    "/"
+    (file-truename (locate-dominating-file default-directory "flake.nix")))
+   nil success error
+   :sections '(nix3-flake-insert-outputs)))
 
 ;;;; Processing data
 
@@ -384,10 +449,12 @@ The result includes apps and derivations for the selected system."
 
 Use PROMPT-FORMAT for the completion prompt, DEFAULT-VALUE as the initial
 selection, and SYSTEM to select a target system."
-  (promise-wait (if nix3-flake-url
-                    nix3-flake-remote-wait
-                  nix3-flake-wait)
-    (nix3-flake-demand-outputs))
+  (nix3-flake--wait-for-sections
+   (nix3-flake-location) nix3-flake-url
+   :sections '(nix3-flake-insert-outputs)
+   :timeout (if nix3-flake-url
+               nix3-flake-remote-wait
+             nix3-flake-wait))
   (let ((alist (nix3-flake--filter-outputs command system)))
     (cl-labels
         ((group (candidate transform)
@@ -663,7 +730,8 @@ IS-URL specifies whether DIR-OR-URL is a remote URL or a local directory."
 (defun nix3-flake-show-revert (&rest _args)
   "Revert the `nix3-flake-show' buffer."
   (interactive)
-  (nix3-flake--get-promise (nix3-flake-location) nix3-flake-url)
+  (nix3-flake--wait-for-sections (nix3-flake-location) nix3-flake-url
+                                 :timeout nix3-flake-wait)
   (let ((inhibit-read-only t))
     (erase-buffer)
     (magit-insert-section (flake)
@@ -715,12 +783,14 @@ IS-URL specifies whether DIR-OR-URL is a remote URL or a local directory."
            (file-exists-p (expand-file-name "flake.nix" dir)))
       (let ((truename (nix3-normalize-path dir))
             (default-directory dir))
-        (promise-chain (nix3-flake--get-promise truename nil)
-          (then (lambda (_)
-                  (nix3-flake-switch-to-buffer (nix3-flake-show-buffer truename nil))
-                  (let (message-log-max)
-                    (message "Fetched the flake"))))
-          (promise-catch #'nix3-flake--handle-process-error)))
+        (nix3-flake--load-sections
+         truename nil
+         (lambda ()
+           (nix3-flake-switch-to-buffer (nix3-flake-show-buffer truename nil))
+           (let (message-log-max)
+             (message "Fetched the flake")))
+         #'nix3-flake--handle-process-error
+         :timeout nix3-flake-wait))
     (user-error "Directory %s does not contain flake.nix" dir)))
 
 (defun nix3-flake-select-locally ()
@@ -737,106 +807,128 @@ IS-URL specifies whether DIR-OR-URL is a remote URL or a local directory."
                            ent
                          (car ent)))))
   (message "Fetching a flake...")
-  (promise-chain (nix3-flake--get-promise url t :wait nix3-flake-remote-wait)
-    (then (lambda (_)
-            (nix3-flake-switch-to-buffer (nix3-flake-show-buffer url t))
-            (let (message-log-max)
-              (message "Fetched the flake"))))
-    (promise-catch #'nix3-flake--handle-process-error)))
-
-(cl-defun nix3-flake--get-promise (dir-or-url is-url &key sections wait)
-  "Return a promise that loads sections for DIR-OR-URL.
-
-IS-URL specifies whether DIR-OR-URL is remote.  SECTIONS optionally selects
-the loader functions, and WAIT overrides the default timeout."
-  (cl-flet
-      ((make-loader (loader)
-         (promise-new (apply-partially loader dir-or-url is-url)))
-       (uniq (items)
-         (cl-remove-duplicates items :test #'eq)))
-    (promise-wait (or wait nix3-flake-wait)
-      (thread-last
-        (or sections nix3-flake-show-sections)
-        (mapcar (lambda (func)
-                  (when (symbolp func)
-                    (get func 'nix3-loader))))
-        (delq nil)
-        (uniq)
-        (mapcar #'make-loader)
-        (apply #'vector)
-        (promise-all)))))
+  (nix3-flake--load-sections
+   url t
+   (lambda ()
+     (nix3-flake-switch-to-buffer (nix3-flake-show-buffer url t))
+     (let (message-log-max)
+       (message "Fetched the flake")))
+   #'nix3-flake--handle-process-error
+   :timeout nix3-flake-remote-wait))
 
 (defun nix3-flake-run-section (sections dir-or-url is-url)
   "Run the loader SECTIONS for DIR-OR-URL and its associated hooks.
 
 IS-URL specifies whether DIR-OR-URL is remote."
-  (nix3-flake--get-promise dir-or-url is-url
-                           :sections (symbol-value sections))
+  (nix3-flake--wait-for-sections dir-or-url is-url
+                                 :sections (symbol-value sections)
+                                 :timeout nix3-flake-wait)
   (run-hooks sections))
 
-(defun nix3-flake--handle-process-error (payload)
-  "Report the process error described by promise PAYLOAD."
-  (pcase payload
-    (`(:timeouted)
-     (message "Timeout while fetching the Nix flake"))
-    (`(:rejected ,plist)
-     (message "Error from \"nix %s %s\": %s"
-              (mapconcat #'shell-quote-argument (plist-get plist :subcommand) " ")
-              (plist-get plist :url)
-              (with-current-buffer (plist-get plist :error-buffer)
-                (let ((case-fold-search t))
-                  (save-excursion
-                    (goto-char (point-max))
-                    (when (re-search-backward (rx bol "error") nil t)
-                      (buffer-substring (line-beginning-position)
-                                        (line-end-position))))))))))
+(defun nix3-flake--start-json-process
+    (url is-url command subcommand stderr-buffer put-result success error)
+  "Start COMMAND asynchronously and cache its parsed JSON result.
 
-(cl-defmacro nix3-flake--nix-json-process (func-name &key name buffer stderr
+SUCCESS is called with the parsed JSON value.  ERROR is called with a plist
+describing a failure."
+  (let ((default-directory (if is-url "~/" default-directory)))
+    (async-start
+     `(lambda ()
+        (require 'json)
+        (condition-case err
+            (let* ((stderr-file (make-temp-file "nix3-stderr"))
+                   (output
+                    (with-temp-buffer
+                      (let ((command ',command))
+                        (cons (apply #'call-process
+                                     (car command) nil
+                                     (list (current-buffer) stderr-file)
+                                     nil (cdr command))
+                              (buffer-string)))))
+                   (code (car output))
+                   (stdout (cdr output))
+                   (stderr (with-temp-buffer
+                             (insert-file-contents stderr-file)
+                             (buffer-string))))
+              (delete-file stderr-file)
+              (if (zerop code)
+                  (condition-case err
+                      (list :success
+                            (json-parse-string stdout
+                                               :object-type 'alist
+                                               :array-type 'list))
+                    (error (list :error (error-message-string err) code)))
+                (list :error stderr code)))
+          (error (list :error (error-message-string err) -1))))
+     (lambda (result)
+       (pcase result
+         (`(:success ,value)
+          (funcall put-result url value)
+          (funcall success value))
+         (`(:error ,message ,_code)
+          (when stderr-buffer
+            (with-current-buffer (get-buffer-create stderr-buffer)
+              (let ((inhibit-read-only t))
+                (erase-buffer)
+                (insert message))))
+          (funcall error (list :error-buffer stderr-buffer
+                               :subcommand subcommand
+                               :url url
+                               :stderr message))))))))
+
+(defun nix3-flake--last-error-line (payload)
+  "Return the last error line from PAYLOAD."
+  (let ((stderr (or (plist-get payload :stderr) "")))
+    (with-temp-buffer
+      (insert stderr)
+      (goto-char (point-max))
+      (let ((case-fold-search t))
+        (if (re-search-backward (rx bol "error") nil t)
+            (string-trim (buffer-substring (line-beginning-position)
+                                           (line-end-position)))
+          (string-trim stderr))))))
+
+(defun nix3-flake--handle-process-error (payload)
+  "Report the process error described by PAYLOAD."
+  (pcase payload
+    (:timeouted
+     (message "Timeout while fetching the Nix flake"))
+    (_
+     (message "Error from \"nix %s %s\": %s"
+              (mapconcat #'shell-quote-argument
+                         (or (plist-get payload :subcommand) '("?"))
+                         " ")
+              (or (plist-get payload :url) "?")
+              (nix3-flake--last-error-line payload)))))
+
+(cl-defmacro nix3-flake--nix-json-process (func-name &key stderr
                                                       subcommand
                                                       put-result)
   "Define FUNC-NAME as an asynchronous Nix JSON process loader.
 
-NAME, BUFFER, STDERR, SUBCOMMAND, and PUT-RESULT configure the process and
-the function used to cache its parsed result."
+STDERR is the name of the buffer that receives error output, SUBCOMMAND is
+the Nix subcommand to run, and PUT-RESULT stores a parsed result."
   (declare (indent 1))
-  `(defun ,func-name (url is-url resolve reject)
-     "Fetch JSON data for URL and resolve the promise with the parsed result."
-     (make-process :name ,name
-                   :buffer ,buffer
-                   :stderr ,stderr
-                   :command (append (list nix3-nix-executable
-                                          ,@subcommand
-                                          url
-                                          "--json")
-                                    nix3-flake-default-json-options
-                                    (when is-url
-                                      '("--no-write-lock-file")))
-                   :sentinel
-                   (lambda (process event)
-                     (cond
-                      ((equal "finished\n" event)
-                       (with-current-buffer (process-buffer process)
-                         (goto-char (point-min))
-                         (let ((result (json-parse-buffer :object-type 'alist
-                                                          :array-type 'list)))
-                           (,put-result url result)
-                           (funcall resolve result)))
-                       (kill-buffer (process-buffer process)))
-                      ((string-prefix-p "exited abnormally" event)
-                       (funcall reject (list :error-buffer ,stderr
-                                             :subcommand ',subcommand
-                                             :url url))))))))
+  `(defun ,func-name (url is-url success error)
+     "Fetch JSON data for URL and call SUCCESS with the parsed result.
+Call ERROR with a plist describing the process error on failure."
+     (nix3-flake--start-json-process
+      url is-url
+      (append (list nix3-nix-executable ,@subcommand url "--json")
+              nix3-flake-default-json-options
+              (when is-url
+                '("--no-write-lock-file")))
+      ',subcommand
+      ,stderr
+      #',put-result
+      success error)))
 
 (nix3-flake--nix-json-process nix3-flake--make-show-process
-  :name "Nix-Flake-Show-Json"
-  :buffer (generate-new-buffer "*Nix Flake Show Output*")
   :stderr nix3-flake-show-error-buffer
   :subcommand ("flake" "show")
   :put-result nix3-flake-show--put)
 
 (nix3-flake--nix-json-process nix3-flake--make-metadata-process
-  :name "Nix-Flake-Metadata-Json"
-  :buffer (generate-new-buffer "*Nix Flake Metadata Output*")
   :stderr nix3-flake-metadata-error-buffer
   :subcommand ("flake" "metadata")
   :put-result nix3-flake-metadata--put)
@@ -949,22 +1041,27 @@ When FORCE is non-nil, always prompt for the directory."
                            (car item)))
             (url (if (stringp item)
                      item
-                   (nix3-flake-ref-alist-to-url (cdr item)))))
-        (promise-chain (promise-new (apply-partially #'nix3-flake--make-show-process
-                                                     url t))
-          (then `(lambda (_)
-                   (let (message-log-max)
-                     (message nil))
-                   (if-let* ((templates (thread-last
-                                          (nix3-flake-show--get ,url)
-                                          ;; Since Nix 2.7, the default template is templates.default, so we
-                                          ;; won't consider defaultTemplate.
-                                          (alist-get 'templates))))
-                       (concat ,name-or-url
-                               "#" (nix3-flake--complete-template ,prompt templates))
-                     (error "No template"))))
-          (then callback)
-          (promise-catch #'error))))))
+                   (nix3-flake-ref-alist-to-url (cdr item))))
+            (buffer (current-buffer))
+            (dir default-directory))
+        (nix3-flake--make-show-process
+         url t
+         (lambda (_result)
+           (with-current-buffer buffer
+             (let ((default-directory dir))
+               (let (message-log-max)
+                 (message nil))
+               (if-let* ((templates (thread-last
+                                      (nix3-flake-show--get url)
+                                      ;; Since Nix 2.7, the default template is templates.default, so we
+                                      ;; won't consider defaultTemplate.
+                                      (alist-get 'templates))))
+                   (funcall callback
+                            (concat name-or-url
+                                    "#" (nix3-flake--complete-template
+                                          prompt templates)))
+                 (error "No template")))))
+         #'error)))))
 
 (defun nix3-flake--template-p (url)
   "Return non-nil when URL names a flake template."
@@ -1086,18 +1183,23 @@ then runs `nix3-flake-init'."
 
 (defun nix3-flake-git-log-source (url-alist revs)
   "Display REVS from the repository represented by URL-ALIST."
-  (promise-chain (or (funcall nix3-flake-worktree-promise-fn
-                              (nix3-registry--non-indirect url-alist))
-                     (error "No promise"))
-    (then `(lambda (dir)
-             (let ((default-directory dir))
-               ;; TODO: Fetch data
-               (magit-log-other ',revs))))
-    (promise-catch #'nix3-flake--handle-repo-error)))
+  (let ((buffer (current-buffer)))
+    (unless (funcall nix3-flake-worktree-async-fn
+                     (nix3-registry--non-indirect url-alist)
+                     (lambda (dir)
+                       (with-current-buffer buffer
+                         (let ((default-directory dir))
+                           ;; TODO: Fetch data
+                           (magit-log-other revs))))
+                     #'nix3-flake--handle-repo-error)
+      (error "No asynchronous worktree function"))))
 
 (defun nix3-flake--handle-repo-error (payload)
-  "Signal an error for repository promise PAYLOAD."
-  (error "Error in nix3-flake--handle-repo-error: %s" payload))
+  "Signal an error for repository error PAYLOAD."
+  (error "Failed to prepare a Git worktree: %s"
+         (pcase payload
+           (`(:error ,message) (string-trim message))
+           (_ payload))))
 
 ;;;; Commands on a flake
 
@@ -1113,11 +1215,10 @@ DIR is a directory of the flake.
 Optionally, you can pass NAMES explicitly to update inputs
 non-interactively."
   (interactive "DFlake: ")
-  (promise-wait nix3-flake-wait
-    (promise-new (apply-partially
-                  #'nix3-flake--make-metadata-process
-                  (nix3-flake-location :dir dir :local t)
-                  nil)))
+  (nix3-flake--wait-for-sections
+   (nix3-flake-location :dir dir :local t) nil
+   :sections '(nix3-flake-insert-metadata)
+   :timeout nix3-flake-wait)
   (let* ((default-directory dir)
          (names (or names
                     (completing-read-multiple (format "Select inputs at %s: " dir)

@@ -35,7 +35,7 @@
 (require 'project)
 (require 'nix3-utils)
 (require 'nix3-registry-core)
-(require 'promise)
+(require 'async)
 
 (defgroup nix3-flake-clone
   nil
@@ -53,21 +53,22 @@
   :type 'function)
 
 ;;;###autoload
-(defun nix3-flake-clone-promise (url-alist)
-  "Return a promise that clones URL-ALIST into a local Git worktree."
-  (promise-new
-   `(lambda (resolve _)
-      (let* ((url-alist ',url-alist)
-             (origin (nix3-build-git-clone-url
-                      (nix3-registry--non-indirect
-                       url-alist)))
-             (dir (nix3-flake-clone--default-dest origin)))
-        (if (file-directory-p dir)
-            (funcall resolve dir)
-          (let ((parent (file-name-directory dir)))
-            (unless (file-directory-p parent)
-              (make-directory parent t)))
-          (nix3-flake-clone-async origin dir :callback resolve))))))
+(defun nix3-flake-clone-worktree (url-alist success &optional error)
+  "Clone URL-ALIST into a local Git worktree asynchronously.
+
+Call SUCCESS with the destination directory when the worktree becomes
+available.  Call ERROR with an error description if cloning fails."
+  (let* ((origin (nix3-build-git-clone-url
+                  (nix3-registry--non-indirect url-alist)))
+         (dir (nix3-flake-clone--default-dest origin)))
+    (if (file-directory-p dir)
+        (progn
+          (funcall success dir)
+          dir)
+      (let ((parent (file-name-directory dir)))
+        (unless (file-directory-p parent)
+          (make-directory parent t)))
+      (nix3-flake-clone-async origin dir success error))))
 
 (defun nix3-flake-clone--default-dest (url-or-alist)
   "Return the local destination for URL-OR-ALIST."
@@ -85,29 +86,46 @@
      (nix3-build-git-clone-url
       (nix3-registry--non-indirect url-or-alist)))))
 
-(cl-defun nix3-flake-clone-async (origin dest &key callback)
-  "Clone the Git repository at ORIGIN into DEST.
+(cl-defun nix3-flake-clone-async (origin dest success &optional error)
+  "Clone the Git repository at ORIGIN into DEST asynchronously.
 
-Call CALLBACK with the destination when cloning succeeds."
-  (let ((parent (file-name-directory (string-remove-suffix "/" dest))))
-    (unless (file-directory-p parent)
-      (make-directory parent t)))
+Call SUCCESS with the destination when cloning succeeds.  Call ERROR with
+an error description when cloning fails."
   (message "Cloning %s to %s..." origin dest)
-  (make-process :name "nix flake clone"
-                :buffer "*Nix3-Flake-Clone*"
-                :command (list nix3-git-executable
-                               "clone"
-                               "--filter=blob:none"
-                               origin
-                               (expand-file-name dest))
-                :sentinel
-                `(lambda (process _event)
-                   (when (eq 'exit (process-status process))
-                     (if (= 0 (process-exit-status process))
-                         (funcall ,(or callback
-                                       nix3-flake-clone-find-function)
-                                  ,dest)
-                       (message "Returned non-zero from git-clone"))))))
+  (async-start
+   `(lambda ()
+      (condition-case err
+          (let* ((stderr-file (make-temp-file "nix3-git-clone"))
+                 (output
+                  (with-temp-buffer
+                    (let ((command ',(list nix3-git-executable
+                                           "clone"
+                                           "--filter=blob:none"
+                                           origin
+                                           (expand-file-name dest))))
+                      (cons (apply #'call-process
+                                   (car command) nil
+                                   (list (current-buffer) stderr-file)
+                                   nil (cdr command))
+                            (buffer-string)))))
+                 (code (car output))
+                 (stderr (with-temp-buffer
+                           (insert-file-contents stderr-file)
+                           (buffer-string))))
+            (delete-file stderr-file)
+            (if (zerop code)
+                (list :success ,dest)
+              (list :error stderr code)))
+        (error (list :error (error-message-string err) -1))))
+   (lambda (result)
+     (pcase result
+       (`(:success ,dir)
+        (funcall (or success nix3-flake-clone-find-function) dir))
+       (`(:error ,message ,_code)
+        (if error
+            (funcall error (list :error message))
+          (message "Returned non-zero from git-clone: %s"
+                   (string-trim message))))))))
 
 (provide 'nix3-flake-clone)
 ;;; nix3-flake-clone.el ends here

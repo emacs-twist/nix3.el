@@ -379,10 +379,15 @@ When REFRESH is non-nil, refresh the nix flake show/metadata cache."
                  (nix3-flake-metadata--get nix3-transient-flake)
                  (nix3-flake-show--get nix3-transient-flake))
             (call-interactively #'nix3-transient--dispatch)
-          (promise-chain (nix3-flake--get-promise nix3-transient-flake nix3-flake-url)
-            (then (lambda (_)
-                    (call-interactively #'nix3-transient--dispatch)))
-            (promise-catch #'nix3-flake--handle-process-error)))
+          (let ((buffer (current-buffer)))
+            (nix3-flake--load-sections
+             nix3-transient-flake nix3-flake-url
+             (lambda ()
+               (when (buffer-live-p buffer)
+                 (with-current-buffer buffer
+                   (call-interactively #'nix3-transient--dispatch))))
+             #'nix3-flake--handle-process-error
+             :timeout nix3-flake-wait)))
       (if (file-writable-p default-directory)
           (when (yes-or-no-p "Initialize a flake because there is no flake.nix? ")
             (funcall nix3-flake-init-function))
