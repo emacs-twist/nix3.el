@@ -1,6 +1,13 @@
 {
   description = "THIS IS AN AUTO-GENERATED FILE. PLEASE DON'T EDIT IT MANUALLY.";
   inputs = {
+    async = {
+      flake = false;
+      owner = "jwiegley";
+      ref = "master";
+      repo = "emacs-async";
+      type = "github";
+    };
     compat = {
       flake = false;
       owner = "emacs-compat";
@@ -23,12 +30,6 @@
       flake = false;
       owner = "magit";
       repo = "magit";
-      type = "github";
-    };
-    promise = {
-      flake = false;
-      owner = "chuntaro";
-      repo = "emacs-promise";
       type = "github";
     };
     "s" = {

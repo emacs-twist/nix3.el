@@ -85,17 +85,17 @@
     },
     "version": "4.7.0"
   },
-  "promise": {
-    "author": "chuntaro <chuntaro@sakura-games.jp>",
+  "async": {
+    "author": "John Wiegley <jwiegley@gmail.com>",
     "meta": {
-      "description": "Promises/A+",
-      "homepage": "https://github.com/chuntaro/emacs-promise"
+      "description": "Asynchronous processing in Emacs",
+      "homepage": "https://github.com/jwiegley/emacs-async"
     },
-    "narHash": "sha256-p6HAx+uAQTWfUlPfJu0tk6x6EBxsSuRa+4n7Vd5rus8=",
+    "narHash": "sha256-222eh5iuKviyCb3ZSDeRlDsnlQKccCaWpX4k8wrmyKo=",
     "packageRequires": {
-      "emacs": "25.1"
+      "emacs": "24.4"
     },
-    "version": "1.1"
+    "version": "2.0"
   },
   "s": {
     "author": "Magnar Sveen <magnars@gmail.com>",

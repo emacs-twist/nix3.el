@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "async": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792942738,
+        "narHash": "sha256-222eh5iuKviyCb3ZSDeRlDsnlQKccCaWpX4k8wrmyKo=",
+        "owner": "jwiegley",
+        "repo": "emacs-async",
+        "rev": "93be69563f6f25ee48977878110de3912b1d6d72",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jwiegley",
+        "ref": "master",
+        "repo": "emacs-async",
+        "type": "github"
+      }
+    },
     "compat": {
       "flake": false,
       "locked": {
@@ -64,29 +81,13 @@
         "type": "github"
       }
     },
-    "promise": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1615102078,
-        "narHash": "sha256-p6HAx+uAQTWfUlPfJu0tk6x6EBxsSuRa+4n7Vd5rus8=",
-        "owner": "chuntaro",
-        "repo": "emacs-promise",
-        "rev": "cec51feb5f957e8febe6325335cf57dc2db6be30",
-        "type": "github"
-      },
-      "original": {
-        "owner": "chuntaro",
-        "repo": "emacs-promise",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
+        "async": "async",
         "compat": "compat",
         "cond-let": "cond-let",
         "llama": "llama",
         "magit-section": "magit-section",
-        "promise": "promise",
         "s": "s"
       }
     },
