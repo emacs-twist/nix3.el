@@ -103,36 +103,83 @@ When LIMIT is nil, return the width of the longest item."
 
 (defun nix3-git-url-to-flake-alist (git-url)
   ;; TODO: Add tests
-  "Return the flake reference alist corresponding to GIT-URL."
+  "Return the flake reference alist corresponding to GIT-URL.
+
+Known forges are converted to their dedicated flake reference types,
+while other Git URLs are represented as generic Git references."
   ;; git+https://example.org/my/repo
   ;; git+https://example.org/my/repo?dir=flake1
   ;; git+ssh://git@github.com/NixOS/nix?ref=v1.2.3
   ;; git://github.com/edolstra/dwarffs?ref=unstable&rev=e486d8d40e626a20e06d792db8cc5ac5aba9a5b4
   ;; git+file:///home/my-user/some-repo/some-repo
-  (cl-flet
-      ((host-to-type (domain)
-         (pcase-exhaustive domain
-           ("github.com" "github")
-           ("gitlab.com" "gitlab")
-           ("git.sr.ht" "sourcehut"))))
-    (pcase-exhaustive git-url
-      ((rx bol "https://" (group (or "github.com" "gitlab.com" "git.sr.ht")) "/"
-           (group (+ (not (any "/")))) "/" (group (+? (not (any "/"))))
-           (?  ".git")
-           (or eol "/"))
-       (list (cons 'type (host-to-type (match-string 1 git-url)))
-             (cons 'owner (match-string 2 git-url))
-             (cons 'repo (match-string 3 git-url))))
-      ((rx bol "git@" (group (or "github.com" "gitlab.com" "git.sr.ht")) ":"
-           (group (+ (not (any "/")))) "/" (group (+? (not (any "/"))))
-           (?  ".git")
-           eol)
-       (list (cons 'type (host-to-type (match-string 1 git-url)))
-             (cons 'owner (match-string 2 git-url))
-             (cons 'repo (match-string 3 git-url))))
-      ((rx bol (or "https://" "git://"))
-       (list (cons 'type "git")
-             (cons 'url git-url))))))
+  (cl-labels
+      ((git-alist (url)
+         (list (cons 'type "git")
+               (cons 'url url)))
+       (path-parts (path)
+         "Return (OWNER REPO) from PATH, or nil if it is not a repo path."
+         (save-match-data
+           (when (string-match (rx bol
+                                   (group (+ (not (any "/"))))
+                                   "/"
+                                   (group (+ (not (any "/")))))
+                               path)
+             (list (match-string 1 path)
+                   (string-remove-suffix ".git" (match-string 2 path))))))
+       (forge-alist (host path)
+         "Return a flake alist for PATH on HOST, if HOST is a known forge."
+         (when-let* ((parts (and (not (string-match-p (rx (any "?#")) path))
+                                 (path-parts path)))
+                     (owner (car parts))
+                     (repo (cadr parts)))
+           (pcase host
+             ("github.com"
+              (list (cons 'type "github")
+                    (cons 'owner owner)
+                    (cons 'repo repo)))
+             ("gitlab.com"
+              (list (cons 'type "gitlab")
+                    (cons 'owner owner)
+                    (cons 'repo repo)))
+             ("git.sr.ht"
+              (list (cons 'type "sourcehut")
+                    (cons 'owner owner)
+                    (cons 'repo repo))))))
+       (ssh-url (user host path)
+         (format "ssh://%s%s/%s"
+                 (if user (concat user "@") "")
+                 host path)))
+    (pcase git-url
+      ;; A generic Git URL prefixed with git+ is represented by its URL
+      ;; without the prefix, which is added back when formatting the flake URL.
+      ((rx bol "git+")
+       (nix3-git-url-to-flake-alist (substring git-url 4)))
+      ;; A URL with an explicit scheme, optionally including userinfo and a
+      ;; port: https://user@example.org:8443/owner/repo.git
+      ((rx bol (group (+ (any alnum "+-" ".")))
+           "://"
+           (?  (group (+ (not (any "/@")))) "@")
+           (group (* (not (any "/:"))))
+           (?  ":" (+ (char digit)))
+           (?  "/" (group (* anything))))
+       (let ((scheme (match-string 1 git-url))
+             (host (match-string 3 git-url))
+             (path (or (match-string 4 git-url) "")))
+         (pcase scheme
+           ((or "https" "ssh")
+            (or (forge-alist host path)
+                (git-alist git-url)))
+           (_ (git-alist git-url)))))
+      ;; SCP-like syntax: [USER@]HOST:PATH
+      ((rx bol (?  (group (+ (not (any "/:@")))) "@")
+           (group (+ (not (any "/:"))))
+           ":" (group (+ anything)))
+       (let ((user (match-string 1 git-url))
+             (host (match-string 2 git-url))
+             (path (match-string 3 git-url)))
+         (or (forge-alist host path)
+             (git-alist (ssh-url user host path)))))
+      (_ (git-alist git-url)))))
 
 (defun nix3-format-duration (seconds)
   "Format SECONDS as a human-readable relative duration."
